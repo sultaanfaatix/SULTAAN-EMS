@@ -20,6 +20,7 @@
 </section>
 <section class="toolbar glass-card">
   <form method="post" action="{{ url_for('admin.import_results') }}" enctype="multipart/form-data" class="inline-upload"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><select name="exam_id" required>{% for e in exams %}<option value="{{ e.id }}">{{ e.name }}</option>{% endfor %}</select><label class="file-pill"><i class="fa-solid fa-file-excel"></i><input type="file" name="file" accept=".xlsx" required></label><button><i class="fa-solid fa-upload"></i> Import Results</button></form>
+  <a class="btn ghost" href="{{ url_for('admin.result_import_template') }}"><i class="fa-solid fa-file-arrow-down"></i> Template</a>
   <a class="btn ghost" href="{{ url_for('admin.export_results') }}"><i class="fa-solid fa-download"></i> Export Results</a>
 </section>
 <section class="panel">

@@ -1,13 +1,16 @@
 from pathlib import Path
 
-from flask import Blueprint, flash, redirect, render_template, request, send_file, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required
-from openpyxl import Workbook, load_workbook
+from openpyxl import Workbook
 from sqlalchemy import or_
 
 from . import db
-from .models import AcademicYear, Exam, GradeScale, Result, SchoolClass, Setting, Student, Subject, User
-from .security import ALLOWED_PHOTOS, ALLOWED_SHEETS, allowed_file, role_required, safe_upload_name
+from .audit import audit
+from .import_wizard import preview_results, preview_students, result_template, student_template
+from .models import AcademicYear, AuditLog, Exam, GradeScale, Result, SchoolClass, Setting, Student, Subject, User
+from .permissions import PERMISSIONS, can, enforce_endpoint_permission, permission_required
+from .security import ALLOWED_PHOTOS, ALLOWED_SHEETS, allowed_file, safe_upload_name
 from .services import get_settings, result_payload
 
 admin_bp = Blueprint("admin", __name__)
@@ -16,7 +19,7 @@ admin_bp = Blueprint("admin", __name__)
 @admin_bp.before_request
 @login_required
 def require_login():
-    pass
+    enforce_endpoint_permission()
 
 
 @admin_bp.route("/")
@@ -51,6 +54,7 @@ def student_form(student_id=None):
         student.student_code = request.form["student_code"].strip()
         student.full_name = request.form["full_name"].strip()
         student.mother_name = request.form.get("mother_name", "").strip()
+        student.phone = request.form.get("phone", "").strip()
         student.class_id = int(request.form["class_id"])
         student.academic_year_id = int(request.form["academic_year_id"])
         student.note = request.form.get("note", "").strip()
@@ -68,6 +72,7 @@ def student_form(student_id=None):
             photo.save(upload_dir / filename)
             student.photo_path = f"uploads/{filename}"
         db.session.add(student)
+        audit("Student Updates", f"Saved student {student.student_code}")
         db.session.commit()
         flash("Student saved successfully.", "success")
         return redirect(url_for("admin.students"))
@@ -83,6 +88,7 @@ def student_form(student_id=None):
 def delete_student(student_id):
     student = db.session.get(Student, student_id) or abort_404()
     db.session.delete(student)
+    audit("Student Updates", f"Deleted student {student.student_code}")
     db.session.commit()
     flash("Student deleted.", "success")
     return redirect(url_for("admin.students"))
@@ -91,11 +97,17 @@ def delete_student(student_id):
 @admin_bp.route("/students/<int:student_id>/toggle-lock", methods=["POST"])
 def toggle_student_lock(student_id):
     student = db.session.get(Student, student_id) or abort_404()
+    if student.is_result_locked and not can("unlock_results"):
+        abort(403)
+    if not student.is_result_locked and not can("lock_results"):
+        abort(403)
     student.is_result_locked = not student.is_result_locked
     if student.is_result_locked:
         student.lock_reason = request.form.get("lock_reason", "").strip() or "Outstanding clearance required."
+        audit("Result Locking", f"Locked result for {student.student_code}")
     else:
         student.lock_reason = ""
+        audit("Result Locking", f"Unlocked result for {student.student_code}")
     db.session.commit()
     flash("Result lock status updated.", "success")
     return redirect(url_for("admin.students"))
@@ -107,32 +119,45 @@ def import_students():
     if not file or not allowed_file(file.filename, ALLOWED_SHEETS):
         flash("Upload an .xlsx file.", "danger")
         return redirect(url_for("admin.students"))
-    wb = load_workbook(file, data_only=True)
-    ws = wb.active
-    headers = [str(c.value).strip().lower() for c in ws[1]]
-    required = ["student_id", "full_name", "mother_name", "class", "academic_year"]
-    if any(col not in headers for col in required):
-        flash("Excel columns required: student_id, full_name, mother_name, class, academic_year.", "danger")
-        return redirect(url_for("admin.students"))
-    added = 0
-    for row in ws.iter_rows(min_row=2, values_only=True):
-        data = dict(zip(headers, row))
-        if not data.get("student_id"):
-            continue
-        school_class = get_or_create(SchoolClass, name=str(data["class"]).strip())
-        year = get_or_create(AcademicYear, name=str(data["academic_year"]).strip())
-        student = Student.query.filter_by(student_code=str(data["student_id"]).strip()).first() or Student()
-        student.student_code = str(data["student_id"]).strip()
-        student.full_name = str(data.get("full_name") or "").strip()
-        student.mother_name = str(data.get("mother_name") or "").strip()
-        student.school_class = school_class
-        student.academic_year = year
-        student.is_active = True
-        db.session.add(student)
-        added += 1
+    rows, errors = preview_students(file)
+    if not errors:
+        session["student_import_rows"] = rows
+    audit("Import Operations", f"Previewed student import: {len(rows)} rows, {len(errors)} errors")
     db.session.commit()
-    flash(f"Imported {added} students.", "success")
+    return render_template("admin/import_wizard.html", kind="students", rows=rows, errors=errors, confirm_url=url_for("admin.confirm_student_import"))
+
+
+@admin_bp.route("/students/import/confirm", methods=["POST"])
+def confirm_student_import():
+    rows = session.pop("student_import_rows", [])
+    if not rows:
+        flash("No validated student import is waiting for confirmation.", "warning")
+        return redirect(url_for("admin.students"))
+    try:
+        for data in rows:
+            school_class = SchoolClass.query.filter_by(name=data["class"]).one()
+            year = AcademicYear.query.filter_by(name=data["academic_year"]).one()
+            student = Student.query.filter_by(student_code=data["student_id"]).first() or Student(student_code=data["student_id"])
+            student.full_name = data["full_name"]
+            student.mother_name = data.get("mother_name", "")
+            student.phone = data.get("phone", "")
+            student.school_class = school_class
+            student.academic_year = year
+            student.is_active = True
+            db.session.add(student)
+        audit("Import Operations", f"Confirmed student import: {len(rows)} rows")
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        flash("Import failed. No records were saved.", "danger")
+        return redirect(url_for("admin.students"))
+    flash(f"Imported {len(rows)} students.", "success")
     return redirect(url_for("admin.students"))
+
+
+@admin_bp.route("/students/import/template")
+def student_import_template():
+    return workbook_response(student_template(), "student_import_template.xlsx")
 
 
 @admin_bp.route("/students/export")
@@ -140,9 +165,9 @@ def export_students():
     wb = Workbook()
     ws = wb.active
     ws.title = "Students"
-    ws.append(["student_id", "full_name", "mother_name", "class", "academic_year", "active"])
+    ws.append(["student_id", "full_name", "mother_name", "phone", "class", "academic_year", "active"])
     for s in Student.query.order_by(Student.full_name).all():
-        ws.append([s.student_code, s.full_name, s.mother_name, s.school_class.name, s.academic_year.name, s.is_active])
+        ws.append([s.student_code, s.full_name, s.mother_name, s.phone, s.school_class.name, s.academic_year.name, s.is_active])
     return workbook_response(wb, "students.xlsx")
 
 
@@ -170,6 +195,7 @@ def save_results():
         result.score = score
         result.is_published = bool(request.form.get("is_published"))
         db.session.add(result)
+    audit("Result Publishing", f"Saved results for student {student.student_code} exam {exam.name}")
     db.session.commit()
     flash("Results saved.", "success")
     return redirect(url_for("admin.results"))
@@ -179,6 +205,7 @@ def save_results():
 def delete_result(result_id):
     result = db.session.get(Result, result_id) or abort_404()
     db.session.delete(result)
+    audit("Result Publishing", f"Deleted result row {result_id}")
     db.session.commit()
     flash("Result row deleted.", "success")
     return redirect(url_for("admin.results"))
@@ -191,30 +218,42 @@ def import_results():
     if not file or not allowed_file(file.filename, ALLOWED_SHEETS) or not exam_id:
         flash("Choose an exam and upload an .xlsx file.", "danger")
         return redirect(url_for("admin.results"))
-    exam = db.session.get(Exam, int(exam_id)) or abort_404()
-    wb = load_workbook(file, data_only=True)
-    ws = wb.active
-    headers = [str(c.value).strip() for c in ws[1]]
-    subject_names = headers[1:]
-    imported = 0
-    for row in ws.iter_rows(min_row=2, values_only=True):
-        student = Student.query.filter_by(student_code=str(row[0]).strip()).first()
-        if not student:
-            continue
-        for subject_name, score in zip(subject_names, row[1:]):
-            if score is None:
-                continue
-            subject = get_or_create(Subject, name=subject_name.strip())
-            result = Result.query.filter_by(student_id=student.id, exam_id=exam.id, subject_id=subject.id).first() or Result(
-                student=student, exam=exam, subject=subject
-            )
-            result.score = float(score)
+    rows, errors = preview_results(file, int(exam_id))
+    if not errors:
+        session["result_import_rows"] = rows
+    audit("Import Operations", f"Previewed result import: {len(rows)} rows, {len(errors)} errors")
+    db.session.commit()
+    return render_template("admin/import_wizard.html", kind="results", rows=rows, errors=errors, confirm_url=url_for("admin.confirm_result_import"))
+
+
+@admin_bp.route("/results/import/confirm", methods=["POST"])
+def confirm_result_import():
+    rows = session.pop("result_import_rows", [])
+    if not rows:
+        flash("No validated result import is waiting for confirmation.", "warning")
+        return redirect(url_for("admin.results"))
+    try:
+        for data in rows:
+            student = Student.query.filter_by(student_code=data["student_id"]).one()
+            subject = Subject.query.filter_by(name=data["subject"]).one()
+            exam = db.session.get(Exam, int(data["exam_id"]))
+            result = Result.query.filter_by(student_id=student.id, exam_id=exam.id, subject_id=subject.id).first() or Result(student=student, exam=exam, subject=subject)
+            result.score = float(data["score"])
             result.is_published = True
             db.session.add(result)
-        imported += 1
-    db.session.commit()
-    flash(f"Imported results for {imported} students.", "success")
+        audit("Import Operations", f"Confirmed result import: {len(rows)} rows")
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        flash("Import failed. No records were saved.", "danger")
+        return redirect(url_for("admin.results"))
+    flash(f"Imported {len(rows)} result rows.", "success")
     return redirect(url_for("admin.results"))
+
+
+@admin_bp.route("/results/import/template")
+def result_import_template():
+    return workbook_response(result_template(), "result_import_template.xlsx")
 
 
 @admin_bp.route("/results/export")
@@ -232,7 +271,12 @@ def export_results():
 def admin_print_report(student_id, exam_id):
     student = db.session.get(Student, student_id) or abort_404()
     exam = db.session.get(Exam, exam_id) or abort_404()
-    return render_template("print_report.html", result=result_payload(student, exam=exam, public_only=False))
+    payload = result_payload(student, exam=exam, public_only=False)
+    from .verification import verification_payload
+
+    payload["verification"] = verification_payload(student, exam)
+    db.session.commit()
+    return render_template("print_report.html", result=payload)
 
 
 @admin_bp.route("/classes", methods=["GET", "POST"])
@@ -297,7 +341,7 @@ def switch_year(row_id):
 
 
 @admin_bp.route("/users", methods=["GET", "POST"])
-@role_required("super_admin")
+@permission_required("users")
 def users():
     if request.method == "POST":
         user = db.session.get(User, int(request.form.get("id") or 0)) or User()
@@ -312,14 +356,18 @@ def users():
             flash("Password is required for new users.", "danger")
             return redirect(url_for("admin.users"))
         db.session.add(user)
+        posted_permissions = request.form.getlist("permissions")
+        user.set_permissions(posted_permissions)
+        audit("Admin Updates", f"Saved admin {user.username}")
+        audit("Permission Changes", f"Updated permissions for {user.username}: {', '.join(posted_permissions)}")
         db.session.commit()
         flash("User saved.", "success")
         return redirect(url_for("admin.users"))
-    return render_template("admin/users.html", rows=User.query.order_by(User.username).all())
+    return render_template("admin/users.html", rows=User.query.order_by(User.username).all(), permissions=PERMISSIONS)
 
 
 @admin_bp.route("/users/<int:row_id>/reset", methods=["POST"])
-@role_required("super_admin")
+@permission_required("users")
 def reset_user_password(row_id):
     user = db.session.get(User, row_id) or abort_404()
     password = request.form.get("password", "")
@@ -327,6 +375,7 @@ def reset_user_password(row_id):
         flash("New password must be at least 8 characters.", "danger")
     else:
         user.set_password(password)
+        audit("Admin Updates", f"Reset password for {user.username}")
         db.session.commit()
         flash("Password reset.", "success")
     return redirect(url_for("admin.users"))
@@ -362,6 +411,7 @@ def settings():
             "email_url",
             "call_url",
             "maps_url",
+            "enable_phone_verification",
         ]
         for key in editable_keys:
             setting = db.session.get(Setting, key) or Setting(key=key)
@@ -393,10 +443,17 @@ def settings():
             grade.min_score = request.form.get(f"min_{grade.id}", grade.min_score)
             grade.max_score = request.form.get(f"max_{grade.id}", grade.max_score)
             grade.comment = request.form.get(f"comment_{grade.id}", grade.comment)
+        audit("Settings Changes", "Updated system settings")
         db.session.commit()
         flash("Settings saved.", "success")
         return redirect(url_for("admin.settings"))
     return render_template("admin/settings.html", settings=get_settings(), scales=GradeScale.query.order_by(GradeScale.min_score.desc()).all())
+
+
+@admin_bp.route("/audit-logs")
+def audit_logs():
+    rows = AuditLog.query.order_by(AuditLog.created_at.desc()).limit(500).all()
+    return render_template("admin/audit_logs.html", rows=rows)
 
 
 @admin_bp.route("/classes/<int:row_id>/delete", methods=["POST"])
@@ -429,6 +486,7 @@ def simple_crud(model, template, fields):
 def delete_row(model, row_id, endpoint):
     row = db.session.get(model, row_id) or abort_404()
     db.session.delete(row)
+    audit("Admin Updates", f"Deleted {model.__name__} {row_id}")
     db.session.commit()
     flash("Deleted successfully.", "success")
     return redirect(url_for(endpoint))

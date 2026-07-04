@@ -2,8 +2,10 @@ from flask import Blueprint, jsonify, render_template, request
 from sqlalchemy import func
 
 from . import db
-from .models import Exam, Student
+from .i18n import language_redirect
+from .models import Exam, ReportVerification, Student
 from .services import get_settings, result_payload
+from .verification import verification_payload
 
 public_bp = Blueprint("public", __name__)
 
@@ -13,12 +15,19 @@ def portal():
     return render_template("portal.html", settings=get_settings())
 
 
+@public_bp.route("/language/<lang>")
+def set_language(lang):
+    return language_redirect(lang)
+
+
 # =========================
 # RESULT SUBMIT (MAIN FIX)
 # =========================
 @public_bp.route("/result", methods=["POST"])
 def result():
     student_id = request.form.get("student_id", "").strip()
+    settings = get_settings()
+    phone = request.form.get("phone", "").strip()
 
     student = Student.query.filter(
         func.trim(Student.student_code) == student_id
@@ -30,6 +39,14 @@ def result():
             settings=get_settings(),
             error="Ma jiro Student ID-ga aad gelisay."
         )
+
+    if settings.get("enable_phone_verification") == "on":
+        if not phone or (student.phone or "").strip() != phone:
+            return render_template(
+                "portal.html",
+                settings=settings,
+                error="Phone number verification failed."
+            )
 
     if student.is_result_locked:
         return render_template(
@@ -83,6 +100,8 @@ def print_report(student_code):
     ).order_by(Exam.id.desc()).first_or_404()
 
     payload = result_payload(student, exam=exam, public_only=True)
+    payload["verification"] = verification_payload(student, exam)
+    db.session.commit()
 
     return render_template("print_report.html", result=payload)
 
@@ -135,3 +154,13 @@ def api_result(student_code):
         "status": payload["status"],
         "grade": payload["overall_grade"],
     })
+
+
+@public_bp.route("/verify/<token>")
+def verify_report(token):
+    settings = get_settings()
+    record = ReportVerification.query.filter_by(token=token, is_valid=True).first()
+    if not record:
+        return render_template("verify.html", settings=settings, verified=False), 404
+    payload = result_payload(record.student, exam=record.exam, public_only=True)
+    return render_template("verify.html", settings=settings, verified=True, result=payload)

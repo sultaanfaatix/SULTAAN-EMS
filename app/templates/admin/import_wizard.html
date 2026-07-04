@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Import Wizard{% endblock %}
+{% block admin_content %}
+<section class="panel">
+  <div class="section-heading"><span><i class="fa-solid fa-file-import"></i></span><div><h2>{{ kind|title }} Import Preview</h2><p>Review validation results before committing. Imports with errors cannot be saved.</p></div></div>
+  {% if errors %}
+    <div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i> Import blocked. Fix the errors below and upload again.</div>
+    <ul>
+      {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+    </ul>
+  {% else %}
+    <div class="status-pill ok"><i class="fa-solid fa-circle-check"></i> Validation passed. {{ rows|length }} rows ready.</div>
+  {% endif %}
+  <div class="responsive-table" style="margin-top:16px">
+    <table class="premium-table">
+      <thead>
+        <tr>{% if rows %}{% for key in rows[0].keys() %}<th>{{ key }}</th>{% endfor %}{% else %}<th>Rows</th>{% endif %}</tr>
+      </thead>
+      <tbody>
+        {% for row in rows[:50] %}
+          <tr>{% for value in row.values() %}<td>{{ value }}</td>{% endfor %}</tr>
+        {% else %}
+          <tr><td>No rows found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <form method="post" action="{{ confirm_url }}" style="margin-top:16px">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="premium" {% if errors or not rows %}disabled{% endif %}><i class="fa-solid fa-database"></i> Confirm Import</button>
+  </form>
+</section>
+{% endblock %}

@@ -32,7 +32,8 @@ INSERT INTO settings (`key`, value) VALUES
 ('principal_signature_path', ''),
 ('vice_principal_signature_path', ''),
 ('exam_officer_signature_path', ''),
-('passing_mark', '50')
+('passing_mark', '50'),
+('enable_phone_verification', 'off')
 ON DUPLICATE KEY UPDATE value = VALUES(value);
 
 INSERT INTO grade_scales (grade, min_score, max_score, comment) VALUES

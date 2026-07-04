@@ -17,7 +17,13 @@
         <p>{{ result.settings.school_motto }}</p>
         <span><i class="fa-solid fa-location-dot"></i> {{ result.settings.school_address }} &nbsp; <i class="fa-solid fa-phone"></i> {{ result.settings.school_phone }} &nbsp; <i class="fa-solid fa-envelope"></i> {{ result.settings.school_email }}</span>
       </div>
-      <div class="qr-box"><i class="fa-solid fa-qrcode"></i><small>Verify</small></div>
+      <div class="qr-box">
+        {% if result.verification %}
+          <img src="{{ result.verification.qr_code }}" alt="Verification QR Code">
+        {% else %}
+          <i class="fa-solid fa-qrcode"></i><small>Verify</small>
+        {% endif %}
+      </div>
     </header>
 
     <section class="report-title">

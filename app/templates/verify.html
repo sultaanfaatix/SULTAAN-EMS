@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Verified') if verified else _('Invalid Result') }}{% endblock %}
+{% block body_class %}public-body{% endblock %}
+{% block content %}
+<main class="public-hero lock-screen">
+  <section class="locked-card glass-card">
+    <div class="lock-emblem">
+      <i class="fa-solid {{ 'fa-circle-check' if verified else 'fa-circle-xmark' }}"></i>
+    </div>
+    {% if verified %}
+      {% if settings.logo_path %}<img src="{{ url_for('static', filename=settings.logo_path) }}" alt="{{ settings.school_name }} logo" style="max-height:80px">{% endif %}
+      <span class="eyebrow"><i class="fa-solid fa-shield-check"></i> {{ _('Verified') }}</span>
+      <h1>{{ settings.school_name }}</h1>
+      <div class="lock-details">
+        <div><i class="fa-solid fa-user-graduate"></i><span>Student Name</span><strong>{{ result.student.full_name }}</strong></div>
+        <div><i class="fa-solid fa-id-card"></i><span>{{ _('Student ID') }}</span><strong>{{ result.student.student_code }}</strong></div>
+        <div><i class="fa-solid fa-people-roof"></i><span>{{ _('Classes') }}</span><strong>{{ result.student.school_class.name }}</strong></div>
+        <div><i class="fa-solid fa-file-circle-check"></i><span>{{ _('Exams') }}</span><strong>{{ result.exam.name }}</strong></div>
+        <div><i class="fa-solid fa-calendar-days"></i><span>{{ _('Academic Year') }}</span><strong>{{ result.student.academic_year.name }}</strong></div>
+        <div><i class="fa-solid fa-circle-check"></i><span>Status</span><strong>{{ _('Verified') }}</strong></div>
+      </div>
+    {% else %}
+      <span class="eyebrow warning"><i class="fa-solid fa-triangle-exclamation"></i> {{ _('Invalid Result') }}</span>
+      <h1>{{ _('Invalid Result') }}</h1>
+      <p>This verification link is invalid or no longer active.</p>
+    {% endif %}
+    <a class="btn premium" href="{{ url_for('public.portal') }}"><i class="fa-solid fa-arrow-left"></i> {{ _('Search') }}</a>
+  </section>
+</main>
+{% endblock %}

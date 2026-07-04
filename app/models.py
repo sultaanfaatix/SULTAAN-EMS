@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from flask_login import UserMixin
@@ -20,6 +21,7 @@ class User(UserMixin, TimestampMixin, db.Model):
     full_name = db.Column(db.String(150), nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.Enum("super_admin", "admin", "staff"), default="admin", nullable=False)
+    permissions = db.Column(db.Text)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
 
     def set_password(self, password):
@@ -30,6 +32,23 @@ class User(UserMixin, TimestampMixin, db.Model):
 
     def can_manage_users(self):
         return self.role == "super_admin"
+
+    def permission_set(self):
+        if self.role == "super_admin":
+            return {"*"}
+        if not self.permissions:
+            return set()
+        try:
+            value = json.loads(self.permissions)
+        except (TypeError, ValueError):
+            return set()
+        return set(value if isinstance(value, list) else [])
+
+    def has_permission(self, permission):
+        return self.role == "super_admin" or permission in self.permission_set()
+
+    def set_permissions(self, permissions):
+        self.permissions = json.dumps(sorted(set(permissions or [])))
 
 
 class AcademicYear(TimestampMixin, db.Model):
@@ -82,6 +101,7 @@ class Student(TimestampMixin, db.Model):
 
     full_name = db.Column(db.String(180), nullable=False)
     mother_name = db.Column(db.String(180))
+    phone = db.Column(db.String(40))
 
     class_id = db.Column(db.Integer, db.ForeignKey("school_classes.id"), nullable=False)
     academic_year_id = db.Column(db.Integer, db.ForeignKey("academic_years.id"), nullable=False)
@@ -138,3 +158,31 @@ class GradeScale(TimestampMixin, db.Model):
     min_score = db.Column(db.Numeric(6, 2), nullable=False)
     max_score = db.Column(db.Numeric(6, 2), nullable=False)
     comment = db.Column(db.String(120), nullable=False)
+
+
+class ReportVerification(TimestampMixin, db.Model):
+    __tablename__ = "report_verifications"
+
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    student_id = db.Column(db.Integer, db.ForeignKey("students.id", ondelete="CASCADE"), nullable=False)
+    exam_id = db.Column(db.Integer, db.ForeignKey("exams.id", ondelete="CASCADE"), nullable=False)
+    is_valid = db.Column(db.Boolean, default=True, nullable=False)
+
+    student = db.relationship("Student")
+    exam = db.relationship("Exam")
+
+    __table_args__ = (
+        UniqueConstraint("student_id", "exam_id", name="uq_report_student_exam"),
+    )
+
+
+class AuditLog(db.Model):
+    __tablename__ = "audit_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    username = db.Column(db.String(80), nullable=False)
+    ip_address = db.Column(db.String(80))
+    action = db.Column(db.String(120), nullable=False)
+    details = db.Column(db.Text)

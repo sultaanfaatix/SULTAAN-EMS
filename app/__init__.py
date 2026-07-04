@@ -21,6 +21,7 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
 
     from .models import User, Setting
+    from .permissions import can
     from .services import DEFAULT_SETTINGS
 
     @login_manager.user_loader
@@ -36,8 +37,19 @@ def create_app(config_class=Config):
 
     @app.context_processor
     def inject_ui_settings():
+        from .i18n import active_translations, current_language, translate
         from .services import get_settings
-        return {"ui_settings": get_settings()}
+
+        settings = get_settings()
+        lang = current_language(settings.get("default_language", "en"))
+        return {
+            "ui_settings": settings,
+            "_": translate,
+            "active_translations": active_translations(),
+            "current_language": lang,
+            "text_direction": "rtl" if lang == "ar" else "ltr",
+            "can": can,
+        }
 
     from .routes_admin import admin_bp
     from .routes_auth import auth_bp
@@ -54,11 +66,15 @@ def create_app(config_class=Config):
     # =========================
     with app.app_context():
         db.create_all()
+        from .schema_compat import ensure_schema_compatibility
 
-        # seed settings
+        ensure_schema_compatibility()
+
+        # seed missing settings only; never overwrite production values
         if DEFAULT_SETTINGS:
             for key, value in DEFAULT_SETTINGS.items():
-                db.session.merge(Setting(key=key, value=value))
+                if not db.session.get(Setting, key):
+                    db.session.add(Setting(key=key, value=value))
             db.session.commit()
 
         # 🔥 AUTO ADMIN FIX (IMPORTANT)
@@ -88,9 +104,13 @@ def register_cli(app):
     @app.cli.command("init-db")
     def init_db_command():
         db.create_all()
+        from .schema_compat import ensure_schema_compatibility
+
+        ensure_schema_compatibility()
 
         for key, value in DEFAULT_SETTINGS.items():
-            db.session.merge(Setting(key=key, value=value))
+            if not db.session.get(Setting, key):
+                db.session.add(Setting(key=key, value=value))
 
         if not GradeScale.query.first():
             for grade, min_score, max_score, comment in [

@@ -13,6 +13,7 @@
     <label><i class="fa-solid fa-globe"></i> Website<input name="school_website" value="{{ settings.school_website }}"></label>
     <label><i class="fa-solid fa-user-tie"></i> Principal Name<input name="principal_name" value="{{ settings.principal_name }}"></label>
     <label><i class="fa-solid fa-percent"></i> Passing Mark<input name="passing_mark" type="number" step="0.01" value="{{ settings.passing_mark }}"></label>
+    <label><i class="fa-solid fa-phone-volume"></i> Enable Phone Verification<select name="enable_phone_verification"><option value="off" {% if settings.enable_phone_verification != 'on' %}selected{% endif %}>OFF</option><option value="on" {% if settings.enable_phone_verification == 'on' %}selected{% endif %}>ON</option></select></label>
     <label><i class="fa-solid fa-image"></i> School Logo<input name="logo" type="file" accept="image/*"></label>
     <label class="wide"><i class="fa-solid fa-shoe-prints"></i> Footer Text<input name="school_footer" value="{{ settings.school_footer }}"></label>
   </section>

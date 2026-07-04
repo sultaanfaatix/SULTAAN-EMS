@@ -6,6 +6,23 @@ setTimeout(() => {
   });
 }, 4500);
 
+if (window.APP_TRANSLATIONS) {
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const skipTags = new Set(["SCRIPT", "STYLE", "TEXTAREA"]);
+  const nodes = [];
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (!node.parentElement || skipTags.has(node.parentElement.tagName)) continue;
+    nodes.push(node);
+  }
+  nodes.forEach((node) => {
+    const original = node.nodeValue.trim();
+    if (original && window.APP_TRANSLATIONS[original]) {
+      node.nodeValue = node.nodeValue.replace(original, window.APP_TRANSLATIONS[original]);
+    }
+  });
+}
+
 const resultPanel = document.querySelector(".premium-result");
 if (resultPanel) {
   const status = resultPanel.dataset.resultStatus;

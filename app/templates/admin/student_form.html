@@ -7,6 +7,7 @@
   <label><i class="fa-solid fa-id-card"></i> Student ID<input name="student_code" value="{{ student.student_code or '' }}" required></label>
   <label class="span-2"><i class="fa-solid fa-user-graduate"></i> Full Name<input name="full_name" value="{{ student.full_name or '' }}" required></label>
   <label class="span-2"><i class="fa-solid fa-person-dress"></i> Mother Name<input name="mother_name" value="{{ student.mother_name or '' }}"></label>
+  <label><i class="fa-solid fa-phone"></i> Phone Number<input name="phone" value="{{ student.phone or '' }}"></label>
   <label><i class="fa-solid fa-people-roof"></i> Class<select name="class_id" required>{% for c in classes %}<option value="{{ c.id }}" {% if student.class_id==c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
   <label><i class="fa-solid fa-calendar-days"></i> Academic Year<select name="academic_year_id" required>{% for y in years %}<option value="{{ y.id }}" {% if student.academic_year_id==y.id %}selected{% endif %}>{{ y.name }}</option>{% endfor %}</select></label>
   <label><i class="fa-solid fa-image"></i> Student Photo<input type="file" name="photo" accept="image/*"></label>

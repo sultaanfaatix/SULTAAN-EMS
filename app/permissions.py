@@ -1,0 +1,90 @@
+from functools import wraps
+
+from flask import abort, request
+from flask_login import current_user
+
+
+PERMISSIONS = [
+    ("dashboard", "Dashboard"),
+    ("students", "Students"),
+    ("results", "Results"),
+    ("subjects", "Subjects"),
+    ("classes", "Classes"),
+    ("exams", "Exams"),
+    ("academic_years", "Academic Years"),
+    ("users", "Users"),
+    ("settings", "Settings"),
+    ("import", "Import"),
+    ("export", "Export"),
+    ("reports", "Reports"),
+    ("print", "Print"),
+    ("publish_results", "Publish Results"),
+    ("lock_results", "Lock Results"),
+    ("unlock_results", "Unlock Results"),
+    ("attendance", "Attendance"),
+    ("qr_verification", "QR Verification"),
+    ("system_settings", "System Settings"),
+    ("backup", "Backup"),
+    ("restore", "Restore"),
+]
+
+ENDPOINT_PERMISSIONS = {
+    "admin.dashboard": "dashboard",
+    "admin.students": "students",
+    "admin.student_form": "students",
+    "admin.delete_student": "students",
+    "admin.toggle_student_lock": "students",
+    "admin.import_students": "import",
+    "admin.confirm_student_import": "import",
+    "admin.student_import_template": "import",
+    "admin.export_students": "export",
+    "admin.results": "results",
+    "admin.save_results": "results",
+    "admin.delete_result": "results",
+    "admin.import_results": "import",
+    "admin.confirm_result_import": "import",
+    "admin.result_import_template": "import",
+    "admin.export_results": "export",
+    "admin.admin_print_report": "print",
+    "admin.classes": "classes",
+    "admin.delete_class": "classes",
+    "admin.subjects": "subjects",
+    "admin.delete_subject": "subjects",
+    "admin.exams": "exams",
+    "admin.delete_exam": "exams",
+    "admin.toggle_exam": "publish_results",
+    "admin.academic_years": "academic_years",
+    "admin.switch_year": "academic_years",
+    "admin.delete_academic_year": "academic_years",
+    "admin.users": "users",
+    "admin.reset_user_password": "users",
+    "admin.settings": ("settings", "system_settings"),
+    "admin.audit_logs": "system_settings",
+}
+
+
+def can(permission):
+    return current_user.is_authenticated and current_user.has_permission(permission)
+
+
+def permission_required(permission):
+    def decorator(view):
+        @wraps(view)
+        def wrapped(*args, **kwargs):
+            if not can(permission):
+                abort(403)
+            return view(*args, **kwargs)
+
+        return wrapped
+
+    return decorator
+
+
+def enforce_endpoint_permission():
+    permission = ENDPOINT_PERMISSIONS.get(request.endpoint)
+    if isinstance(permission, (tuple, list, set)):
+        if not any(can(item) for item in permission):
+            abort(403)
+        return
+    if permission and not can(permission):
+        abort(403)

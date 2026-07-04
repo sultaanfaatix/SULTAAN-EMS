@@ -36,6 +36,7 @@ DEFAULT_SETTINGS = {
     "vice_principal_signature_path": "",
     "exam_officer_signature_path": "",
     "passing_mark": "50",
+    "enable_phone_verification": "off",
 }
 
 

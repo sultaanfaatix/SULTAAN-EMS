@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   full_name VARCHAR(150) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('super_admin','admin','staff') NOT NULL DEFAULT 'admin',
+  permissions TEXT,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -53,6 +54,7 @@ CREATE TABLE IF NOT EXISTS students (
   student_code VARCHAR(50) NOT NULL UNIQUE,
   full_name VARCHAR(180) NOT NULL,
   mother_name VARCHAR(180),
+  phone VARCHAR(40),
   class_id INT NOT NULL,
   academic_year_id INT NOT NULL,
   photo_path VARCHAR(255),
@@ -96,4 +98,27 @@ CREATE TABLE IF NOT EXISTS grade_scales (
   comment VARCHAR(120) NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS report_verifications (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  token VARCHAR(120) NOT NULL UNIQUE,
+  student_id INT NOT NULL,
+  exam_id INT NOT NULL,
+  is_valid BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_report_student_exam (student_id, exam_id),
+  CONSTRAINT fk_verify_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+  CONSTRAINT fk_verify_exam FOREIGN KEY (exam_id) REFERENCES exams(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  username VARCHAR(80) NOT NULL,
+  ip_address VARCHAR(80),
+  action VARCHAR(120) NOT NULL,
+  details TEXT,
+  INDEX idx_audit_created_at (created_at)
 );

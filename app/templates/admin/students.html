@@ -5,6 +5,7 @@
   <form class="search-tools"><label><i class="fa-solid fa-search"></i><input name="q" value="{{ q }}" placeholder="Search by ID, name, or mother name"></label><button><i class="fa-solid fa-magnifying-glass"></i> Search</button></form>
   <div class="toolbar-actions">
     <a class="btn premium" href="{{ url_for('admin.student_form') }}"><i class="fa-solid fa-user-plus"></i> Add Student</a>
+    <a class="btn ghost" href="{{ url_for('admin.student_import_template') }}"><i class="fa-solid fa-file-arrow-down"></i> Template</a>
     <a class="btn ghost" href="{{ url_for('admin.export_students') }}"><i class="fa-solid fa-file-export"></i> Export</a>
     <form method="post" action="{{ url_for('admin.import_students') }}" enctype="multipart/form-data" class="inline-upload"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label class="file-pill"><i class="fa-solid fa-file-excel"></i><input type="file" name="file" accept=".xlsx" required></label><button><i class="fa-solid fa-upload"></i> Import</button></form>
   </div>

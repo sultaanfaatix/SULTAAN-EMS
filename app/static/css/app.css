@@ -153,6 +153,7 @@ tbody tr:hover td { background: #f8fbff; }
 .check { display: flex; align-items: center; gap: 8px; align-self: center; color: var(--ink); }
 .check input { width: auto; }
 .subject-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.permission-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
 .inline { display: inline-flex; }
 .reset-form { display: flex; gap: 8px; align-items: center; }
 .reset-form input { max-width: 190px; }

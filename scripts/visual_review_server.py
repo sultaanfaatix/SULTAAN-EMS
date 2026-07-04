@@ -22,7 +22,6 @@ app = create_app(ReviewConfig)
 
 def seed():
     with app.app_context():
-        db.drop_all()
         db.create_all()
         for key, value in DEFAULT_SETTINGS.items():
             db.session.add(Setting(key=key, value=value))
