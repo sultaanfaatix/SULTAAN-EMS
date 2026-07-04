@@ -1,7 +1,20 @@
+# Environment
 .env
 .venv/
+
+# Python cache
 __pycache__/
-*.pyc
+*.py[cod]
+
+# Database
+*.db
+
+# Logs
+*.log
+
+# Flask instance
+instance/
+
+# Uploaded files
 app/static/uploads/*
 !app/static/uploads/.gitkeep
-*.log
