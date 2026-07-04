@@ -58,6 +58,8 @@ def student_form(student_id=None):
         student.phone = request.form.get("phone", "").strip()
         student.class_id = int(request.form["class_id"])
         student.academic_year_id = int(request.form["academic_year_id"])
+        student.level = request.form.get("level", "").strip()
+        student.section = request.form.get("section", "").strip()
         student.note = request.form.get("note", "").strip()
         student.is_result_locked = bool(request.form.get("is_result_locked"))
         student.lock_reason = request.form.get("lock_reason", "").strip()
@@ -428,6 +430,24 @@ def settings():
             "report_comment_box",
             "report_table_style",
             "principal_comment",
+            "attendance_color_present",
+            "attendance_color_absent",
+            "attendance_color_late",
+            "attendance_color_excused",
+            "attendance_color_medical_leave",
+            "attendance_color_blocked",
+            "attendance_icon_present",
+            "attendance_icon_absent",
+            "attendance_icon_late",
+            "attendance_icon_excused",
+            "attendance_icon_medical_leave",
+            "attendance_icon_blocked",
+            "result_page_primary_color",
+            "result_page_accent_color",
+            "result_table_style",
+            "result_card_style",
+            "result_button_style",
+            "result_icon_style",
         ]
         for key in editable_keys:
             setting = db.session.get(Setting, key) or Setting(key=key)

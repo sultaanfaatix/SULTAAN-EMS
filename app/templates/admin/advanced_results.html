@@ -1,0 +1,93 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Advanced Results{% endblock %}
+{% block admin_content %}
+<style>
+  .result-node summary, .analytics-card h3, .analytics-card strong { color: {{ settings.result_page_primary_color }}; }
+  .result-node summary i { color: {{ settings.result_page_accent_color }}; }
+</style>
+<section class="stat-grid module-stats">
+  <article class="stat-card"><span>Rows</span><strong>{{ stats.rows }}</strong></article>
+  <article class="stat-card"><span>Students</span><strong>{{ stats.students }}</strong></article>
+  <article class="stat-card"><span>Published</span><strong>{{ stats.published }}</strong></article>
+  <article class="stat-card"><span>Locked</span><strong>{{ stats.locked }}</strong></article>
+  <article class="stat-card"><span>Pass Rate</span><strong>{{ stats.pass_rate }}%</strong></article>
+  <article class="stat-card"><span>Exam Average</span><strong>{{ stats.exam_average }}%</strong></article>
+</section>
+
+<section class="panel">
+  <div class="section-heading"><span><i class="fa-solid fa-filter"></i></span><div><h2>Professional Filters</h2><p>Filter by academic year, exam, level, class, section, student, publication, or lock status.</p></div></div>
+  <form method="get" class="form-grid premium-form">
+    <label><i class="fa-solid fa-search"></i> Search<input name="q" value="{{ filters.q }}" placeholder="Student, ID, subject"></label>
+    <label><i class="fa-solid fa-calendar-days"></i> Academic Year<select name="year_id"><option value="">All Years</option>{% for y in years %}<option value="{{ y.id }}" {% if filters.year_id==y.id %}selected{% endif %}>{{ y.name }}</option>{% endfor %}</select></label>
+    <label><i class="fa-solid fa-file-circle-check"></i> Exam<select name="exam_id"><option value="">All Exams</option>{% for e in exams %}<option value="{{ e.id }}" {% if filters.exam_id==e.id %}selected{% endif %}>{{ e.name }}</option>{% endfor %}</select></label>
+    <label><i class="fa-solid fa-layer-group"></i> Level<select name="level"><option value="">All Levels</option>{% for level in levels %}<option value="{{ level }}" {% if filters.level==level %}selected{% endif %}>{{ level }}</option>{% endfor %}</select></label>
+    <label><i class="fa-solid fa-people-roof"></i> Class<select name="class_id"><option value="">All Classes</option>{% for c in classes %}<option value="{{ c.id }}" {% if filters.class_id==c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
+    <label><i class="fa-solid fa-table-cells"></i> Section<select name="section"><option value="">All Sections</option>{% for section in sections %}<option value="{{ section }}" {% if filters.section==section %}selected{% endif %}>{{ section }}</option>{% endfor %}</select></label>
+    <label><i class="fa-solid fa-toggle-on"></i> Status<select name="status"><option value="">All</option>{% for status in ['Published','Unpublished','Locked'] %}<option value="{{ status }}" {% if filters.status==status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select></label>
+    <button class="premium"><i class="fa-solid fa-filter"></i> Apply</button>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="section-heading"><span><i class="fa-solid fa-chart-simple"></i></span><div><h2>Statistics</h2><p>Subject averages, highest students, lowest students, pass and fail rates.</p></div></div>
+  <div class="analytics-grid">
+    <div class="analytics-card"><h3>Subject Averages</h3>{% for subject, avg in stats.subject_averages.items() %}<p><span>{{ subject }}</span><strong>{{ avg }}%</strong></p>{% else %}<p>No subject averages yet.</p>{% endfor %}</div>
+    <div class="analytics-card"><h3>Top Students</h3>{% for item in stats.top_students %}<p><span>{{ item.student.full_name }}</span><strong>{{ item.average }}%</strong></p>{% else %}<p>No ranked data.</p>{% endfor %}</div>
+    <div class="analytics-card"><h3>Lowest Students</h3>{% for item in stats.lowest_students %}<p><span>{{ item.student.full_name }}</span><strong>{{ item.average }}%</strong></p>{% else %}<p>No ranked data.</p>{% endfor %}</div>
+    <div class="analytics-card"><h3>Pass / Fail</h3><p><span>Pass Rate</span><strong>{{ stats.pass_rate }}%</strong></p><p><span>Fail Rate</span><strong>{{ stats.fail_rate }}%</strong></p></div>
+  </div>
+</section>
+
+<section class="toolbar glass-card">
+  <a class="btn ghost" href="{{ url_for('admin_advanced_results.export_excel', **request.args) }}"><i class="fa-solid fa-file-excel"></i> Export Excel</a>
+  <button form="bulk-results-form" name="action" value="publish"><i class="fa-solid fa-eye"></i> Publish</button>
+  <button form="bulk-results-form" name="action" value="unpublish"><i class="fa-solid fa-eye-slash"></i> Unpublish</button>
+  <button form="bulk-results-form" name="action" value="lock"><i class="fa-solid fa-lock"></i> Lock</button>
+  <button form="bulk-results-form" name="action" value="unlock"><i class="fa-solid fa-unlock"></i> Unlock</button>
+  <button form="bulk-results-form" name="action" value="delete" class="danger"><i class="fa-solid fa-trash"></i> Delete</button>
+</section>
+
+<section class="panel">
+  <div class="section-heading"><span><i class="fa-solid fa-sitemap"></i></span><div><h2>Hierarchical Results</h2><p>Academic Year -> Exam -> Level -> Class -> Section -> Students.</p></div></div>
+  <form id="bulk-results-form" method="post" action="{{ url_for('admin_advanced_results.bulk') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% for year, exams_group in grouped.items() %}
+      <details class="result-node" open><summary><i class="fa-solid fa-calendar-days"></i> {{ year }}</summary>
+      {% for exam, levels_group in exams_group.items() %}
+        <details class="result-node" open><summary><i class="fa-solid fa-file-circle-check"></i> {{ exam }}</summary>
+        {% for level, classes_group in levels_group.items() %}
+          <details class="result-node"><summary><i class="fa-solid fa-layer-group"></i> {{ level }}</summary>
+          {% for class_name, sections_group in classes_group.items() %}
+            <details class="result-node"><summary><i class="fa-solid fa-people-roof"></i> {{ class_name }}</summary>
+            {% for section, section_rows in sections_group.items() %}
+              <details class="result-node"><summary><i class="fa-solid fa-table-cells"></i> {{ section }}</summary>
+              <div class="responsive-table">
+                <table class="premium-table data-table"><thead><tr><th>Select</th><th>Student</th><th>Subject</th><th>Score</th><th>Published</th><th>Locked</th><th>Print</th></tr></thead><tbody>
+                {% for r in section_rows %}
+                  <tr><td data-label="Select"><input type="checkbox" name="result_ids" value="{{ r.id }}"></td><td data-label="Student">{{ r.student.student_code }} - {{ r.student.full_name }}</td><td data-label="Subject">{{ r.subject.name }}</td><td data-label="Score">{{ r.score }} / {{ r.subject.max_score }}</td><td data-label="Published">{{ 'Yes' if r.is_published else 'No' }}</td><td data-label="Locked">{{ 'Yes' if r.student.is_result_locked else 'No' }}</td><td data-label="Print"><a class="icon-btn small" href="{{ url_for('admin.admin_print_report', student_id=r.student_id, exam_id=r.exam_id) }}" target="_blank"><i class="fa-solid fa-print"></i></a></td></tr>
+                {% endfor %}
+                </tbody></table>
+              </div>
+              </details>
+            {% endfor %}
+            </details>
+          {% endfor %}
+          </details>
+        {% endfor %}
+        </details>
+      {% endfor %}
+      </details>
+    {% else %}
+      <p class="empty-state"><i class="fa-solid fa-circle-info"></i>No results found.</p>
+    {% endfor %}
+  </form>
+</section>
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+  document.querySelectorAll('.data-table').forEach((table) => new DataTable(table, { pageLength: 25, responsive: true }));
+</script>
+{% endblock %}

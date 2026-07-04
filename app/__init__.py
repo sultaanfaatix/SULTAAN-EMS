@@ -52,12 +52,18 @@ def create_app(config_class=Config):
         }
 
     from .routes_admin import admin_bp
+    from .routes_advanced_results import advanced_results_bp
+    from .routes_attendance import attendance_bp
     from .routes_auth import auth_bp
+    from .routes_id_cards import id_cards_bp
     from .routes_public import public_bp
 
     app.register_blueprint(public_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp, url_prefix="/admin")
+    app.register_blueprint(attendance_bp, url_prefix="/admin/attendance")
+    app.register_blueprint(id_cards_bp, url_prefix="/admin/id-cards")
+    app.register_blueprint(advanced_results_bp, url_prefix="/admin/advanced-results")
 
     register_cli(app)
 

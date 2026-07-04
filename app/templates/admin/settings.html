@@ -81,6 +81,24 @@
   </section>
 
   <section class="panel form-grid premium-form">
+    <div class="section-heading wide"><span><i class="fa-solid fa-user-check"></i></span><div><h2>Attendance Customization</h2><p>Owner controls for attendance colors and status icons.</p></div></div>
+    {% for key, label in [('present','Present'),('absent','Absent'),('late','Late'),('excused','Excused'),('medical_leave','Medical Leave'),('blocked','Blocked')] %}
+      <label><i class="fa-solid fa-palette"></i> {{ label }} Color<input name="attendance_color_{{ key }}" type="color" value="{{ settings.get('attendance_color_' ~ key) }}"></label>
+      <label><i class="fa-solid fa-icons"></i> {{ label }} Icon<input name="attendance_icon_{{ key }}" value="{{ settings.get('attendance_icon_' ~ key) }}"></label>
+    {% endfor %}
+  </section>
+
+  <section class="panel form-grid premium-form">
+    <div class="section-heading wide"><span><i class="fa-solid fa-chart-line"></i></span><div><h2>Advanced Results Customization</h2><p>Owner controls for result page colors, cards, table, buttons, and icons.</p></div></div>
+    <label><i class="fa-solid fa-palette"></i> Result Primary Color<input name="result_page_primary_color" type="color" value="{{ settings.result_page_primary_color }}"></label>
+    <label><i class="fa-solid fa-fill-drip"></i> Result Accent Color<input name="result_page_accent_color" type="color" value="{{ settings.result_page_accent_color }}"></label>
+    <label><i class="fa-solid fa-table"></i> Table Style<select name="result_table_style"><option value="striped" {% if settings.result_table_style=='striped' %}selected{% endif %}>Striped</option><option value="bordered" {% if settings.result_table_style=='bordered' %}selected{% endif %}>Bordered</option><option value="minimal" {% if settings.result_table_style=='minimal' %}selected{% endif %}>Minimal</option></select></label>
+    <label><i class="fa-solid fa-table-cells-large"></i> Card Style<select name="result_card_style"><option value="soft" {% if settings.result_card_style=='soft' %}selected{% endif %}>Soft</option><option value="sharp" {% if settings.result_card_style=='sharp' %}selected{% endif %}>Sharp</option><option value="compact" {% if settings.result_card_style=='compact' %}selected{% endif %}>Compact</option></select></label>
+    <label><i class="fa-solid fa-toggle-on"></i> Button Style<select name="result_button_style"><option value="filled" {% if settings.result_button_style=='filled' %}selected{% endif %}>Filled</option><option value="outline" {% if settings.result_button_style=='outline' %}selected{% endif %}>Outline</option></select></label>
+    <label><i class="fa-solid fa-icons"></i> Icon Style<select name="result_icon_style"><option value="solid" {% if settings.result_icon_style=='solid' %}selected{% endif %}>Solid</option><option value="minimal" {% if settings.result_icon_style=='minimal' %}selected{% endif %}>Minimal</option></select></label>
+  </section>
+
+  <section class="panel form-grid premium-form">
     <div class="section-heading wide"><span><i class="fa-solid fa-ranking-star"></i></span><div><h2>Grade Scale</h2><p>Adjust score bands and comments used across reports.</p></div></div>
     {% for s in scales %}
       <label>{{ s.grade }} Min<input name="min_{{ s.id }}" value="{{ s.min_score }}"></label>

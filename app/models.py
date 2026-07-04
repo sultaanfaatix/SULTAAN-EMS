@@ -105,6 +105,8 @@ class Student(TimestampMixin, db.Model):
 
     class_id = db.Column(db.Integer, db.ForeignKey("school_classes.id"), nullable=False)
     academic_year_id = db.Column(db.Integer, db.ForeignKey("academic_years.id"), nullable=False)
+    level = db.Column(db.String(80))
+    section = db.Column(db.String(80))
 
     photo_path = db.Column(db.String(255))
     note = db.Column(db.Text)
@@ -175,6 +177,47 @@ class ReportVerification(TimestampMixin, db.Model):
     __table_args__ = (
         UniqueConstraint("student_id", "exam_id", name="uq_report_student_exam"),
     )
+
+
+class AttendanceRecord(TimestampMixin, db.Model):
+    __tablename__ = "attendance_records"
+
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
+    academic_year_id = db.Column(db.Integer, db.ForeignKey("academic_years.id"), nullable=False, index=True)
+    class_id = db.Column(db.Integer, db.ForeignKey("school_classes.id"), nullable=False, index=True)
+    exam_id = db.Column(db.Integer, db.ForeignKey("exams.id", ondelete="SET NULL"), index=True)
+    attendance_date = db.Column(db.Date, nullable=False, index=True)
+    status = db.Column(
+        db.Enum("Present", "Absent", "Late", "Excused", "Medical Leave", "Blocked"),
+        default="Present",
+        nullable=False,
+        index=True,
+    )
+    note = db.Column(db.String(255))
+    marked_by_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
+
+    student = db.relationship("Student")
+    academic_year = db.relationship("AcademicYear")
+    school_class = db.relationship("SchoolClass")
+    exam = db.relationship("Exam")
+    marked_by = db.relationship("User")
+
+
+class IdCardIssue(TimestampMixin, db.Model):
+    __tablename__ = "id_card_issues"
+
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    student_id = db.Column(db.Integer, db.ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
+    academic_year_id = db.Column(db.Integer, db.ForeignKey("academic_years.id"), nullable=False, index=True)
+    issue_date = db.Column(db.Date, nullable=False)
+    expiry_date = db.Column(db.Date)
+    status = db.Column(db.Enum("Active", "Inactive", "Expired", "Blocked"), default="Active", nullable=False, index=True)
+    template_name = db.Column(db.String(80), default="default", nullable=False)
+
+    student = db.relationship("Student")
+    academic_year = db.relationship("AcademicYear")
 
 
 class AuditLog(db.Model):

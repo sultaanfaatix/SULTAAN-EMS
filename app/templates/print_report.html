@@ -45,10 +45,7 @@
       <div><span>Student Name</span><b>{{ result.student.full_name }}</b></div>
       <div><span>Student ID</span><b>{{ result.student.student_code }}</b></div>
       <div><span>Class</span><b>{{ result.student.school_class.name }}</b></div>
-      <div><span>Exam</span><b>{{ result.exam.name if result.exam else "Exam Result" }}</b></div>
-      <div><span>Academic Year</span><b>{{ result.student.academic_year.name }}</b></div>
       <div><span>Mother Name</span><b>{{ result.student.mother_name }}</b></div>
-      <div><span>Result Status</span><b>{{ result.status }}</b></div>
     </section>
 
     <table class="print-table">
@@ -76,8 +73,7 @@
     </section>
 
     <section class="comment-grid comment-{{ result.settings.report_comment_box }}">
-      <div><strong>Teacher Comment</strong><p>{{ result.comment }}</p></div>
-      <div><strong>Principal Comment</strong><p>{{ result.settings.principal_comment or result.settings.school_motto }}</p></div>
+      <div><strong>Automatic Comment</strong><p>{{ result.comment }}</p></div>
       {% if result.settings.report_qr_position == 'bottom' %}
       <div class="qr-box bottom-qr">{% if result.verification %}<img src="{{ result.verification.qr_code }}" alt="Verification QR Code">{% else %}<i class="fa-solid fa-qrcode"></i>{% endif %}</div>
       {% endif %}

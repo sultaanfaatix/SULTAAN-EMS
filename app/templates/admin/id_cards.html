@@ -1,0 +1,80 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Student ID Cards{% endblock %}
+{% block admin_content %}
+<section class="panel">
+  <div class="section-heading"><span><i class="fa-solid fa-pen-ruler"></i></span><div><h2>ID Card Designer</h2><p>Customize card size, orientation, colors, logo placement, QR, footer, watermark, stamp, and signature text.</p></div></div>
+  <form method="post" class="form-grid premium-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label><i class="fa-solid fa-ruler-combined"></i> Card Size<select name="id_card_size"><option value="cr80" {% if settings.id_card_size=='cr80' %}selected{% endif %}>CR80 Standard</option><option value="a6" {% if settings.id_card_size=='a6' %}selected{% endif %}>A6</option><option value="custom" {% if settings.id_card_size=='custom' %}selected{% endif %}>Custom</option></select></label>
+    <label><i class="fa-solid fa-mobile-screen"></i> Orientation<select name="id_card_orientation"><option value="portrait" {% if settings.id_card_orientation=='portrait' %}selected{% endif %}>Portrait</option><option value="landscape" {% if settings.id_card_orientation=='landscape' %}selected{% endif %}>Landscape</option></select></label>
+    <label><i class="fa-solid fa-fill-drip"></i> Background<input type="color" name="id_card_background" value="{{ settings.id_card_background }}"></label>
+    <label><i class="fa-solid fa-palette"></i> Primary<input type="color" name="id_card_primary_color" value="{{ settings.id_card_primary_color }}"></label>
+    <label><i class="fa-solid fa-droplet"></i> Accent<input type="color" name="id_card_accent_color" value="{{ settings.id_card_accent_color }}"></label>
+    <label><i class="fa-solid fa-font"></i> Font<select name="id_card_font_family"><option {% if settings.id_card_font_family=='Segoe UI' %}selected{% endif %}>Segoe UI</option><option {% if settings.id_card_font_family=='Arial' %}selected{% endif %}>Arial</option><option {% if settings.id_card_font_family=='Tahoma' %}selected{% endif %}>Tahoma</option><option {% if settings.id_card_font_family=='Times New Roman' %}selected{% endif %}>Times New Roman</option></select></label>
+    <label><i class="fa-solid fa-border-top-left"></i> Border<select name="id_card_border_style"><option value="solid" {% if settings.id_card_border_style=='solid' %}selected{% endif %}>Solid</option><option value="minimal" {% if settings.id_card_border_style=='minimal' %}selected{% endif %}>Minimal</option><option value="double" {% if settings.id_card_border_style=='double' %}selected{% endif %}>Double</option></select></label>
+    <label><i class="fa-solid fa-crop-simple"></i> Rounded Corners<select name="id_card_rounded_corners"><option value="on" {% if settings.id_card_rounded_corners=='on' %}selected{% endif %}>ON</option><option value="off" {% if settings.id_card_rounded_corners!='on' %}selected{% endif %}>OFF</option></select></label>
+    <label><i class="fa-solid fa-barcode"></i> Barcode<select name="id_card_show_barcode"><option value="off" {% if settings.id_card_show_barcode!='on' %}selected{% endif %}>OFF</option><option value="on" {% if settings.id_card_show_barcode=='on' %}selected{% endif %}>ON</option></select></label>
+    <label><i class="fa-solid fa-calendar-plus"></i> Valid Months<input type="number" min="1" name="id_card_issue_months" value="{{ settings.id_card_issue_months }}"></label>
+    <label class="span-2"><i class="fa-solid fa-signature"></i> Office Examination Signature<input name="id_card_office_signature" value="{{ settings.id_card_office_signature }}"></label>
+    <label><i class="fa-solid fa-stamp"></i> School Stamp<input name="id_card_stamp_text" value="{{ settings.id_card_stamp_text }}"></label>
+    <label><i class="fa-solid fa-water"></i> Watermark<input name="id_card_watermark" value="{{ settings.id_card_watermark }}"></label>
+    <label class="wide"><i class="fa-solid fa-shoe-prints"></i> Footer<input name="id_card_footer" value="{{ settings.id_card_footer }}"></label>
+    <button class="premium"><i class="fa-solid fa-floppy-disk"></i> Save Designer</button>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="section-heading"><span><i class="fa-solid fa-filter"></i></span><div><h2>Find Students</h2><p>Generate one ID card or bulk generate by class, level, section, or all students.</p></div></div>
+  <form method="get" class="form-grid premium-form">
+    <label><i class="fa-solid fa-search"></i> Search<input name="q" value="{{ filters.q }}" placeholder="ID, name, mother name"></label>
+    <label><i class="fa-solid fa-people-roof"></i> Class<select name="class_id"><option value="">All Classes</option>{% for c in classes %}<option value="{{ c.id }}" {% if filters.class_id==c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
+    <label><i class="fa-solid fa-calendar-days"></i> Academic Year<select name="year_id"><option value="">All Years</option>{% for y in years %}<option value="{{ y.id }}" {% if filters.year_id==y.id %}selected{% endif %}>{{ y.name }}</option>{% endfor %}</select></label>
+    <label><i class="fa-solid fa-layer-group"></i> Level<select name="level"><option value="">All Levels</option>{% for level in levels %}<option value="{{ level }}" {% if filters.level==level %}selected{% endif %}>{{ level }}</option>{% endfor %}</select></label>
+    <label><i class="fa-solid fa-table-cells"></i> Section<select name="section"><option value="">All Sections</option>{% for section in sections %}<option value="{{ section }}" {% if filters.section==section %}selected{% endif %}>{{ section }}</option>{% endfor %}</select></label>
+    <button class="premium"><i class="fa-solid fa-filter"></i> Apply</button>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="section-heading"><span><i class="fa-solid fa-id-card"></i></span><div><h2>Bulk Operations</h2><p>Select students or generate by class, level, section, or all active records.</p></div></div>
+  <form method="post" action="{{ url_for('admin_id_cards.bulk_generate') }}" class="form-grid premium-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label><i class="fa-solid fa-layer-group"></i> Scope<select name="scope"><option value="selected">Selected Students</option><option value="class">Class</option><option value="level">Level</option><option value="section">Section</option><option value="all">All Students</option></select></label>
+    <label><i class="fa-solid fa-people-roof"></i> Class<select name="class_id"><option value="">Choose Class</option>{% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></label>
+    <label><i class="fa-solid fa-layer-group"></i> Level<select name="level"><option value="">Choose Level</option>{% for level in levels %}<option value="{{ level }}">{{ level }}</option>{% endfor %}</select></label>
+    <label><i class="fa-solid fa-table-cells"></i> Section<select name="section"><option value="">Choose Section</option>{% for section in sections %}<option value="{{ section }}">{{ section }}</option>{% endfor %}</select></label>
+    <div class="wide responsive-table">
+      <table class="premium-table"><thead><tr><th>Select</th><th>Photo</th><th>ID</th><th>Name</th><th>Class</th><th>Level</th><th>Section</th><th>Action</th></tr></thead><tbody>
+      {% for s in students %}
+        <tr>
+          <td data-label="Select"><input type="checkbox" name="student_ids" value="{{ s.id }}"></td>
+          <td data-label="Photo">{% if s.photo_path %}<img class="mini-avatar" src="{{ url_for('static', filename=s.photo_path) }}" alt="Photo">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}</td>
+          <td data-label="ID">{{ s.student_code }}</td><td data-label="Name">{{ s.full_name }}</td><td data-label="Class">{{ s.school_class.name }}</td><td data-label="Level">{{ s.level or '-' }}</td><td data-label="Section">{{ s.section or '-' }}</td>
+          <td data-label="Action"><form method="post" action="{{ url_for('admin_id_cards.generate', student_id=s.id) }}" class="inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="icon-btn small" title="Generate"><i class="fa-solid fa-id-card-clip"></i></button></form></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8">No students found.</td></tr>
+      {% endfor %}
+      </tbody></table>
+    </div>
+    <button class="premium"><i class="fa-solid fa-id-card"></i> Generate Bulk IDs</button>
+  </form>
+</section>
+
+<section class="panel">
+  <div class="section-heading"><span><i class="fa-solid fa-clock-rotate-left"></i></span><div><h2>Recent ID Card Issues</h2><p>Print, export, and verify generated cards.</p></div></div>
+  <div class="toolbar glass-card">
+    <a class="btn ghost" href="{{ url_for('admin_id_cards.print_cards') }}" target="_blank"><i class="fa-solid fa-print"></i> Bulk Print Recent</a>
+    <a class="btn ghost" href="{{ url_for('admin_id_cards.export_pdf') }}"><i class="fa-solid fa-file-pdf"></i> Export Recent PDF</a>
+  </div>
+  <div class="responsive-table">
+    <table class="premium-table"><thead><tr><th>Student</th><th>Class</th><th>Issue</th><th>Expiry</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+    {% for issue in issues %}
+      <tr><td data-label="Student">{{ issue.student.student_code }} - {{ issue.student.full_name }}</td><td data-label="Class">{{ issue.student.school_class.name }}</td><td data-label="Issue">{{ issue.issue_date }}</td><td data-label="Expiry">{{ issue.expiry_date }}</td><td data-label="Status"><span class="status-pill">{{ issue.status }}</span></td><td data-label="Actions" class="action-cell"><a class="icon-btn small" href="{{ url_for('admin_id_cards.print_cards', issue_ids=issue.id) }}" target="_blank" title="Print"><i class="fa-solid fa-print"></i></a><a class="icon-btn small" href="{{ url_for('public.verify_id_card', token=issue.token) }}" target="_blank" title="Verify"><i class="fa-solid fa-qrcode"></i></a><a class="icon-btn small" href="{{ url_for('admin_id_cards.export_pdf', issue_ids=issue.id) }}" title="PDF"><i class="fa-solid fa-file-pdf"></i></a></td></tr>
+    {% else %}
+      <tr><td colspan="6">No ID cards generated yet.</td></tr>
+    {% endfor %}
+    </tbody></table>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Student ID Cards</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <style>
+    @page { size: A4; margin: 10mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "{{ settings.id_card_font_family }}", "Segoe UI", Arial, sans-serif; color: #111827; print-color-adjust: exact; }
+    .card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8mm; }
+    .id-card { break-inside: avoid; background: {{ settings.id_card_background }}; border: {{ '3px double' if settings.id_card_border_style=='double' else '1.5px solid' }} {{ settings.id_card_primary_color }}; border-radius: {{ '14px' if settings.id_card_rounded_corners=='on' else '0' }}; overflow: hidden; min-height: {{ '88mm' if settings.id_card_orientation=='landscape' else '118mm' }}; display: grid; grid-template-rows: auto 1fr auto; position: relative; }
+    .id-card.landscape { min-height: 62mm; }
+    .watermark { position: absolute; inset: 0; display: grid; place-items: center; transform: rotate(-25deg); font-size: 32px; font-weight: 900; color: rgba(0,32,96,.08); pointer-events: none; }
+    .card-head { display: flex; align-items: center; gap: 10px; background: {{ settings.id_card_primary_color }}; color: #fff; padding: 10px; }
+    .logo { width: 42px; height: 42px; border-radius: 10px; background: #fff; display: grid; place-items: center; color: {{ settings.id_card_primary_color }}; overflow: hidden; }
+    .logo img, .photo img { width: 100%; height: 100%; object-fit: cover; }
+    .card-head h2 { margin: 0; font-size: 15px; text-transform: uppercase; }
+    .card-head span { font-size: 11px; opacity: .86; }
+    .card-body { display: grid; grid-template-columns: 35% 1fr; gap: 10px; padding: 12px; position: relative; z-index: 1; }
+    .photo { height: 105px; border: 2px solid {{ settings.id_card_accent_color }}; border-radius: 12px; display: grid; place-items: center; color: {{ settings.id_card_primary_color }}; overflow: hidden; background: #eef6ff; }
+    .info { display: grid; gap: 6px; }
+    .info div { border-bottom: 1px solid #dbe4f0; padding-bottom: 3px; }
+    .info span { display: block; font-size: 9px; color: #64748b; text-transform: uppercase; }
+    .info strong { font-size: 13px; color: {{ settings.id_card_primary_color }}; }
+    .qr { display: grid; place-items: center; gap: 4px; color: {{ settings.id_card_primary_color }}; }
+    .qr img { width: 64px; height: 64px; }
+    .back { border-top: 1px dashed #cbd5e1; padding: 10px 12px; display: grid; grid-template-columns: 1fr auto; gap: 10px; font-size: 11px; }
+    .stamp { border: 1px solid {{ settings.id_card_accent_color }}; border-radius: 999px; width: 62px; height: 62px; display: grid; place-items: center; text-align: center; color: {{ settings.id_card_accent_color }}; font-weight: 800; font-size: 9px; }
+    .barcode { height: 22px; background: repeating-linear-gradient(90deg, #111827 0 2px, transparent 2px 5px); margin-top: 6px; }
+    footer { background: {{ settings.id_card_accent_color }}; color: #fff; padding: 7px 10px; font-size: 10px; display: flex; justify-content: space-between; }
+    @media print { body { margin: 0; } }
+  </style>
+</head>
+<body onload="window.print()">
+  <main class="card-grid">
+    {% for item in cards %}
+      {% set issue = item.issue %}
+      <article class="id-card {{ settings.id_card_orientation }}">
+        {% if settings.id_card_watermark %}<div class="watermark">{{ settings.id_card_watermark }}</div>{% endif %}
+        <header class="card-head">
+          <div class="logo">{% if settings.logo_path %}<img src="{{ url_for('static', filename=settings.logo_path) }}" alt="Logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}</div>
+          <div><h2>{{ settings.school_name }}</h2><span>Student Identification Card</span></div>
+        </header>
+        <section class="card-body">
+          <div>
+            <div class="photo">{% if issue.student.photo_path %}<img src="{{ url_for('static', filename=issue.student.photo_path) }}" alt="Photo">{% else %}<i class="fa-solid fa-user-graduate fa-3x"></i>{% endif %}</div>
+            <div class="qr"><img src="{{ item.qr.qr_code }}" alt="QR"><small>Secure Verification</small></div>
+          </div>
+          <div class="info">
+            <div><span>Student Name</span><strong>{{ issue.student.full_name }}</strong></div>
+            <div><span>Student ID</span><strong>{{ issue.student.student_code }}</strong></div>
+            <div><span>Class</span><strong>{{ issue.student.school_class.name }}</strong></div>
+            <div><span>Academic Year</span><strong>{{ issue.academic_year.name }}</strong></div>
+            <div><span>Issue Date</span><strong>{{ issue.issue_date }}</strong></div>
+            <div><span>Expiry Date</span><strong>{{ issue.expiry_date or '' }}</strong></div>
+            {% if settings.id_card_show_barcode == 'on' %}<div><span>Barcode</span><div class="barcode"></div></div>{% endif %}
+          </div>
+        </section>
+        <section class="back">
+          <div><strong>{{ settings.id_card_office_signature }}</strong><p>{{ settings.school_address }} | {{ settings.school_phone }}</p><p>{{ settings.id_card_footer }}</p></div>
+          <div class="stamp">{{ settings.id_card_stamp_text }}</div>
+        </section>
+        <footer><span>{{ settings.school_website }}</span><span>Status: {{ issue.status }}</span></footer>
+      </article>
+    {% endfor %}
+  </main>
+</body>
+</html>

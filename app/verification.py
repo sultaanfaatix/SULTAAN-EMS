@@ -31,3 +31,8 @@ def verification_payload(student, exam):
     record = get_or_create_verification(student, exam)
     verify_url = url_for("public.verify_report", token=record.token, _external=True)
     return {"record": record, "url": verify_url, "qr_code": qr_data_uri(verify_url)}
+
+
+def id_card_qr_payload(issue):
+    verify_url = url_for("public.verify_id_card", token=issue.token, _external=True)
+    return {"url": verify_url, "qr_code": qr_data_uri(verify_url)}

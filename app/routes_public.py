@@ -1,9 +1,11 @@
+from datetime import date
+
 from flask import Blueprint, jsonify, render_template, request
 from sqlalchemy import func
 
 from . import db
 from .i18n import language_redirect
-from .models import Exam, ReportVerification, Student
+from .models import Exam, IdCardIssue, ReportVerification, Student
 from .services import get_settings, result_payload
 from .verification import verification_payload
 
@@ -164,3 +166,13 @@ def verify_report(token):
         return render_template("verify.html", settings=settings, verified=False), 404
     payload = result_payload(record.student, exam=record.exam, public_only=True)
     return render_template("verify.html", settings=settings, verified=True, result=payload)
+
+
+@public_bp.route("/verify-id/<token>")
+def verify_id_card(token):
+    settings = get_settings()
+    issue = IdCardIssue.query.filter_by(token=token).first()
+    if not issue:
+        return render_template("verify_id.html", settings=settings, verified=False), 404
+    status = "Expired" if issue.expiry_date and issue.expiry_date < date.today() else issue.status
+    return render_template("verify_id.html", settings=settings, verified=True, issue=issue, display_status=status)

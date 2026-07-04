@@ -41,7 +41,7 @@ b { color: var(--report-primary); font-size: 8.9pt; }
 .overall-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm; }
 .overall-grid div { display: grid; grid-template-columns: 8mm 1fr; column-gap: 2mm; align-items: center; }
 .overall-grid i { grid-row: span 2; color: var(--report-accent); font-size: 12pt; }
-.comment-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 2mm; }
+.comment-grid { display: grid; grid-template-columns: 1fr auto; gap: 2mm; }
 .comment-grid div { border-left: 4px solid var(--report-accent); background: #fff; border-radius: 3mm; padding: 2mm; font-size: 8pt; }
 .comment-plain div { border-left-width: 1px; }
 .comment-grid p { margin: 1mm 0 0; }
