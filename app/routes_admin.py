@@ -12,6 +12,7 @@ from .models import AcademicYear, AuditLog, Exam, GradeScale, Result, SchoolClas
 from .permissions import PERMISSIONS, can, enforce_endpoint_permission, permission_required
 from .security import ALLOWED_PHOTOS, ALLOWED_SHEETS, allowed_file, safe_upload_name
 from .services import get_settings, result_payload
+from .services import slug
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -412,6 +413,21 @@ def settings():
             "call_url",
             "maps_url",
             "enable_phone_verification",
+            "report_header_style",
+            "report_footer_text",
+            "report_primary_color",
+            "report_accent_color",
+            "report_font_family",
+            "report_border_style",
+            "report_background",
+            "report_watermark",
+            "report_logo_position",
+            "report_qr_position",
+            "report_photo_position",
+            "report_signature_position",
+            "report_comment_box",
+            "report_table_style",
+            "principal_comment",
         ]
         for key in editable_keys:
             setting = db.session.get(Setting, key) or Setting(key=key)
@@ -424,6 +440,7 @@ def settings():
             "principal_signature": "principal_signature_path",
             "vice_principal_signature": "vice_principal_signature_path",
             "exam_officer_signature": "exam_officer_signature_path",
+            "school_stamp": "school_stamp_path",
         }
         for field_name, setting_key in upload_fields.items():
             upload = request.files.get(field_name)
@@ -439,6 +456,22 @@ def settings():
             setting = db.session.get(Setting, setting_key) or Setting(key=setting_key)
             setting.value = f"uploads/{filename}"
             db.session.add(setting)
+        for subject in Subject.query.order_by(Subject.name).all():
+            field_name = f"subject_icon_{subject.id}"
+            upload = request.files.get(field_name)
+            if not upload or not upload.filename:
+                continue
+            if not allowed_file(upload.filename, ALLOWED_PHOTOS):
+                flash("Uploaded subject icons must be JPG, PNG, or WEBP.", "danger")
+                return redirect(url_for("admin.settings"))
+            filename = f"subject_icon_{subject.id}_{safe_upload_name(upload.filename)}"
+            upload_dir = Path(current_app_config("UPLOAD_FOLDER"))
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            upload.save(upload_dir / filename)
+            setting_key = f"subject_icon_{slug(subject.name)}"
+            setting = db.session.get(Setting, setting_key) or Setting(key=setting_key)
+            setting.value = f"uploads/{filename}"
+            db.session.add(setting)
         for grade in GradeScale.query.all():
             grade.min_score = request.form.get(f"min_{grade.id}", grade.min_score)
             grade.max_score = request.form.get(f"max_{grade.id}", grade.max_score)
@@ -447,7 +480,13 @@ def settings():
         db.session.commit()
         flash("Settings saved.", "success")
         return redirect(url_for("admin.settings"))
-    return render_template("admin/settings.html", settings=get_settings(), scales=GradeScale.query.order_by(GradeScale.min_score.desc()).all())
+    return render_template(
+        "admin/settings.html",
+        settings=get_settings(),
+        scales=GradeScale.query.order_by(GradeScale.min_score.desc()).all(),
+        subjects=Subject.query.order_by(Subject.name).all(),
+        slug=slug,
+    )
 
 
 @admin_bp.route("/audit-logs")

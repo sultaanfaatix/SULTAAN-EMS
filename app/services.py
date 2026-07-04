@@ -37,6 +37,22 @@ DEFAULT_SETTINGS = {
     "exam_officer_signature_path": "",
     "passing_mark": "50",
     "enable_phone_verification": "off",
+    "report_header_style": "classic",
+    "report_footer_text": "",
+    "report_primary_color": "#002060",
+    "report_accent_color": "#007bff",
+    "report_font_family": "Segoe UI",
+    "report_border_style": "rounded",
+    "report_background": "#f8fbff",
+    "report_watermark": "",
+    "report_logo_position": "left",
+    "report_qr_position": "right",
+    "report_photo_position": "left",
+    "report_signature_position": "bottom",
+    "report_comment_box": "highlighted",
+    "report_table_style": "striped",
+    "principal_comment": "",
+    "school_stamp_path": "",
 }
 
 
@@ -45,6 +61,41 @@ def get_settings():
     settings = DEFAULT_SETTINGS.copy()
     settings.update({row.key: row.value for row in rows})
     return settings
+
+
+SUBJECT_ICON_DEFAULTS = {
+    "math": "fa-calculator",
+    "mathematics": "fa-calculator",
+    "physics": "fa-atom",
+    "chemistry": "fa-flask-vial",
+    "biology": "fa-dna",
+    "business": "fa-briefcase",
+    "technology": "fa-microchip",
+    "history": "fa-landmark",
+    "geography": "fa-earth-africa",
+    "islamic": "fa-mosque",
+    "islamic studies": "fa-mosque",
+    "arabic": "fa-language",
+    "somali": "fa-book-open-reader",
+    "english": "fa-spell-check",
+}
+
+
+def subject_icon(subject_name, settings=None):
+    settings = settings or get_settings()
+    key = f"subject_icon_{slug(subject_name)}"
+    uploaded = settings.get(key)
+    if uploaded:
+        return {"type": "image", "value": uploaded}
+    normalized = (subject_name or "").strip().lower()
+    for needle, icon in SUBJECT_ICON_DEFAULTS.items():
+        if needle in normalized:
+            return {"type": "fa", "value": icon}
+    return {"type": "fa", "value": "fa-book"}
+
+
+def slug(value):
+    return "".join(ch.lower() if ch.isalnum() else "_" for ch in str(value or "")).strip("_")
 
 
 def grade_for(score):
@@ -88,8 +139,27 @@ def result_payload(student, exam=None, public_only=True):
                 "grade": grade_for(percentage),
                 "status": "Pass" if percentage >= passing else "Needs Support",
                 "percentage": float(round(percentage, 2)),
+                "icon": subject_icon(row.subject.name, settings),
             }
         )
+
+    rank = None
+    if rows:
+        peers = {}
+        peer_rows = Result.query.filter_by(exam_id=rows[0].exam_id).all()
+        for peer in peer_rows:
+            peers.setdefault(peer.student_id, {"total": Decimal("0"), "max": Decimal("0")})
+            peers[peer.student_id]["total"] += Decimal(peer.score)
+            peers[peer.student_id]["max"] += Decimal(peer.subject.max_score)
+        ordered = sorted(
+            ((sid, data["total"] / data["max"] * 100 if data["max"] else Decimal("0")) for sid, data in peers.items()),
+            key=lambda item: item[1],
+            reverse=True,
+        )
+        for index, (sid, _avg) in enumerate(ordered, start=1):
+            if sid == student.id:
+                rank = index
+                break
 
     return {
         "student": student,
@@ -100,6 +170,7 @@ def result_payload(student, exam=None, public_only=True):
         "average": float(round(average, 2)),
         "status": status,
         "overall_grade": overall,
+        "rank": rank,
         "comment": student.note or automatic_comment(average),
         "settings": settings,
     }

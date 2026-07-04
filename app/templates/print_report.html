@@ -5,11 +5,20 @@
   <title>Report Card - {{ result.student.student_code }}</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/print.css') }}">
+  <style>
+    :root {
+      --report-primary: {{ result.settings.report_primary_color or result.settings.primary_color or '#002060' }};
+      --report-accent: {{ result.settings.report_accent_color or result.settings.secondary_color or '#007bff' }};
+      --report-bg: {{ result.settings.report_background or '#f8fbff' }};
+      --report-font: "{{ result.settings.report_font_family or 'Segoe UI' }}";
+    }
+  </style>
 </head>
 <body onload="window.print()">
-  <article class="sheet">
-    <header class="print-header">
-      <div class="print-logo">
+  <article class="sheet report-{{ result.settings.report_border_style }} table-{{ result.settings.report_table_style }}">
+    {% if result.settings.report_watermark %}<div class="watermark">{{ result.settings.report_watermark }}</div>{% endif %}
+    <header class="print-header header-{{ result.settings.report_header_style }}">
+      <div class="print-logo logo-{{ result.settings.report_logo_position }}">
         {% if result.settings.logo_path %}<img src="{{ url_for('static', filename=result.settings.logo_path) }}" alt="Logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}
       </div>
       <div class="print-brand">
@@ -17,51 +26,64 @@
         <p>{{ result.settings.school_motto }}</p>
         <span><i class="fa-solid fa-location-dot"></i> {{ result.settings.school_address }} &nbsp; <i class="fa-solid fa-phone"></i> {{ result.settings.school_phone }} &nbsp; <i class="fa-solid fa-envelope"></i> {{ result.settings.school_email }}</span>
       </div>
+      {% if result.settings.report_qr_position != 'bottom' %}
       <div class="qr-box">
-        {% if result.verification %}
-          <img src="{{ result.verification.qr_code }}" alt="Verification QR Code">
-        {% else %}
-          <i class="fa-solid fa-qrcode"></i><small>Verify</small>
-        {% endif %}
+        {% if result.verification %}<img src="{{ result.verification.qr_code }}" alt="Verification QR Code">{% else %}<i class="fa-solid fa-qrcode"></i><small>Verify</small>{% endif %}
       </div>
+      {% endif %}
     </header>
 
     <section class="report-title">
-      <div><span>Official Report Card</span><h2>{{ result.exam.name if result.exam else "Exam Result" }}</h2></div>
+      <div><span>Modern International School Report</span><h2>{{ result.exam.name if result.exam else "Exam Result" }}</h2></div>
       <b>{{ result.student.academic_year.name }}</b>
     </section>
 
-    <section class="student-strip">
-      <div class="student-photo">{% if result.student.photo_path %}<img src="{{ url_for('static', filename=result.student.photo_path) }}" alt="Student photo">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}</div>
-      <div class="wide"><span>Student Name</span><b>{{ result.student.full_name }}</b></div>
-      <div class="wide"><span>Mother Name</span><b>{{ result.student.mother_name }}</b></div>
+    <section class="student-card-grid photo-{{ result.settings.report_photo_position }}">
+      {% if result.settings.report_photo_position != 'hidden' %}
+        <div class="student-photo">{% if result.student.photo_path %}<img src="{{ url_for('static', filename=result.student.photo_path) }}" alt="Student photo">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}</div>
+      {% endif %}
+      <div><span>Student Name</span><b>{{ result.student.full_name }}</b></div>
       <div><span>Student ID</span><b>{{ result.student.student_code }}</b></div>
       <div><span>Class</span><b>{{ result.student.school_class.name }}</b></div>
-      <div><span>Status</span><b>{{ result.status }}</b></div>
+      <div><span>Exam</span><b>{{ result.exam.name if result.exam else "Exam Result" }}</b></div>
+      <div><span>Academic Year</span><b>{{ result.student.academic_year.name }}</b></div>
+      <div><span>Mother Name</span><b>{{ result.student.mother_name }}</b></div>
+      <div><span>Result Status</span><b>{{ result.status }}</b></div>
     </section>
 
     <table class="print-table">
-      <thead><tr><th>#</th><th>Subject</th><th>Score</th><th>Grade</th><th>Comment</th><th>Status</th></tr></thead>
+      <thead><tr><th>#</th><th>Icon</th><th>Subject Name</th><th>Score</th><th>Grade</th><th>Comment</th><th>Average</th></tr></thead>
       <tbody>
         {% for row in result.subjects %}
-          <tr><td>{{ loop.index }}</td><td>{{ row.subject }}</td><td>{{ row.score }} / {{ row.max_score }}</td><td>{{ row.grade.grade }}</td><td>{{ row.grade.comment }}</td><td>{{ row.status }}</td></tr>
+          <tr class="grade-row grade-{{ row.grade.grade|replace('+','plus')|replace('-','minus') }}">
+            <td>{{ loop.index }}</td>
+            <td class="subject-icon-cell">{% if row.icon.type == 'image' %}<img src="{{ url_for('static', filename=row.icon.value) }}" alt="Subject icon">{% else %}<i class="fa-solid {{ row.icon.value }}"></i>{% endif %}</td>
+            <td>{{ row.subject }}</td>
+            <td>{{ row.score }} / {{ row.max_score }}</td>
+            <td><b>{{ row.grade.grade }}</b></td>
+            <td>{{ row.grade.comment }}</td>
+            <td>{{ row.percentage }}%</td>
+          </tr>
         {% endfor %}
       </tbody>
     </table>
 
-    <section class="print-summary">
-      <div><i class="fa-solid fa-calculator"></i><span>Total</span><b>{{ result.total }} / {{ result.max_total }}</b></div>
+    <section class="overall-grid">
       <div><i class="fa-solid fa-percent"></i><span>Average</span><b>{{ result.average }}%</b></div>
-      <div><i class="fa-solid fa-medal"></i><span>Overall Grade</span><b>{{ result.overall_grade.grade }}</b></div>
+      <div><i class="fa-solid fa-medal"></i><span>Grade</span><b>{{ result.overall_grade.grade }}</b></div>
+      <div><i class="fa-solid fa-ranking-star"></i><span>Rank</span><b>{{ result.rank or "-" }}</b></div>
       <div><i class="fa-solid fa-circle-check"></i><span>Decision</span><b>{{ result.status }}</b></div>
     </section>
 
-    <section class="print-remark">
-      <i class="fa-solid fa-comment-dots"></i>
-      <p>{{ result.comment }}</p>
+    <section class="comment-grid comment-{{ result.settings.report_comment_box }}">
+      <div><strong>Teacher Comment</strong><p>{{ result.comment }}</p></div>
+      <div><strong>Principal Comment</strong><p>{{ result.settings.principal_comment or result.settings.school_motto }}</p></div>
+      {% if result.settings.report_qr_position == 'bottom' %}
+      <div class="qr-box bottom-qr">{% if result.verification %}<img src="{{ result.verification.qr_code }}" alt="Verification QR Code">{% else %}<i class="fa-solid fa-qrcode"></i>{% endif %}</div>
+      {% endif %}
     </section>
 
-    <section class="signatures">
+    <section class="signatures signature-{{ result.settings.report_signature_position }}">
       <div>
         {% if result.settings.principal_signature_path %}<img src="{{ url_for('static', filename=result.settings.principal_signature_path) }}" alt="Principal signature">{% endif %}
         <b>{{ result.settings.principal_name }}</b><span>Principal</span>
@@ -74,10 +96,14 @@
         {% if result.settings.exam_officer_signature_path %}<img src="{{ url_for('static', filename=result.settings.exam_officer_signature_path) }}" alt="Exam officer signature">{% endif %}
         <b>Examination Officer</b><span>Results Office</span>
       </div>
+      <div class="stamp-box">
+        {% if result.settings.school_stamp_path %}<img src="{{ url_for('static', filename=result.settings.school_stamp_path) }}" alt="School stamp">{% else %}<i class="fa-solid fa-stamp"></i>{% endif %}
+        <span>School Stamp</span>
+      </div>
     </section>
 
     <footer>
-      <span>{{ result.settings.school_footer }}</span>
+      <span>{{ result.settings.report_footer_text or result.settings.school_footer }}</span>
       <span>{{ result.settings.school_website }}</span>
     </footer>
   </article>

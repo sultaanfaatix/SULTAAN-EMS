@@ -2,7 +2,7 @@
 {% block title %}{{ settings.school_name }} Result Portal{% endblock %}
 {% block body_class %}public-body{% endblock %}
 {% block content %}
-<main class="public-hero">
+<main class="public-hero student-homepage">
   <nav class="public-nav glass-card">
     <a class="portal-brand" href="{{ url_for('public.portal') }}">
       <span class="brand-logo">
@@ -23,30 +23,28 @@
 
   <section class="portal-layout">
     <div class="hero-copy">
-      <span class="eyebrow"><i class="fa-solid fa-graduation-cap"></i> {{ _('Online Exam Result Management') }}</span>
-      <h1>{{ settings.school_name }} {{ _('Results Portal') }}</h1>
-      <p>{{ settings.dashboard_subtitle }}</p>
-      <div class="hero-metrics">
-        <div><i class="fa-solid fa-lock"></i><strong>{{ _('Secure') }}</strong><span>{{ _('Student ID lookup') }}</span></div>
-        <div><i class="fa-solid fa-print"></i><strong>A4</strong><span>{{ _('One-page report') }}</span></div>
-        <div><i class="fa-solid fa-bolt"></i><strong>{{ _('Live') }}</strong><span>{{ _('Database updates') }}</span></div>
+      <div class="hero-school-logo">
+        {% if settings.logo_path %}<img src="{{ url_for('static', filename=settings.logo_path) }}" alt="{{ settings.school_name }} logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}
       </div>
+      <span class="eyebrow"><i class="fa-solid fa-graduation-cap"></i> {{ settings.school_motto }}</span>
+      <h1>{{ settings.school_name }}</h1>
+      <p>{{ _('Find Student Result') }}</p>
     </div>
 
     <section class="search-card glass-card">
       <div class="card-heading">
         <span class="icon-pill"><i class="fa-solid fa-magnifying-glass"></i></span>
-        <div><h2>{{ _('Find Student Result') }}</h2><p>{{ _('Enter the official Student ID to view the published report.') }}</p></div>
+        <div><h2>{{ _('Results Portal') }}</h2><p>{{ _('Enter the official Student ID to view the published report.') }}</p></div>
       </div>
       <form method="post" action="{{ url_for('public.result') }}" class="search-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label for="student_id"><i class="fa-solid fa-id-card"></i> {{ _('Student ID') }}</label>
         <div class="search-row">
-          <input id="student_id" name="student_id" required placeholder="Example: 3007">
+          <input id="student_id" class="student-id-input" name="student_id" required placeholder="Example: 3007">
           {% if settings.enable_phone_verification == 'on' %}
             <input id="phone" name="phone" required placeholder="{{ _('Phone Number') }}">
           {% endif %}
-          <button type="submit"><i class="fa-solid fa-search"></i> {{ _('Search') }}</button>
+          <button type="submit" class="student-search-button"><i class="fa-solid fa-search"></i> {{ _('Search') }}</button>
         </div>
       </form>
       {% if error %}<div class="empty-state"><i class="fa-solid fa-circle-exclamation"></i>{{ error }}</div>{% endif %}
@@ -110,9 +108,11 @@
   {% endif %}
 
   <footer class="public-footer glass-card">
-    <div><strong>{{ settings.school_name }}</strong><span>{{ settings.school_address }} | {{ settings.school_phone }} | {{ settings.school_email }}</span></div>
+    <div><strong>{{ settings.school_name }}</strong><span>{{ settings.school_address }} | {{ settings.school_phone }} | {{ settings.school_email }} | {{ settings.school_website }}</span></div>
     <div class="social-links">
+      <a href="{{ settings.facebook_url or '#' }}" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
       <a href="{{ settings.whatsapp_url or '#' }}" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+      <a href="{{ settings.school_website or '#' }}" aria-label="Website"><i class="fa-solid fa-globe"></i></a>
       <a href="{{ settings.facebook_url or '#' }}" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
       <a href="{{ settings.instagram_url or '#' }}" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
       <a href="{{ settings.telegram_url or '#' }}" aria-label="Telegram"><i class="fa-brands fa-telegram"></i></a>
