@@ -2,7 +2,7 @@
 {% block title %}{{ settings.school_name }} Result Portal{% endblock %}
 {% block body_class %}public-body premium-public-body{% endblock %}
 {% block content %}
-<main class="public-hero student-homepage premium-homepage">
+<main class="public-hero student-homepage premium-homepage {% if result %}has-result{% endif %}">
   <nav class="premium-language-nav">
     <label class="premium-language-pill">
       <i class="fa-solid fa-globe"></i>
@@ -28,79 +28,95 @@
     </div>
   </section>
 
-  <section class="premium-search-shell glass-card">
-    <form method="post" action="{{ url_for('public.result') }}" class="premium-search-form {% if settings.enable_phone_verification == 'on' %}has-phone{% endif %}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div class="premium-input-icon"><i class="fa-regular fa-user"></i></div>
-      <div class="floating-field">
-        <input id="student_id" class="student-id-input premium-floating-input" name="student_id" required placeholder="Fadlan halkan geli lambarka aqoonsiga ardayga">
-        <label for="student_id">Fadlan halkan geli lambarka aqoonsiga ardayga</label>
-      </div>
-      {% if settings.enable_phone_verification == 'on' %}
-        <div class="floating-field phone-floating-field">
-          <input id="phone" name="phone" required placeholder="{{ _('Phone Number') }}">
-          <label for="phone">{{ _('Phone Number') }}</label>
+  {% if not result %}
+    <section class="premium-search-shell glass-card">
+      <form method="post" action="{{ url_for('public.result') }}" class="premium-search-form {% if settings.enable_phone_verification == 'on' %}has-phone{% endif %}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="premium-input-icon"><i class="fa-regular fa-user"></i></div>
+        <div class="floating-field">
+          <input id="student_id" class="student-id-input premium-floating-input" name="student_id" required placeholder="Fadlan halkan geli lambarka aqoonsiga ardayga">
+          <label for="student_id">Fadlan halkan geli lambarka aqoonsiga ardayga</label>
         </div>
-      {% endif %}
-      <button type="submit" class="student-search-button premium-search-button"><i class="fa-solid fa-magnifying-glass"></i><span>RAADI</span></button>
-      <div class="premium-search-hint"><span></span>Geli ID-ga si aad u aragto natiijada<span></span></div>
-    </form>
-    {% if error %}<div class="empty-state premium-error"><i class="fa-solid fa-circle-exclamation"></i>{{ error }}</div>{% endif %}
-  </section>
+        {% if settings.enable_phone_verification == 'on' %}
+          <div class="floating-field phone-floating-field">
+            <input id="phone" name="phone" required placeholder="{{ _('Phone Number') }}">
+            <label for="phone">{{ _('Phone Number') }}</label>
+          </div>
+        {% endif %}
+        <button type="submit" class="student-search-button premium-search-button"><i class="fa-solid fa-magnifying-glass"></i><span>RAADI</span></button>
+        <div class="premium-search-hint"><span></span>Geli ID-ga si aad u aragto natiijada<span></span></div>
+      </form>
+      {% if error %}<div class="empty-state premium-error"><i class="fa-solid fa-circle-exclamation"></i>{{ error }}</div>{% endif %}
+    </section>
+  {% endif %}
 
   {% if result %}
-    <section class="premium-result" data-result-status="{{ result.status }}">
-      <div class="celebration {{ 'success' if result.status == 'Gudbay' else 'support' }}">
-        <i class="fa-solid {{ 'fa-trophy' if result.status == 'Gudbay' else 'fa-seedling' }}"></i>
-        <div><strong>{{ 'Congratulations!' if result.status == 'Gudbay' else 'Keep Growing' }}</strong><span>{{ result.comment }}</span></div>
-      </div>
-      <div class="profile-panel glass-card">
-        <div class="student-avatar">
-          {% if result.student.photo_path %}<img src="{{ url_for('static', filename=result.student.photo_path) }}" alt="{{ result.student.full_name }} photo">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}
-        </div>
-        <div class="student-title">
-          <span>{{ result.student.student_code }}</span>
-          <h2>{{ result.student.full_name }}</h2>
-          <p><i class="fa-solid fa-user"></i> Mother: {{ result.student.mother_name }}</p>
-          <p><i class="fa-solid fa-people-roof"></i> Class: {{ result.student.school_class.name }}</p>
-        </div>
-        <a class="btn premium" href="{{ url_for('public.print_report', student_code=result.student.student_code) }}" target="_blank"><i class="fa-solid fa-print"></i> Print Report</a>
-      </div>
+    <section class="premium-result result-dashboard" data-result-status="{{ result.status }}">
+      <div class="student-result-shell">
+        <section class="student-result-card glass-card">
+          <div class="student-result-main">
+            <div class="student-result-photo">
+              {% if result.student.photo_path %}<img src="{{ url_for('static', filename=result.student.photo_path) }}" alt="{{ result.student.full_name }} photo">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}
+            </div>
+            <div class="student-result-bio">
+              <h2>{{ result.student.full_name }}</h2>
+              <div class="student-detail-grid">
+                <div class="student-detail-item"><span><i class="fa-solid fa-id-card"></i></span><small>Student ID</small><strong>{{ result.student.student_code }}</strong></div>
+                <div class="student-detail-item"><span><i class="fa-solid fa-people-roof"></i></span><small>Class</small><strong>{{ result.student.school_class.name }}</strong></div>
+                <div class="student-detail-item wide"><span><i class="fa-solid fa-user"></i></span><small>Mother's Name</small><strong>{{ result.student.mother_name }}</strong></div>
+              </div>
+            </div>
+          </div>
+          <aside class="result-status-panel {{ 'passed' if result.status == 'Gudbay' else 'failed' }}">
+            <div class="status-title">Overall Result</div>
+            <div class="status-row">
+              <strong>{{ 'PASSED' if result.status == 'Gudbay' else 'FAILED' }}</strong>
+              <span><i class="fa-solid {{ 'fa-check' if result.status == 'Gudbay' else 'fa-xmark' }}"></i></span>
+            </div>
+            <dl>
+              <div><dt>Average Mark</dt><dd>{{ result.average }}%</dd></div>
+              <div><dt>Grade</dt><dd>{{ result.overall_grade.grade }}</dd></div>
+              <div><dt>Position in Class</dt><dd>{{ result.rank or '-' }}</dd></div>
+            </dl>
+          </aside>
+        </section>
 
-      <div class="result-info-grid">
-        <div class="info-tile wide"><i class="fa-solid fa-user-graduate"></i><span>Student Name</span><strong>{{ result.student.full_name }}</strong></div>
-        <div class="info-tile wide"><i class="fa-solid fa-person-dress"></i><span>Mother Name</span><strong>{{ result.student.mother_name }}</strong></div>
-        <div class="info-tile"><i class="fa-solid fa-id-badge"></i><span>Student ID</span><strong>{{ result.student.student_code }}</strong></div>
-        <div class="info-tile"><i class="fa-solid fa-people-roof"></i><span>Class</span><strong>{{ result.student.school_class.name }}</strong></div>
-        <div class="info-tile"><i class="fa-solid fa-percent"></i><span>Average</span><strong>{{ result.average }}%</strong></div>
-        <div class="info-tile"><i class="fa-solid fa-calculator"></i><span>Total Marks</span><strong>{{ result.total }} / {{ result.max_total }}</strong></div>
-        <div class="info-tile"><i class="fa-solid fa-medal"></i><span>Grade</span><strong>{{ result.overall_grade.grade }}</strong></div>
-      </div>
+        <section class="result-summary-cards" aria-label="Result summary">
+          <div class="result-summary-card average"><span><i class="fa-solid fa-chart-line"></i></span><small>Average</small><strong>{{ result.average }}%</strong><em>Average Mark</em></div>
+          <div class="result-summary-card grade"><span><i class="fa-regular fa-star"></i></span><small>Grade</small><strong>{{ result.overall_grade.grade }}</strong><em>Final Grade</em></div>
+          <div class="result-summary-card position"><span><i class="fa-solid fa-trophy"></i></span><small>Position</small><strong>{{ result.rank or '-' }}</strong><em>In Class</em></div>
+          <div class="result-summary-card decision {{ 'passed' if result.status == 'Gudbay' else 'failed' }}"><span><i class="fa-solid {{ 'fa-circle-check' if result.status == 'Gudbay' else 'fa-circle-xmark' }}"></i></span><small>Result</small><strong>{{ 'Pass' if result.status == 'Gudbay' else 'Fail' }}</strong><em>{{ result.comment }}</em></div>
+        </section>
 
-      <div class="decision-box {{ 'pass-box' if result.status == 'Gudbay' else 'fail-box' }}">
-        <i class="fa-solid {{ 'fa-circle-check' if result.status == 'Gudbay' else 'fa-hands-helping' }}"></i>
-        <div><span>Final Decision</span><strong>{{ result.status }}</strong><p>{{ result.comment }}</p></div>
-      </div>
+        <section class="result-subjects-panel glass-card">
+          <div class="result-section-title"><span><i class="fa-solid fa-square-poll-horizontal"></i></span><h2>Subject Performance</h2></div>
+          <div class="responsive-table result-subjects-table-wrap">
+            <table class="premium-table subject-results-table">
+              <thead><tr><th>#</th><th>Subject</th><th>Full Mark</th><th>Mark Obtained</th><th>Percentage</th><th>Grade</th><th>Remark</th></tr></thead>
+              <tbody>
+                {% for row in result.subjects %}
+                  <tr>
+                    <td data-label="#"><strong>{{ loop.index }}</strong></td>
+                    <td data-label="Subject"><span class="subject-icon"><i class="fa-solid fa-book-open"></i></span>{{ row.subject }}</td>
+                    <td data-label="Full Mark">{{ row.max_score }}</td>
+                    <td data-label="Mark Obtained"><strong>{{ row.score }}</strong></td>
+                    <td data-label="Percentage"><span class="subject-percent">{{ row.percentage }}%</span></td>
+                    <td data-label="Grade"><span class="grade-badge">{{ row.grade.grade }}</span></td>
+                    <td data-label="Remark"><span class="subject-remark">{{ row.grade.comment }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="grading-note"><i class="fa-solid fa-circle-info"></i> Grading System: A+ (90-100) | A (80-89) | B (70-79) | C (60-69) | D (50-59) | F (0-49)</div>
+        </section>
 
-      <section class="result-table-card glass-card">
-        <div class="section-heading"><span><i class="fa-solid fa-chart-simple"></i></span><div><h2>Subject Performance</h2><p>Scores, grades, remarks, and subject status.</p></div></div>
-        <div class="responsive-table">
-          <table class="premium-table">
-            <thead><tr><th>Subject</th><th>Score</th><th>Grade</th><th>Comment</th><th>Status</th></tr></thead>
-            <tbody>
-              {% for row in result.subjects %}
-                <tr>
-                  <td data-label="Subject"><span class="subject-icon"><i class="fa-solid fa-book-open"></i></span>{{ row.subject }}</td>
-                  <td data-label="Score"><strong>{{ row.score }}</strong> / {{ row.max_score }}</td>
-                  <td data-label="Grade"><span class="grade-badge">{{ row.grade.grade }}</span></td>
-                  <td data-label="Comment">{{ row.grade.comment }}</td>
-                  <td data-label="Status"><span class="status-pill {{ 'ok' if row.status == 'Pass' else 'warn' }}"><i class="fa-solid {{ 'fa-check' if row.status == 'Pass' else 'fa-arrow-trend-up' }}"></i>{{ row.status }}</span></td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </section>
+        <section class="result-action-panel glass-card">
+          <a class="result-action-button download" href="{{ url_for('public.print_report', student_code=result.student.student_code) }}" target="_blank" rel="noopener"><i class="fa-solid fa-download"></i><span>Download Report</span><small>PDF</small></a>
+          <a class="result-action-button print" href="{{ url_for('public.print_report', student_code=result.student.student_code) }}" target="_blank" rel="noopener"><i class="fa-solid fa-print"></i><span>Print Result</span><small>Print</small></a>
+          <button type="button" class="result-action-button share js-share-result" data-share-url="{{ url_for('public.print_report', student_code=result.student.student_code) }}" data-share-title="{{ result.student.full_name }} Result"><i class="fa-solid fa-share-nodes"></i><span>Share Result</span><small>Share</small></button>
+        </section>
+      </div>
     </section>
   {% endif %}
 
@@ -115,5 +131,28 @@
       <a href="{{ settings.maps_url or '#' }}" aria-label="Map"><i class="fa-solid fa-map-location-dot"></i></a>
     </div>
   </footer>
+  {% if result %}
+    <script>
+      (() => {
+        const button = document.querySelector(".js-share-result");
+        if (!button) return;
+        button.addEventListener("click", async () => {
+          const shareUrl = new URL(button.dataset.shareUrl, window.location.origin).href;
+          const shareData = { title: button.dataset.shareTitle || document.title, url: shareUrl };
+          try {
+            if (navigator.share) {
+              await navigator.share(shareData);
+            } else if (navigator.clipboard) {
+              await navigator.clipboard.writeText(shareUrl);
+              button.classList.add("copied");
+              setTimeout(() => button.classList.remove("copied"), 1400);
+            }
+          } catch (error) {
+            button.classList.remove("copied");
+          }
+        });
+      })();
+    </script>
+  {% endif %}
 </main>
 {% endblock %}
