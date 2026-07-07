@@ -1,4 +1,4 @@
-@page { size: A4; margin: 5mm; }
+@page { size: A4; margin: 4mm; }
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
 body {
@@ -9,13 +9,13 @@ body {
   -webkit-print-color-adjust: exact;
 }
 .tis-print-report {
-  width: 200mm;
-  min-height: 287mm;
+  width: 202mm;
+  height: 289mm;
   margin: 0 auto;
-  padding: 6mm;
+  padding: 4.2mm;
   display: grid;
   grid-template-rows: auto auto auto 1fr auto auto auto;
-  gap: 4.2mm;
+  gap: 2.8mm;
   overflow: hidden;
   border: 1px solid #d4e2f6;
   border-radius: 2mm;
@@ -27,8 +27,8 @@ body {
 .tis-print-header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 70mm;
-  min-height: 32mm;
-  gap: 5mm;
+  min-height: 28mm;
+  gap: 4mm;
   align-items: start;
 }
 .tis-print-brand {
@@ -39,8 +39,8 @@ body {
   min-width: 0;
 }
 .tis-print-logo {
-  width: 27mm;
-  height: 27mm;
+  width: 24mm;
+  height: 24mm;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -55,7 +55,7 @@ body {
 .tis-print-brand h1 {
   margin: 0;
   color: #08266e;
-  font-size: 31pt;
+  font-size: 28pt;
   line-height: .95;
   letter-spacing: .03em;
 }
@@ -67,7 +67,7 @@ body {
   text-transform: uppercase;
 }
 .tis-print-brand p {
-  margin: 4mm 0 0;
+  margin: 2.5mm 0 0;
   color: #063b9b;
   font-size: 11pt;
   font-weight: 800;
@@ -76,8 +76,8 @@ body {
 }
 .tis-print-exam {
   position: relative;
-  min-height: 31mm;
-  padding: 7mm 8mm 5mm 18mm;
+  min-height: 27mm;
+  padding: 5.5mm 7mm 4mm 18mm;
   color: #fff;
   text-align: center;
   border-radius: 0 3mm 0 18mm;
@@ -104,7 +104,7 @@ body {
 }
 .tis-print-exam strong {
   display: block;
-  margin-top: 3mm;
+  margin-top: 2mm;
   color: #fff;
   font-size: 26pt;
   line-height: 1;
@@ -113,7 +113,7 @@ body {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 2.8mm;
-  padding: 3mm 4mm;
+  padding: 2.4mm 3.2mm;
   border: 1px solid #cddcf1;
   border-radius: 4mm;
   background: rgba(255,255,255,.92);
@@ -155,7 +155,7 @@ body {
   align-items: center;
   gap: 3mm;
   margin: -1px 0 0 4mm;
-  padding: 3.4mm 7mm;
+  padding: 2.8mm 6mm;
   color: #fff;
   font-size: 14pt;
   line-height: 1;
@@ -165,14 +165,14 @@ body {
 }
 .tis-student-body {
   display: grid;
-  grid-template-columns: 43mm minmax(0, 1fr) 42mm;
-  gap: 8mm;
+  grid-template-columns: 40mm minmax(0, 1fr) 39mm;
+  gap: 6mm;
   align-items: center;
-  padding: 5mm 6mm 6mm;
+  padding: 3.6mm 5mm 4.2mm;
 }
 .tis-student-photo {
-  width: 38mm;
-  height: 46mm;
+  width: 36mm;
+  height: 42mm;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -185,7 +185,7 @@ body {
 .tis-student-photo img { width: 100%; height: 100%; object-fit: cover; }
 .tis-student-lines {
   display: grid;
-  gap: 3mm;
+  gap: 2.2mm;
 }
 .tis-student-lines div {
   display: grid;
@@ -194,7 +194,7 @@ body {
   column-gap: 3mm;
   align-items: center;
   min-width: 0;
-  padding-bottom: 2.4mm;
+  padding-bottom: 1.7mm;
   border-bottom: 1px solid #ccd9ec;
 }
 .tis-student-lines span {
@@ -224,7 +224,7 @@ body {
   text-transform: uppercase;
 }
 .tis-verify-qr {
-  width: 39mm;
+  width: 36mm;
   overflow: hidden;
   justify-self: end;
   text-align: center;
@@ -234,18 +234,18 @@ body {
 }
 .tis-verify-qr img,
 .tis-verify-qr > i {
-  width: 34mm;
-  height: 34mm;
+  width: 30mm;
+  height: 30mm;
   display: grid;
   place-items: center;
-  margin: 5mm auto 3mm;
+  margin: 3.5mm auto 2mm;
   object-fit: contain;
   color: #07143b;
   font-size: 25pt;
 }
 .tis-verify-qr strong {
   display: block;
-  padding: 3mm 2mm;
+  padding: 2.4mm 2mm;
   color: #fff;
   background: #073986;
   font-size: 10pt;
@@ -260,30 +260,46 @@ body {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  font-size: 9pt;
+  font-size: 8.3pt;
 }
 .tis-print-table th,
 .tis-print-table td {
-  padding: 2.6mm 2.4mm;
+  padding: 1.75mm 1.8mm;
   border: 1px solid #dbe5f3;
   text-align: center;
 }
 .tis-print-table th {
   color: #071f58;
   background: #f8fbff;
-  font-size: 8pt;
+  font-size: 7.4pt;
   text-transform: uppercase;
 }
 .tis-print-table th:nth-child(2),
 .tis-print-table td:nth-child(2) {
-  width: 27%;
+  width: 34%;
   text-align: left;
   text-transform: uppercase;
+}
+.tis-print-table th:first-child,
+.tis-print-table td:first-child {
+  width: 8mm;
+  padding-left: .8mm;
+  padding-right: .8mm;
+}
+.tis-print-table th:nth-child(3),
+.tis-print-table td:nth-child(3),
+.tis-print-table th:nth-child(4),
+.tis-print-table td:nth-child(4) {
+  width: 22mm;
+}
+.tis-print-table th:nth-child(5),
+.tis-print-table td:nth-child(5) {
+  width: 17mm;
 }
 .tis-print-table td { color: #07143b; }
 .tis-print-table td:nth-child(5) strong {
   color: #078148;
-  font-size: 15pt;
+  font-size: 13pt;
 }
 .tis-print-table td:nth-child(6) {
   color: #0047c2;
@@ -293,16 +309,16 @@ body {
 .tis-print-summary {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 3mm;
+  gap: 2.2mm;
 }
 .tis-print-summary div {
-  min-height: 25mm;
+  min-height: 21mm;
   display: grid;
   grid-template-columns: 11mm minmax(0, 1fr);
   grid-template-areas: "icon label" "icon value" "icon note";
   gap: .6mm 3mm;
   align-content: center;
-  padding: 3mm;
+  padding: 2.2mm;
   border: 1px solid #d4e2f6;
   border-radius: 3mm;
   background: #fff;
@@ -311,7 +327,7 @@ body {
 .tis-print-summary i {
   grid-area: icon;
   color: #073986;
-  font-size: 17pt;
+  font-size: 14pt;
   align-self: start;
   padding-top: 1mm;
 }
@@ -325,7 +341,7 @@ body {
 .tis-print-summary strong {
   grid-area: value;
   color: #07143b;
-  font-size: 21pt;
+  font-size: 17pt;
   line-height: 1;
 }
 .tis-print-summary small {
@@ -339,12 +355,12 @@ body {
 .tis-print-bottom {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 48mm 32mm;
-  gap: 5mm;
+  gap: 3.5mm;
   align-items: center;
 }
 .tis-print-comment {
-  min-height: 25mm;
-  padding: 3.5mm 4mm;
+  min-height: 20mm;
+  padding: 2.8mm 3.4mm;
   border: 1px solid #d4e2f6;
   border-radius: 3mm;
   background: #fff;
@@ -353,7 +369,7 @@ body {
   display: flex;
   gap: 2mm;
   align-items: center;
-  margin: 0 0 3mm;
+  margin: 0 0 2mm;
   color: #073986;
   font-size: 10pt;
   text-transform: uppercase;
@@ -362,7 +378,7 @@ body {
   margin: 0;
   color: #07143b;
   font-size: 9pt;
-  line-height: 1.6;
+  line-height: 1.4;
 }
 .tis-official-sign {
   display: grid;
@@ -416,13 +432,13 @@ body {
   letter-spacing: .03em;
 }
 .tis-print-footer {
-  min-height: 15mm;
+  min-height: 11mm;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 1px auto;
-  gap: 8mm;
+  gap: 6mm;
   align-items: center;
   margin: 0 -1mm -1mm;
-  padding: 3.4mm 12mm;
+  padding: 2.4mm 9mm;
   color: #fff;
   border-radius: 8mm 8mm 0 0;
   background: linear-gradient(135deg, #05205f, #073986);
@@ -444,11 +460,11 @@ body {
 }
 .tis-print-footer nav {
   display: flex;
-  gap: 4mm;
+  gap: 3mm;
 }
 .tis-print-footer i {
-  width: 9mm;
-  height: 9mm;
+  width: 7.8mm;
+  height: 7.8mm;
   display: grid;
   place-items: center;
   border: 1px solid rgba(255,255,255,.75);
@@ -457,5 +473,5 @@ body {
 }
 @media print {
   html, body { width: 210mm; height: 297mm; background: #fff; }
-  .tis-print-report { width: 200mm; min-height: 287mm; box-shadow: none; }
+  .tis-print-report { width: 202mm; height: 289mm; box-shadow: none; page-break-inside: avoid; break-inside: avoid; }
 }

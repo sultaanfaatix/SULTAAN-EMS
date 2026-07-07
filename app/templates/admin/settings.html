@@ -99,6 +99,31 @@
   </section>
 
   <section class="panel form-grid premium-form">
+    <div class="section-heading wide"><span><i class="fa-solid fa-pen-to-square"></i></span><div><h2>Result & Print Text Controls</h2><p>Super Admin labels and headings for the public result page and printable report.</p></div></div>
+    <label><i class="fa-solid fa-heading"></i> Online Title Primary<input name="result_online_title_primary" value="{{ settings.result_online_title_primary }}"></label>
+    <label><i class="fa-solid fa-heading"></i> Online Title Accent<input name="result_online_title_accent" value="{{ settings.result_online_title_accent }}"></label>
+    <label class="span-2"><i class="fa-solid fa-quote-left"></i> Online Quote<input name="result_online_quote" value="{{ settings.result_online_quote }}"></label>
+    <label><i class="fa-solid fa-user"></i> Mother Label<input name="result_label_mother_name" value="{{ settings.result_label_mother_name }}"></label>
+    <label><i class="fa-solid fa-id-card"></i> Student ID Label<input name="result_label_student_id" value="{{ settings.result_label_student_id }}"></label>
+    <label><i class="fa-solid fa-people-roof"></i> Class Label<input name="result_label_student_class" value="{{ settings.result_label_student_class }}"></label>
+    <label><i class="fa-solid fa-file-lines"></i> Exam Type Label<input name="result_label_exam_type" value="{{ settings.result_label_exam_type }}"></label>
+    <label><i class="fa-solid fa-calendar-check"></i> Date Issued Label<input name="result_label_date_issued" value="{{ settings.result_label_date_issued }}"></label>
+    <label><i class="fa-solid fa-percent"></i> Percentage Label<input name="result_label_subject_percentage" value="{{ settings.result_label_subject_percentage }}"></label>
+    <label><i class="fa-solid fa-chart-simple"></i> Academic Summary Title<input name="result_academic_summary_title" value="{{ settings.result_academic_summary_title }}"></label>
+    <label><i class="fa-solid fa-comment"></i> Remarks Title<input name="result_teacher_remarks_title" value="{{ settings.result_teacher_remarks_title }}"></label>
+    <label><i class="fa-solid fa-copyright"></i> Online Footer Owner<input name="result_footer_owner" value="{{ settings.result_footer_owner }}"></label>
+    <label><i class="fa-solid fa-school"></i> Print Brand Code<input name="print_brand_code" value="{{ settings.print_brand_code }}"></label>
+    <label><i class="fa-solid fa-file-lines"></i> Print Report Title<input name="print_report_title" value="{{ settings.print_report_title }}"></label>
+    <label><i class="fa-solid fa-user"></i> Print Student Heading<input name="print_student_heading" value="{{ settings.print_student_heading }}"></label>
+    <label><i class="fa-solid fa-table"></i> Print Marks Heading<input name="print_marks_heading" value="{{ settings.print_marks_heading }}"></label>
+    <label><i class="fa-solid fa-qrcode"></i> Print QR Label<input name="print_qr_label" value="{{ settings.print_qr_label }}"></label>
+    <label><i class="fa-solid fa-message"></i> Print Comments Heading<input name="print_comments_heading" value="{{ settings.print_comments_heading }}"></label>
+    <label><i class="fa-solid fa-signature"></i> Signature Title<input name="print_signature_title" value="{{ settings.print_signature_title }}"></label>
+    <label><i class="fa-solid fa-signature"></i> Signature Subtitle<input name="print_signature_subtitle" value="{{ settings.print_signature_subtitle }}"></label>
+    <label><i class="fa-solid fa-copyright"></i> Print Footer Owner<input name="print_footer_owner" value="{{ settings.print_footer_owner }}"></label>
+  </section>
+
+  <section class="panel form-grid premium-form">
     <div class="section-heading wide"><span><i class="fa-solid fa-ranking-star"></i></span><div><h2>Grade Scale</h2><p>Adjust score bands and comments used across reports.</p></div></div>
     {% for s in scales %}
       <label>{{ s.grade }} Min<input name="min_{{ s.id }}" value="{{ s.min_score }}"></label>

@@ -60,12 +60,12 @@
         <h2>{{ result.student.full_name }}</h2>
         <p>{{ result.student.school_class.name }}</p>
         <div class="reference-side-lines">
-          <div><span><i class="fa-solid fa-user"></i></span><small>Mother's Name</small><strong>{{ result.student.mother_name }}</strong></div>
-          <div><span><i class="fa-solid fa-id-card"></i></span><small>Student ID</small><strong>{{ result.student.student_code }}</strong></div>
-          <div><span><i class="fa-solid fa-people-roof"></i></span><small>Student Class</small><strong>{{ result.student.school_class.name }}</strong></div>
-          <div><span><i class="fa-solid fa-file-lines"></i></span><small>Exam Type</small><strong>{{ result.exam.name if result.exam else 'Final Examination' }}</strong></div>
-          <div><span><i class="fa-solid fa-calendar-check"></i></span><small>Date Issued</small><strong>{{ result.student.updated_at.strftime('%d %b %Y') if result.student.updated_at else '-' }}</strong></div>
-          <div><span><i class="fa-solid fa-percent"></i></span><small>Percentage of Subjects</small><strong>{{ result.average }}%</strong></div>
+          <div><span><i class="fa-solid fa-user"></i></span><small>{{ settings.result_label_mother_name }}</small><strong>{{ result.student.mother_name }}</strong></div>
+          <div><span><i class="fa-solid fa-id-card"></i></span><small>{{ settings.result_label_student_id }}</small><strong>{{ result.student.student_code }}</strong></div>
+          <div><span><i class="fa-solid fa-people-roof"></i></span><small>{{ settings.result_label_student_class }}</small><strong>{{ result.student.school_class.name }}</strong></div>
+          <div><span><i class="fa-solid fa-file-lines"></i></span><small>{{ settings.result_label_exam_type }}</small><strong>{{ result.exam.name if result.exam else 'Final Examination' }}</strong></div>
+          <div><span><i class="fa-solid fa-calendar-check"></i></span><small>{{ settings.result_label_date_issued }}</small><strong>{{ result.student.updated_at.strftime('%d %b %Y') if result.student.updated_at else '-' }}</strong></div>
+          <div><span><i class="fa-solid fa-percent"></i></span><small>{{ settings.result_label_subject_percentage }}</small><strong>{{ result.average }}%</strong></div>
         </div>
         <div class="reference-school-mark">
           {% if settings.logo_path %}<img src="{{ url_for('static', filename=settings.logo_path) }}" alt="{{ settings.school_name }} logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}
@@ -77,10 +77,10 @@
       <div class="reference-result-content">
         <header class="reference-result-header">
           <div>
-            <h2>REPORT <span>CARD</span></h2>
+            <h2>{{ settings.result_online_title_primary }} <span>{{ settings.result_online_title_accent }}</span></h2>
             <p>Academic Year {{ result.student.academic_year.name }}</p>
           </div>
-          <blockquote>Your hard work today builds your success tomorrow.</blockquote>
+          <blockquote>{{ settings.result_online_quote }}</blockquote>
           <span class="reference-award"><i class="fa-solid fa-star"></i></span>
         </header>
 
@@ -104,7 +104,7 @@
           </section>
 
           <aside class="reference-academic-summary">
-            <h3>Academic Summary</h3>
+            <h3>{{ settings.result_academic_summary_title }}</h3>
             <div><span><i class="fa-solid fa-book-open"></i> Total Subjects</span><strong>{{ result.subjects|length }}</strong></div>
             <div><span><i class="fa-solid fa-list-check"></i> Total Marks</span><strong>{{ result.max_total }}</strong></div>
             <div><span><i class="fa-solid fa-chart-line"></i> Total Obtained Marks</span><strong>{{ result.total }}</strong></div>
@@ -133,7 +133,7 @@
             <div class="reference-radar"><i class="fa-solid fa-chart-simple"></i><strong>{{ result.average }}%</strong><span>Average Performance</span></div>
           </div>
           <div class="reference-comments">
-            <h3><i class="fa-solid fa-comment"></i> Teacher's Remarks</h3>
+            <h3><i class="fa-solid fa-comment"></i> {{ settings.result_teacher_remarks_title }}</h3>
             <p>{{ result.comment }}</p>
           </div>
         </section>
@@ -148,7 +148,7 @@
   {% endif %}
 
   <footer class="premium-public-footer {% if result %}reference-result-footer{% endif %}">
-    <div class="premium-footer-copy">{% if result %}<em>&copy;</em>{% endif %}<strong>{{ 'SULTAAN' if result else 'SULTAN' }}</strong><span>|</span><b>2026.</b><em>All Rights Reserved.</em></div>
+    <div class="premium-footer-copy">{% if result %}<em>&copy;</em>{% endif %}<strong>{{ settings.result_footer_owner if result else 'SULTAN' }}</strong><span>|</span><b>2026.</b><em>All Rights Reserved.</em></div>
     <div class="social-links premium-social-links">
       {% if result %}
       <a href="{{ settings.call_url or '#' }}" aria-label="Phone"><i class="fa-solid fa-phone"></i></a>

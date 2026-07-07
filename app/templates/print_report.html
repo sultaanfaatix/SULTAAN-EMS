@@ -22,7 +22,7 @@
           {% if result.settings.logo_path %}<img src="{{ url_for('static', filename=result.settings.logo_path) }}" alt="{{ result.settings.school_name }} logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}
         </div>
         <div>
-          <h1>TIS <span>Kaarka Natiijada Imtixaanka</span></h1>
+          <h1>{{ result.settings.print_brand_code }} <span>{{ result.settings.print_report_title }}</span></h1>
           <p>{{ result.settings.school_motto }}</p>
         </div>
       </div>
@@ -40,7 +40,7 @@
     </section>
 
     <section class="tis-student-box">
-      <h2><i class="fa-solid fa-user"></i> Xogta Ardeyga</h2>
+      <h2><i class="fa-solid fa-user"></i> {{ result.settings.print_student_heading }}</h2>
       <div class="tis-student-body">
         <div class="tis-student-photo">
           {% if result.student.photo_path %}<img src="{{ url_for('static', filename=result.student.photo_path) }}" alt="{{ result.student.full_name }} photo">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}
@@ -53,13 +53,13 @@
         </div>
         <div class="tis-verify-qr">
           {% if result.verification %}<img src="{{ result.verification.qr_code }}" alt="Verification QR Code">{% else %}<i class="fa-solid fa-qrcode"></i>{% endif %}
-          <strong>Scan To Verify</strong>
+          <strong>{{ result.settings.print_qr_label }}</strong>
         </div>
       </div>
     </section>
 
     <section class="tis-marks-box">
-      <h2><i class="fa-solid fa-clipboard-list"></i> Natiijada Imtixaanka</h2>
+      <h2><i class="fa-solid fa-clipboard-list"></i> {{ result.settings.print_marks_heading }}</h2>
       <table class="tis-print-table">
         <thead><tr><th>No.</th><th>Maado</th><th>Full Marks</th><th>Marks Obtained</th><th>Grade</th><th>Remarks</th></tr></thead>
         <tbody>
@@ -87,13 +87,13 @@
 
     <section class="tis-print-bottom">
       <div class="tis-print-comment">
-        <h3><i class="fa-solid fa-message"></i> Comments</h3>
+        <h3><i class="fa-solid fa-message"></i> {{ result.settings.print_comments_heading }}</h3>
         <p>{{ result.comment }}</p>
       </div>
       <div class="tis-official-sign">
         {% if result.settings.principal_signature_path %}<img src="{{ url_for('static', filename=result.settings.principal_signature_path) }}" alt="Official signature">{% else %}<span>Signature</span>{% endif %}
-        <strong>Maamulka Dugsiga</strong>
-        <small>School Administration</small>
+        <strong>{{ result.settings.print_signature_title }}</strong>
+        <small>{{ result.settings.print_signature_subtitle }}</small>
       </div>
       <div class="tis-official-stamp">
         {% if result.settings.school_stamp_path %}<img src="{{ url_for('static', filename=result.settings.school_stamp_path) }}" alt="School stamp">{% else %}<strong>TIS</strong>{% endif %}
@@ -101,12 +101,13 @@
     </section>
 
     <footer class="tis-print-footer">
-      <div>&copy; SULTAAN <span>|</span> 2026. All Rights Reserved.</div>
+      <div>&copy; {{ result.settings.print_footer_owner }} <span>|</span> 2026. All Rights Reserved.</div>
       <nav>
         <i class="fa-solid fa-phone"></i>
         <i class="fa-brands fa-whatsapp"></i>
         <i class="fa-brands fa-facebook-f"></i>
         <i class="fa-brands fa-telegram"></i>
+        <i class="fa-solid fa-envelope"></i>
       </nav>
     </footer>
   </article>

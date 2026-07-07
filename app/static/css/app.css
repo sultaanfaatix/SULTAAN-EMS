@@ -1797,6 +1797,12 @@ tbody tr:hover td { background: #f8fbff; }
 .reference-result-footer {
   margin-top: 30px;
 }
+.reference-one-result .reference-actions {
+  padding: 18px;
+}
+.reference-one-result .reference-actions .result-action-button {
+  min-height: 70px;
+}
 @media (max-width: 1180px) {
   .reference-one-result {
     grid-template-columns: 1fr;
@@ -1882,4 +1888,210 @@ tbody tr:hover td { background: #f8fbff; }
     text-align: left;
   }
   .reference-bottom-grid { grid-template-columns: 1fr; }
+}
+.premium-homepage.has-result {
+  overflow-x: auto;
+}
+.premium-homepage.has-result .premium-portal-hero,
+.premium-homepage.has-result .reference-one-result {
+  flex: 0 0 auto;
+}
+@media (max-width: 1180px) {
+  .premium-homepage.has-result {
+    min-width: 0;
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .premium-homepage.has-result .premium-language-nav {
+    position: absolute;
+    top: clamp(32px, 4vw, 56px);
+    right: clamp(18px, 6vw, 110px);
+    justify-content: flex-end;
+    width: auto;
+    margin: 0;
+  }
+  .premium-homepage.has-result .premium-portal-hero {
+    width: 1120px;
+    max-width: none;
+    grid-template-columns: 128px minmax(0, 1fr) 172px;
+    grid-template-areas:
+      "logo school spacer"
+      "logo motto spacer"
+      "title title title";
+    justify-items: start;
+    text-align: left;
+  }
+  .premium-homepage.has-result .premium-school-logo { width: 118px; }
+  .premium-homepage.has-result .premium-portal-hero h1 { font-size: clamp(1.9rem, 3vw, 2.65rem); }
+  .premium-homepage.has-result .premium-motto {
+    display: block;
+    margin-top: 10px;
+    font-size: clamp(1rem, 1.5vw, 1.18rem);
+  }
+  .premium-homepage.has-result .premium-exam-title {
+    margin-top: clamp(28px, 4vw, 42px);
+    text-align: center;
+  }
+  .reference-one-result {
+    width: 1280px;
+    max-width: none;
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+  .reference-student-panel {
+    min-height: 780px;
+    display: block;
+    border-radius: 0 0 150px 0;
+    padding: 30px 26px 30px;
+    text-align: left;
+  }
+  .reference-student-panel h2,
+  .reference-student-panel p,
+  .reference-side-lines {
+    grid-column: auto;
+  }
+  .reference-photo-wrap {
+    grid-row: auto;
+    width: min(205px, 84%);
+  }
+  .reference-school-mark { display: block; }
+  .reference-result-grid {
+    grid-template-columns: minmax(0, 1fr) 330px;
+  }
+  .reference-bottom-grid {
+    grid-template-columns: 220px 250px minmax(0, 1fr);
+  }
+  .reference-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .reference-comments { grid-column: auto; }
+  .reference-result-table {
+    display: table;
+    width: 100%;
+  }
+  .reference-result-table thead { display: table-header-group; }
+  .reference-result-table tbody { display: table-row-group; }
+  .reference-result-table tr { display: table-row; margin: 0; padding: 0; border: 0; box-shadow: none; }
+  .reference-result-table th,
+  .reference-result-table td {
+    display: table-cell;
+    width: auto;
+    text-align: center;
+  }
+  .reference-result-table th:nth-child(2),
+  .reference-result-table td:nth-child(2) { text-align: left; }
+  .reference-result-table td::before { display: none; }
+  .reference-result-footer {
+    min-width: 1280px;
+    margin-left: -18px;
+    margin-right: -18px;
+  }
+}
+@media (max-width: 760px) {
+  .premium-homepage.has-result {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .premium-homepage.has-result .premium-language-nav {
+    position: absolute;
+    top: 24px;
+    right: 34px;
+    margin: 0;
+  }
+  .premium-homepage.has-result .premium-portal-hero {
+    width: 1120px;
+    grid-template-columns: 128px minmax(0, 1fr) 172px;
+    grid-template-areas:
+      "logo school spacer"
+      "logo motto spacer"
+      "title title title";
+    justify-items: start;
+    text-align: left;
+    row-gap: 0;
+  }
+  .premium-homepage.has-result .premium-school-logo { width: 118px; }
+  .premium-homepage.has-result .premium-portal-hero h1 {
+    font-size: 2.25rem;
+    line-height: 1.05;
+  }
+  .premium-homepage.has-result .premium-motto {
+    margin-top: 10px;
+    font-size: 1rem;
+  }
+  .premium-homepage.has-result .premium-exam-title {
+    margin-top: 34px;
+  }
+  .premium-homepage.has-result .premium-exam-title h2 {
+    font-size: 2.5rem;
+    line-height: 1.05;
+  }
+  .premium-homepage.has-result .premium-exam-title p {
+    font-size: 1.25rem;
+  }
+  .reference-one-result {
+    width: 1280px;
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+  .reference-result-content { padding-top: 34px; }
+  .reference-result-header {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 340px) 80px;
+    text-align: left;
+    justify-items: stretch;
+    gap: 22px;
+  }
+  .reference-result-header h2 { font-size: 4rem; }
+  .reference-result-header blockquote { width: auto; }
+  .reference-result-header blockquote::before,
+  .reference-result-header blockquote::after { display: block; }
+  .reference-student-panel {
+    min-height: 780px;
+    display: block;
+    text-align: left;
+    padding: 30px 26px 30px;
+  }
+  .reference-photo-wrap {
+    width: min(205px, 84%);
+  }
+  .reference-side-lines div { text-align: left; }
+  .reference-result-grid {
+    grid-template-columns: minmax(0, 1fr) 330px;
+  }
+  .reference-bottom-grid {
+    grid-template-columns: 220px 250px minmax(0, 1fr);
+  }
+  .reference-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .reference-result-table {
+    display: table;
+    width: 100%;
+  }
+  .reference-result-table thead { display: table-header-group; }
+  .reference-result-table tbody { display: table-row-group; }
+  .reference-result-table tr {
+    display: table-row;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+  .reference-result-table th,
+  .reference-result-table td {
+    display: table-cell;
+    width: auto;
+    border: 1px solid #e0e7f2;
+    padding: 10px 12px;
+    text-align: center;
+    background: rgba(255,255,255,.82) !important;
+  }
+  .reference-result-table th:nth-child(2),
+  .reference-result-table td:nth-child(2) { text-align: left; }
+  .reference-result-table td::before { display: none; }
+  .reference-result-footer {
+    min-width: 1280px;
+    margin-left: -14px;
+    margin-right: -14px;
+    flex-direction: row;
+  }
 }
