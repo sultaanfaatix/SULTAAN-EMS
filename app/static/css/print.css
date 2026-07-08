@@ -1,10 +1,12 @@
-@page { size: A4; margin: 4mm; }
+@page { size: A4 portrait; margin: 4mm; }
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
 body {
   background: #edf5ff;
-  color: #07143b;
-  font-family: var(--report-font), "Segoe UI", Arial, sans-serif;
+  color: var(--print-text, #07143b);
+  font-family: var(--print-font-family, var(--report-font), "Segoe UI", Arial, sans-serif);
+  font-size: var(--print-font-size, 8pt);
+  font-weight: var(--print-font-weight, 700);
   print-color-adjust: exact;
   -webkit-print-color-adjust: exact;
 }
@@ -12,36 +14,56 @@ body {
   width: 202mm;
   height: 289mm;
   margin: 0 auto;
-  padding: 3.6mm;
+  padding: var(--print-padding, 3mm);
   display: grid;
-  grid-template-rows: auto auto 1fr auto auto;
-  gap: 2.2mm;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto auto;
+  gap: var(--print-page-spacing, 1.8mm);
   overflow: hidden;
-  border: 1px solid #d4e2f6;
-  border-radius: 2mm;
+  border: 1px solid var(--print-border, #d4e2f6);
+  border-radius: var(--print-radius, 2mm);
   background:
     radial-gradient(circle at 88% 7%, rgba(0, 174, 255, .1), transparent 24%),
-    linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
-  box-shadow: 0 18px 55px rgba(0, 34, 92, .16);
+    var(--print-bg-image),
+    linear-gradient(180deg, #ffffff 0%, var(--print-bg, #fbfdff) 100%);
+  background-size: auto, cover, auto;
+  background-position: center;
+  box-shadow: var(--print-shadow, 0 18px 55px rgba(0, 34, 92, .16));
+  position: relative;
+}
+.tis-print-watermark {
+  display: var(--print-display-watermark, none);
+  position: absolute;
+  inset: 28mm 24mm;
+  z-index: 0;
+  pointer-events: none;
+  opacity: .055;
+  background-image: var(--print-watermark-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+.tis-print-report > *:not(.tis-print-watermark) {
+  position: relative;
+  z-index: 1;
 }
 .tis-print-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 70mm;
-  min-height: 24mm;
-  gap: 3mm;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 20mm;
+  gap: 2.4mm;
+  align-items: center;
 }
 .tis-print-brand {
   display: grid;
-  grid-template-columns: 24mm minmax(0, 1fr);
-  gap: 3mm;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2.8mm;
   align-items: center;
   min-width: 0;
 }
 .tis-print-logo {
-  width: 21mm;
-  height: 21mm;
-  display: grid;
+  width: 18mm;
+  height: 18mm;
+  display: var(--print-display-logo, grid);
   place-items: center;
   overflow: hidden;
   color: #07317d;
@@ -53,11 +75,14 @@ body {
 }
 .tis-print-logo img { width: 100%; height: 100%; object-fit: contain; }
 .tis-print-brand h1 {
+  display: var(--print-display-school-name, block);
   margin: 0;
-  color: #08266e;
-  font-size: 22pt;
+  color: var(--print-header-color, #08266e);
+  font-size: clamp(15pt, 4.2vw, 20pt);
   line-height: 1.02;
   letter-spacing: 0;
+  max-width: 118mm;
+  overflow-wrap: anywhere;
 }
 .tis-print-brand h1 span {
   display: inline-block;
@@ -67,47 +92,67 @@ body {
   text-transform: uppercase;
 }
 .tis-print-brand p {
-  margin: 1.5mm 0 0;
-  color: #063b9b;
-  font-size: 11pt;
+  margin: 1mm 0 0;
+  color: var(--report-accent, #063b9b);
+  font-size: 8.8pt;
   font-weight: 800;
   letter-spacing: .03em;
   text-transform: uppercase;
 }
+.tis-print-brand small {
+  display: block;
+  margin-top: .6mm;
+  color: #60708d;
+  font-size: 7.2pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
 .tis-print-exam {
-  position: relative;
-  min-height: 23mm;
-  padding: 4.5mm 6mm 3.5mm 17mm;
+  display: var(--print-display-year-badge, grid);
+  place-items: center;
+  min-height: auto;
+  min-width: 36mm;
+  padding: 3.2mm 5.2mm;
   color: #fff;
   text-align: center;
-  border-radius: 0 3mm 0 18mm;
-  background: linear-gradient(135deg, #051951, #073986);
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--print-banner-color, #051951), var(--report-primary, #073986));
   overflow: hidden;
-}
-.tis-print-exam::before {
-  content: "";
-  position: absolute;
-  left: -22mm;
-  top: -14mm;
-  width: 44mm;
-  height: 46mm;
-  border-radius: 50%;
-  background: #fff;
-}
-.tis-print-exam span {
-  display: block;
-  color: #22d3ee;
-  font-size: 11pt;
-  font-weight: 900;
-  letter-spacing: .06em;
-  text-transform: uppercase;
+  box-shadow: 0 8px 18px rgba(0, 45, 120, .18);
 }
 .tis-print-exam strong {
   display: block;
-  margin-top: 1.6mm;
   color: #fff;
-  font-size: 22pt;
+  font-size: 15pt;
   line-height: 1;
+  letter-spacing: .04em;
+}
+.tis-exam-banner {
+  display: var(--print-display-banner, flex);
+  align-items: center;
+  justify-content: center;
+  gap: 4mm;
+  min-height: 10mm;
+  padding: 2mm 5mm;
+  color: #fff;
+  text-align: center;
+  border-radius: var(--print-radius, 3mm);
+  background:
+    linear-gradient(135deg, var(--print-banner-color, #073986), color-mix(in srgb, var(--print-banner-color, #073986) 70%, var(--print-banner-accent, #22d3ee)));
+  box-shadow: var(--print-shadow, 0 8px 22px rgba(0,45,120,.08));
+  overflow: hidden;
+}
+.tis-exam-banner span {
+  width: 24mm;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.76), transparent);
+}
+.tis-exam-banner strong {
+  font-size: 12pt;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 .tis-contact-strip,
 .tis-print-footer {
@@ -148,8 +193,8 @@ body {
 .tis-student-box,
 .tis-marks-box {
   position: relative;
-  border: 1px solid #cddcf1;
-  border-radius: 4mm;
+  border: 1px solid var(--print-border, #cddcf1);
+  border-radius: var(--print-radius, 4mm);
   background: rgba(255,255,255,.96);
   overflow: hidden;
 }
@@ -159,25 +204,25 @@ body {
   align-items: center;
   gap: 3mm;
   margin: -1px 0 0 4mm;
-  padding: 2.2mm 5mm;
+  padding: 1.8mm 4.2mm;
   color: #fff;
-  font-size: 14pt;
+  font-size: 10.5pt;
   line-height: 1;
   text-transform: uppercase;
   border-radius: 0 0 3mm 3mm;
-  background: linear-gradient(135deg, #073986, #061b58);
+  background: linear-gradient(135deg, var(--print-banner-color, #073986), #061b58);
 }
 .tis-student-body {
   display: grid;
-  grid-template-columns: 34mm minmax(0, 1fr) 34mm;
-  gap: 4mm;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 3mm;
   align-items: center;
-  padding: 2.6mm 4mm 3mm;
+  padding: 2.2mm 3.4mm 2.6mm;
 }
 .tis-student-photo {
-  width: 31mm;
-  height: 36mm;
-  display: grid;
+  width: 29mm;
+  height: 33mm;
+  display: var(--print-display-photo, grid);
   place-items: center;
   overflow: hidden;
   color: #fff;
@@ -189,7 +234,8 @@ body {
 .tis-student-photo img { width: 100%; height: 100%; object-fit: cover; }
 .tis-student-lines {
   display: grid;
-  gap: 1.5mm;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.1mm 3mm;
 }
 .tis-student-lines div {
   display: grid;
@@ -198,7 +244,7 @@ body {
   column-gap: 3mm;
   align-items: center;
   min-width: 0;
-  padding-bottom: 1.1mm;
+  padding-bottom: .8mm;
   border-bottom: 1px solid #ccd9ec;
 }
 .tis-student-lines span {
@@ -222,13 +268,14 @@ body {
 .tis-student-lines strong {
   grid-area: value;
   color: #07143b;
-  font-size: 9.6pt;
+  font-size: 8.6pt;
   line-height: 1.2;
   overflow-wrap: anywhere;
   text-transform: uppercase;
 }
 .tis-verify-qr {
-  width: 31mm;
+  display: var(--print-display-qr, block);
+  width: 29mm;
   overflow: hidden;
   justify-self: end;
   text-align: center;
@@ -238,8 +285,8 @@ body {
 }
 .tis-verify-qr img,
 .tis-verify-qr > i {
-  width: 25mm;
-  height: 25mm;
+  width: 23mm;
+  height: 23mm;
   display: grid;
   place-items: center;
   margin: 2.5mm auto 1.6mm;
@@ -252,8 +299,11 @@ body {
   padding: 1.8mm 1.4mm;
   color: #fff;
   background: #073986;
-  font-size: 10pt;
+  font-size: 8.6pt;
   text-transform: uppercase;
+}
+.download-date-row {
+  display: var(--print-display-download-date, grid) !important;
 }
 .tis-marks-box h2 {
   display: flex;
@@ -264,18 +314,19 @@ body {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
-  font-size: 7.8pt;
+  font-size: var(--print-table-font-size, 7.4pt);
 }
 .tis-print-table th,
 .tis-print-table td {
-  padding: 1.18mm 1.35mm;
-  border: 1px solid #dbe5f3;
+  height: var(--print-row-height, 6.4mm);
+  padding: .75mm 1mm;
+  border: 1px solid color-mix(in srgb, var(--print-border, #dbe5f3) 82%, #fff);
   text-align: center;
 }
 .tis-print-table th {
   color: #071f58;
-  background: #f8fbff;
-  font-size: 6.9pt;
+  background: var(--print-table-header, #f8fbff);
+  font-size: 6.6pt;
   text-transform: uppercase;
 }
 .tis-print-table th:nth-child(2),
@@ -303,7 +354,7 @@ body {
 .tis-print-table td { color: #07143b; }
 .tis-print-table td:nth-child(5) strong {
   color: #078148;
-  font-size: 11pt;
+  font-size: 9.4pt;
 }
 .tis-print-table td:nth-child(6) {
   color: #0047c2;
@@ -313,18 +364,18 @@ body {
 .tis-print-summary {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 1.8mm;
+  gap: var(--print-page-spacing, 1.8mm);
 }
 .tis-print-summary div {
-  min-height: 16mm;
+  min-height: 13mm;
   display: grid;
   grid-template-columns: 8.5mm minmax(0, 1fr);
   grid-template-areas: "icon label" "icon value" "icon note";
   gap: .4mm 2mm;
   align-content: center;
-  padding: 1.6mm;
-  border: 1px solid #d4e2f6;
-  border-radius: 3mm;
+  padding: 1.2mm;
+  border: 1px solid var(--print-border, #d4e2f6);
+  border-radius: var(--print-radius, 3mm);
   background: #fff;
   box-shadow: 0 8px 20px rgba(0, 45, 120, .08);
 }
@@ -345,7 +396,7 @@ body {
 .tis-print-summary strong {
   grid-area: value;
   color: #07143b;
-  font-size: 14pt;
+  font-size: 11.5pt;
   line-height: 1;
 }
 .tis-print-summary small {
@@ -358,15 +409,15 @@ body {
 .tis-print-summary div:nth-child(4) strong { color: #078148; }
 .tis-print-bottom {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 48mm 32mm;
-  gap: 2.5mm;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 2mm;
   align-items: center;
 }
 .tis-print-comment {
-  min-height: 15mm;
-  padding: 2mm 2.7mm;
-  border: 1px solid #d4e2f6;
-  border-radius: 3mm;
+  min-height: 13mm;
+  padding: 1.6mm 2.2mm;
+  border: 1px solid var(--print-border, #d4e2f6);
+  border-radius: var(--print-radius, 3mm);
   background: #fff;
 }
 .tis-print-comment h3 {
@@ -375,25 +426,30 @@ body {
   align-items: center;
   margin: 0 0 1.2mm;
   color: #073986;
-  font-size: 8.8pt;
+  font-size: 7.8pt;
   text-transform: uppercase;
 }
 .tis-print-comment p {
   margin: 0;
   color: #07143b;
-  font-size: 8pt;
-  line-height: 1.25;
+  font-size: 7.4pt;
+  line-height: 1.22;
 }
-.tis-official-sign {
+.tis-official-sign,
+.tis-teacher-sign {
   display: grid;
   justify-items: center;
   text-align: center;
   color: #07143b;
 }
+.tis-teacher-sign { display: var(--print-display-teacher-signature, grid); }
+.tis-official-sign { display: var(--print-display-principal-signature, grid); }
 .tis-official-sign img,
-.tis-official-sign span {
-  width: 38mm;
-  height: 10mm;
+.tis-official-sign span,
+.tis-teacher-sign img,
+.tis-teacher-sign span {
+  width: 32mm;
+  height: 8mm;
   display: grid;
   place-items: center;
   object-fit: contain;
@@ -402,21 +458,23 @@ body {
   font-size: 18pt;
   border-bottom: 1px solid #073986;
 }
-.tis-official-sign strong {
+.tis-official-sign strong,
+.tis-teacher-sign strong {
   margin-top: 1.2mm;
   color: #071f58;
-  font-size: 9pt;
+  font-size: 7.5pt;
   text-transform: uppercase;
 }
-.tis-official-sign small {
+.tis-official-sign small,
+.tis-teacher-sign small {
   color: #07143b;
-  font-size: 7.6pt;
+  font-size: 6.5pt;
   font-weight: 800;
   text-transform: uppercase;
 }
 .tis-official-stamp {
-  width: 23mm;
-  height: 23mm;
+  width: 20mm;
+  height: 20mm;
   display: grid;
   place-items: center;
   justify-self: center;
@@ -436,44 +494,26 @@ body {
   letter-spacing: .03em;
 }
 .tis-print-footer {
-  min-height: 11mm;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 1px auto;
-  gap: 6mm;
+  min-height: 7mm;
+  display: var(--print-display-footer, none);
+  gap: 2mm;
+  justify-content: center;
   align-items: center;
-  margin: 0 -1mm -1mm;
-  padding: 2.4mm 9mm;
+  padding: 1.2mm 4mm;
   color: #fff;
-  border-radius: 8mm 8mm 0 0;
-  background: linear-gradient(135deg, #05205f, #073986);
+  border-radius: var(--print-radius, 3mm);
+  background: linear-gradient(135deg, #05205f, var(--print-banner-color, #073986));
 }
-.tis-print-footer::before {
-  content: "";
-  width: 1px;
-  height: 9mm;
-  background: rgba(255,255,255,.7);
-  grid-column: 2;
-}
-.tis-print-footer div {
-  font-size: 9.5pt;
-}
-.tis-print-footer div span {
-  display: inline;
-  margin: 0 2mm;
-  color: rgba(255,255,255,.75);
-}
-.tis-print-footer nav {
-  display: flex;
-  gap: 3mm;
-}
-.tis-print-footer i {
-  width: 7.8mm;
-  height: 7.8mm;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(255,255,255,.75);
+.tis-print-footer img {
+  width: 6mm;
+  height: 6mm;
+  object-fit: contain;
   border-radius: 50%;
-  font-size: 10pt;
+  background: #fff;
+}
+.tis-print-footer span {
+  font-size: 7.2pt;
+  font-weight: 800;
 }
 @media print {
   html, body { width: 210mm; height: 297mm; background: #fff; }

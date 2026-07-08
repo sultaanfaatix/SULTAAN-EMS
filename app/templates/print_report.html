@@ -11,11 +11,42 @@
       --report-accent: {{ result.settings.report_accent_color or result.settings.secondary_color or '#007bff' }};
       --report-bg: {{ result.settings.report_background or '#f8fbff' }};
       --report-font: "{{ result.settings.report_font_family or 'Segoe UI' }}";
+      --print-header-color: {{ result.settings.print_layout_header_color }};
+      --print-banner-color: {{ result.settings.print_layout_banner_color }};
+      --print-banner-accent: {{ result.settings.print_layout_banner_accent }};
+      --print-table-header: {{ result.settings.print_layout_table_header_color }};
+      --print-border: {{ result.settings.print_layout_border_color }};
+      --print-bg: {{ result.settings.print_layout_background_color }};
+      --print-text: {{ result.settings.print_layout_text_color }};
+      --print-font-family: "{{ result.settings.print_layout_font_family }}";
+      --print-font-size: {{ result.settings.print_layout_font_size }};
+      --print-font-weight: {{ result.settings.print_layout_font_weight }};
+      --print-margin: {{ result.settings.print_layout_margin }};
+      --print-padding: {{ result.settings.print_layout_padding }};
+      --print-radius: {{ result.settings.print_layout_radius }};
+      --print-row-height: {{ result.settings.print_layout_table_row_height }};
+      --print-table-font-size: {{ result.settings.print_layout_table_font_size }};
+      --print-page-spacing: {{ result.settings.print_layout_page_spacing }};
+      --print-shadow: {{ 'none' if result.settings.print_layout_shadow == 'none' else '0 8px 22px rgba(0,45,120,.08)' if result.settings.print_layout_shadow == 'soft' else '0 14px 34px rgba(0,45,120,.13)' }};
+      --print-display-logo: {{ 'grid' if result.settings.print_show_school_logo == 'on' else 'none' }};
+      --print-display-school-name: {{ 'block' if result.settings.print_show_school_name == 'on' else 'none' }};
+      --print-display-year-badge: {{ 'grid' if result.settings.print_show_academic_year_badge == 'on' else 'none' }};
+      --print-display-banner: {{ 'flex' if result.settings.print_show_exam_banner == 'on' else 'none' }};
+      --print-display-photo: {{ 'grid' if result.settings.print_show_student_photo == 'on' else 'none' }};
+      --print-display-qr: {{ 'block' if result.settings.print_show_qr_code == 'on' else 'none' }};
+      --print-display-download-date: {{ 'grid' if result.settings.print_show_download_date == 'on' else 'none' }};
+      --print-display-teacher-signature: {{ 'grid' if result.settings.print_show_teacher_signature == 'on' else 'none' }};
+      --print-display-principal-signature: {{ 'grid' if result.settings.print_show_principal_signature == 'on' else 'none' }};
+      --print-display-footer: {{ 'flex' if result.settings.print_show_footer == 'on' else 'none' }};
+      --print-display-watermark: {{ 'block' if result.settings.print_show_watermark == 'on' else 'none' }};
+      --print-bg-image: {% if result.settings.print_background_image %}url('{{ url_for('static', filename=result.settings.print_background_image) }}'){% else %}none{% endif %};
+      --print-watermark-image: {% if result.settings.print_watermark_image %}url('{{ url_for('static', filename=result.settings.print_watermark_image) }}'){% else %}none{% endif %};
     }
   </style>
 </head>
-<body onload="window.print()">
+<body onload="prepareReportPrint()">
   <article class="sheet tis-print-report">
+    <div class="tis-print-watermark"></div>
     <header class="tis-print-header">
       <div class="tis-print-brand">
         <div class="tis-print-logo">
@@ -24,13 +55,19 @@
         <div>
           <h1>{{ result.settings.school_name }}</h1>
           <p>{{ result.settings.school_motto }}</p>
+          <small>{{ result.settings.print_subtitle }}</small>
         </div>
       </div>
       <div class="tis-print-exam">
-        <span>{{ result.exam.name if result.exam else 'Imtixaanka Finalka' }}</span>
         <strong>{{ result.student.academic_year.name }}</strong>
       </div>
     </header>
+
+    <section class="tis-exam-banner">
+      <span></span>
+      <strong>{{ result.settings.print_exam_banner_text }}</strong>
+      <span></span>
+    </section>
 
     <section class="tis-student-box">
       <h2><i class="fa-solid fa-user"></i> {{ result.settings.print_student_heading }}</h2>
@@ -43,6 +80,7 @@
           <div><span><i class="fa-solid fa-person-dress"></i></span><small>Magaca Hooyada</small><strong>{{ result.student.mother_name }}</strong></div>
           <div><span><i class="fa-solid fa-id-card"></i></span><small>Tirataxaane (ID)</small><strong>{{ result.student.student_code }}</strong></div>
           <div><span><i class="fa-solid fa-graduation-cap"></i></span><small>Fasalka</small><strong>{{ result.student.school_class.name }}</strong></div>
+          <div class="download-date-row"><span><i class="fa-solid fa-calendar-day"></i></span><small>Download Date</small><strong id="downloadDate">-</strong></div>
         </div>
         <div class="tis-verify-qr">
           {% if result.verification %}<img src="{{ result.verification.qr_code }}" alt="Verification QR Code">{% else %}<i class="fa-solid fa-qrcode"></i>{% endif %}
@@ -83,6 +121,11 @@
         <h3><i class="fa-solid fa-message"></i> {{ result.settings.print_comments_heading }}</h3>
         <p>{{ result.comment }}</p>
       </div>
+      <div class="tis-teacher-sign">
+        {% if result.settings.vice_principal_signature_path %}<img src="{{ url_for('static', filename=result.settings.vice_principal_signature_path) }}" alt="Teacher signature">{% else %}<span>Signature</span>{% endif %}
+        <strong>Class Teacher</strong>
+        <small>Teacher Signature</small>
+      </div>
       <div class="tis-official-sign">
         {% if result.settings.principal_signature_path %}<img src="{{ url_for('static', filename=result.settings.principal_signature_path) }}" alt="Official signature">{% else %}<span>Signature</span>{% endif %}
         <strong>{{ result.settings.print_signature_title }}</strong>
@@ -93,6 +136,23 @@
       </div>
     </section>
 
+    <footer class="tis-print-footer">
+      {% if result.settings.print_footer_logo %}<img src="{{ url_for('static', filename=result.settings.print_footer_logo) }}" alt="Footer logo">{% endif %}
+      <span>{{ result.settings.report_footer_text or result.settings.school_footer }}</span>
+    </footer>
   </article>
+  <script>
+    function prepareReportPrint() {
+      const target = document.getElementById("downloadDate");
+      if (target) {
+        target.textContent = new Intl.DateTimeFormat("en-GB", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric"
+        }).format(new Date());
+      }
+      window.print();
+    }
+  </script>
 </body>
 </html>

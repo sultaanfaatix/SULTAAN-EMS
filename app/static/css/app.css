@@ -3178,6 +3178,99 @@ tbody tr:hover td { background: #f8fbff; }
 .preview-main th {
   background: linear-gradient(135deg, var(--preview-primary), var(--preview-secondary));
 }
+.print-layout-preview {
+  --print-preview-primary: #08266e;
+  --print-preview-banner: #073986;
+  --print-preview-accent: #22d3ee;
+  --print-preview-border: #cddcf1;
+  --print-preview-bg: #f8fbff;
+  --print-preview-text: #07143b;
+  --print-preview-radius: 14px;
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  color: var(--print-preview-text);
+  border: 1px solid var(--print-preview-border);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--print-preview-accent) 18%, transparent), transparent 26%),
+    linear-gradient(180deg, #fff, var(--print-preview-bg));
+  box-shadow: 0 14px 34px rgba(0, 32, 96, .1);
+}
+.print-preview-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+.print-preview-logo {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 1px solid var(--print-preview-border);
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(0, 32, 96, .11);
+}
+.print-preview-header strong {
+  display: block;
+  color: var(--print-preview-primary);
+  font-size: 1.35rem;
+}
+.print-preview-header small {
+  color: #64748b;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.print-preview-header b {
+  padding: 10px 14px;
+  color: #fff;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--print-preview-banner), var(--print-preview-primary));
+}
+.print-preview-banner {
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  color: #fff;
+  border-radius: var(--print-preview-radius);
+  background: linear-gradient(135deg, var(--print-preview-banner), var(--print-preview-accent));
+  font-weight: 950;
+  letter-spacing: .08em;
+}
+.print-preview-body {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) 90px;
+  gap: 10px;
+}
+.print-preview-body aside,
+.print-preview-body main,
+.print-layout-preview table {
+  border: 1px solid var(--print-preview-border);
+  border-radius: var(--print-preview-radius);
+  background: rgba(255,255,255,.88);
+}
+.print-preview-body aside {
+  min-height: 92px;
+}
+.print-preview-body main {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+}
+.print-preview-body main div {
+  min-height: 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--print-preview-primary) 13%, #fff);
+}
+.print-layout-preview table {
+  overflow: hidden;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.print-layout-preview th {
+  background: color-mix(in srgb, var(--print-preview-primary) 10%, #fff);
+  color: var(--print-preview-primary);
+}
 @keyframes chartSegmentIn {
   from { opacity: 0; }
   to { opacity: .9; }
