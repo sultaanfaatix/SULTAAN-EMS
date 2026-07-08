@@ -134,6 +134,77 @@
     <label><i class="fa-solid fa-shoe-prints"></i> Footer Logo<input name="print_footer_logo" type="file" accept="image/*"></label>
   </section>
 
+  <section class="panel form-grid premium-form verification-page-customizer">
+    <div class="section-heading wide"><span><i class="fa-solid fa-shield-check"></i></span><div><h2>Verification Page Customization</h2><p>Customize the QR result verification page without editing code. This page confirms authenticity only.</p></div></div>
+    <div class="wide verification-preview-admin" id="verificationPreview">
+      <div class="verify-preview-hero">
+        <span></span>
+        <strong>TAYSIR INTERNATIONAL SCHOOL</strong>
+        <small>XARUNTA KORRIINKA MASKAXDA</small>
+      </div>
+      <div class="verify-preview-status"><i class="fa-solid fa-check"></i><b>VERIFIED</b><small>Official Academic Result</small></div>
+      <div class="verify-preview-card"><span></span><div><strong>Student Name</strong><small>ID • Class • Exam • Year</small></div></div>
+      <div class="verify-preview-stats"><div><small>Total Marks</small><b>890 / 1400</b></div><div><small>Percentage</small><b>63.57%</b></div></div>
+    </div>
+
+    <div class="section-heading wide"><span><i class="fa-solid fa-gear"></i></span><div><h2>General</h2><p>Main verification messages and footer text.</p></div></div>
+    <label><i class="fa-solid fa-toggle-on"></i> Enable Verification Page<select name="verify_page_enabled"><option value="on" {% if settings.verify_page_enabled == 'on' %}selected{% endif %}>ON</option><option value="off" {% if settings.verify_page_enabled != 'on' %}selected{% endif %}>OFF</option></select></label>
+    <label><i class="fa-solid fa-heading"></i> Page Title<input data-verify-preview-text=".verify-preview-status b" name="verify_page_title" value="{{ settings.verify_page_title }}"></label>
+    <label class="span-2"><i class="fa-solid fa-align-left"></i> Subtitle<input name="verify_page_subtitle" value="{{ settings.verify_page_subtitle }}"></label>
+    <label><i class="fa-solid fa-shoe-prints"></i> Footer Text<input name="verify_page_footer_text" value="{{ settings.verify_page_footer_text }}"></label>
+    <label><i class="fa-solid fa-copyright"></i> Copyright Text<input name="verify_page_copyright_text" value="{{ settings.verify_page_copyright_text }}"></label>
+    <label><i class="fa-solid fa-circle-check"></i> Success Message<input data-verify-preview-text=".verify-preview-status small" name="verify_success_message" value="{{ settings.verify_success_message }}"></label>
+    <label><i class="fa-solid fa-school"></i> School Motto<input data-verify-preview-text=".verify-preview-hero small" name="verify_school_motto" value="{{ settings.verify_school_motto }}"></label>
+
+    <div class="section-heading wide"><span><i class="fa-solid fa-palette"></i></span><div><h2>Colors</h2><p>White, royal blue, emerald green, and soft official tones.</p></div></div>
+    <label><i class="fa-solid fa-palette"></i> Primary Color<input data-verify-preview-var="--vp-primary" name="verify_primary_color" type="color" value="{{ settings.verify_primary_color }}"></label>
+    <label><i class="fa-solid fa-fill-drip"></i> Secondary Color<input data-verify-preview-var="--vp-secondary" name="verify_secondary_color" type="color" value="{{ settings.verify_secondary_color }}"></label>
+    <label><i class="fa-solid fa-wand-magic-sparkles"></i> Accent Color<input data-verify-preview-var="--vp-accent" name="verify_accent_color" type="color" value="{{ settings.verify_accent_color }}"></label>
+    <label><i class="fa-solid fa-brush"></i> Background Color<input data-verify-preview-var="--vp-bg" name="verify_background_color" type="color" value="{{ settings.verify_background_color }}"></label>
+    <label><i class="fa-solid fa-square"></i> Card Color<input data-verify-preview-var="--vp-card" name="verify_card_color" type="color" value="{{ settings.verify_card_color }}"></label>
+    <label><i class="fa-solid fa-check"></i> Success Color<input data-verify-preview-var="--vp-success" name="verify_success_color" type="color" value="{{ settings.verify_success_color }}"></label>
+    <label><i class="fa-solid fa-font"></i> Text Color<input data-verify-preview-var="--vp-text" name="verify_text_color" type="color" value="{{ settings.verify_text_color }}"></label>
+    <label><i class="fa-solid fa-font"></i> Muted Text Color<input name="verify_muted_text_color" type="color" value="{{ settings.verify_muted_text_color }}"></label>
+    <label><i class="fa-solid fa-hand-pointer"></i> Button Color<input name="verify_button_color" type="color" value="{{ settings.verify_button_color }}"></label>
+    <label><i class="fa-solid fa-border-all"></i> Border Color<input data-verify-preview-var="--vp-border" name="verify_border_color" type="color" value="{{ settings.verify_border_color }}"></label>
+    <label><i class="fa-solid fa-icons"></i> Icon Color<input name="verify_icon_color" type="color" value="{{ settings.verify_icon_color }}"></label>
+
+    <div class="section-heading wide"><span><i class="fa-solid fa-text-height"></i></span><div><h2>Typography & Layout</h2><p>Control font, radius, shadows, spacing, and page width.</p></div></div>
+    <label><i class="fa-solid fa-font"></i> Font Family<input name="verify_font_family" value="{{ settings.verify_font_family }}"></label>
+    <label><i class="fa-solid fa-text-height"></i> Font Size<input name="verify_font_size" value="{{ settings.verify_font_size }}"></label>
+    <label><i class="fa-solid fa-bold"></i> Font Weight<input name="verify_font_weight" value="{{ settings.verify_font_weight }}"></label>
+    <label><i class="fa-solid fa-border-top-left"></i> Card Radius<input data-verify-preview-var="--vp-radius" name="verify_card_radius" value="{{ settings.verify_card_radius }}"></label>
+    <label><i class="fa-solid fa-layer-group"></i> Card Shadow<select name="verify_card_shadow"><option value="soft" {% if settings.verify_card_shadow=='soft' %}selected{% endif %}>Soft</option><option value="medium" {% if settings.verify_card_shadow=='medium' %}selected{% endif %}>Medium</option><option value="none" {% if settings.verify_card_shadow=='none' %}selected{% endif %}>None</option></select></label>
+    <label><i class="fa-solid fa-arrows-up-down"></i> Spacing<input name="verify_spacing" value="{{ settings.verify_spacing }}"></label>
+    <label><i class="fa-solid fa-maximize"></i> Page Width<input name="verify_page_width" value="{{ settings.verify_page_width }}"></label>
+    <label class="span-2"><i class="fa-solid fa-grip"></i> Section Order<input id="verifySectionOrder" name="verify_section_order" value="{{ settings.verify_section_order }}"></label>
+
+    <div class="section-heading wide"><span><i class="fa-solid fa-eye"></i></span><div><h2>Visibility & Fields</h2><p>Choose which authenticity fields appear. Grade/rank remain off by default.</p></div></div>
+    {% for key, label in [
+      ('verify_show_student_photo','Student Photo'),('verify_show_school_logo','School Logo'),('verify_show_badge','Verification Badge'),('verify_show_digital_seal','Digital Seal'),('verify_show_result_summary','Result Summary'),('verify_show_details','Verification Details'),('verify_show_footer','Footer'),
+      ('verify_fields_student_name','Student Name'),('verify_fields_student_id','Student ID'),('verify_fields_class','Class'),('verify_fields_exam','Examination'),('verify_fields_academic_year','Academic Year'),('verify_fields_total_marks','Total Marks'),('verify_fields_percentage','Percentage'),('verify_fields_grade','Grade'),('verify_fields_rank','Rank'),('verify_fields_status','Status')
+    ] %}
+      <label><i class="fa-solid fa-toggle-on"></i> {{ label }}<select name="{{ key }}"><option value="on" {% if settings.get(key) == 'on' %}selected{% endif %}>ON</option><option value="off" {% if settings.get(key) != 'on' %}selected{% endif %}>OFF</option></select></label>
+    {% endfor %}
+
+    <div class="section-heading wide"><span><i class="fa-solid fa-fingerprint"></i></span><div><h2>Verification</h2><p>Badge, status, ID prefix, presets, and animation controls.</p></div></div>
+    <label class="span-2"><i class="fa-solid fa-message"></i> Verification Message<input name="verify_message" value="{{ settings.verify_message }}"></label>
+    <label><i class="fa-solid fa-certificate"></i> Badge Text<input name="verify_badge_text" value="{{ settings.verify_badge_text }}"></label>
+    <label><i class="fa-solid fa-shield"></i> Status Text<input name="verify_status_text" value="{{ settings.verify_status_text }}"></label>
+    <label><i class="fa-solid fa-fingerprint"></i> Verification ID Prefix<input name="verify_id_prefix" value="{{ settings.verify_id_prefix }}"></label>
+    <label><i class="fa-solid fa-stamp"></i> Verification Footer<input name="verify_footer_heading" value="{{ settings.verify_footer_heading }}"></label>
+    <label><i class="fa-solid fa-wand-magic-sparkles"></i> Design Preset<select name="verify_design_preset">{% for preset in ['classic','modern','glassmorphism','minimal','premium','luxury','apple','material'] %}<option value="{{ preset }}" {% if settings.verify_design_preset == preset %}selected{% endif %}>{{ preset|title }}</option>{% endfor %}</select></label>
+    {% for key, label in [('verify_animation_success','Success Animation'),('verify_animation_loading','Loading Animation'),('verify_animation_fade','Fade In'),('verify_animation_zoom','Zoom In'),('verify_animation_slide','Slide Up'),('verify_animation_bounce','Bounce'),('verify_animation_ripple','Ripple'),('verify_animation_glow','Glow Effect')] %}
+      <label><i class="fa-solid fa-bolt"></i> {{ label }}<select name="{{ key }}"><option value="on" {% if settings.get(key) == 'on' %}selected{% endif %}>ON</option><option value="off" {% if settings.get(key) != 'on' %}selected{% endif %}>OFF</option></select></label>
+    {% endfor %}
+
+    <div class="section-heading wide"><span><i class="fa-solid fa-upload"></i></span><div><h2>Branding & Advanced Code</h2><p>Optional images and advanced CSS/JavaScript customizations.</p></div></div>
+    <label><i class="fa-solid fa-image"></i> Verification Background<input name="verify_background_image" type="file" accept="image/*"></label>
+    <label><i class="fa-solid fa-user-graduate"></i> Default Student Photo<input name="verify_default_student_photo" type="file" accept="image/*"></label>
+    <label class="wide"><i class="fa-solid fa-code"></i> Custom CSS<textarea name="verify_custom_css">{{ settings.verify_custom_css }}</textarea></label>
+    <label class="wide"><i class="fa-solid fa-code"></i> Custom JavaScript<textarea name="verify_custom_js">{{ settings.verify_custom_js }}</textarea></label>
+  </section>
+
   <section class="panel form-grid premium-form">
     <div class="section-heading wide"><span><i class="fa-solid fa-icons"></i></span><div><h2>Subject Icons</h2><p>Default icons are automatic. Upload a custom icon for any subject if needed.</p></div></div>
     {% for subject in subjects %}
@@ -270,6 +341,23 @@
     if (!preview) return;
     document.querySelectorAll("[data-print-preview-var]").forEach((input) => {
       const apply = () => preview.style.setProperty(input.dataset.printPreviewVar, input.value);
+      input.addEventListener("input", apply);
+      apply();
+    });
+  })();
+  (() => {
+    const preview = document.getElementById("verificationPreview");
+    if (!preview) return;
+    document.querySelectorAll("[data-verify-preview-var]").forEach((input) => {
+      const apply = () => preview.style.setProperty(input.dataset.verifyPreviewVar, input.value);
+      input.addEventListener("input", apply);
+      apply();
+    });
+    document.querySelectorAll("[data-verify-preview-text]").forEach((input) => {
+      const apply = () => {
+        const target = preview.querySelector(input.dataset.verifyPreviewText);
+        if (target) target.textContent = input.value;
+      };
       input.addEventListener("input", apply);
       apply();
     });

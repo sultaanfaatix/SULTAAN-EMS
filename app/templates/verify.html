@@ -1,30 +1,137 @@
 {% extends "base.html" %}
-{% block title %}{{ _('Verified') if verified else _('Invalid Result') }}{% endblock %}
-{% block body_class %}public-body{% endblock %}
+{% block title %}{{ settings.verify_page_title if verified else _('Invalid Result') }}{% endblock %}
+{% block body_class %}public-body verification-public-body{% endblock %}
 {% block content %}
-<main class="public-hero lock-screen">
-  <section class="locked-card glass-card">
-    <div class="lock-emblem">
-      <i class="fa-solid {{ 'fa-circle-check' if verified else 'fa-circle-xmark' }}"></i>
-    </div>
-    {% if verified %}
-      {% if settings.logo_path %}<img src="{{ url_for('static', filename=settings.logo_path) }}" alt="{{ settings.school_name }} logo" style="max-height:80px">{% endif %}
-      <span class="eyebrow"><i class="fa-solid fa-shield-check"></i> {{ _('Verified') }}</span>
+<main class="verification-page preset-{{ settings.verify_design_preset }}"
+  style="
+    --verify-primary: {{ settings.verify_primary_color }};
+    --verify-secondary: {{ settings.verify_secondary_color }};
+    --verify-accent: {{ settings.verify_accent_color }};
+    --verify-bg: {{ settings.verify_background_color }};
+    --verify-card: {{ settings.verify_card_color }};
+    --verify-success: {{ settings.verify_success_color }};
+    --verify-text: {{ settings.verify_text_color }};
+    --verify-muted: {{ settings.verify_muted_text_color }};
+    --verify-button: {{ settings.verify_button_color }};
+    --verify-border: {{ settings.verify_border_color }};
+    --verify-icon: {{ settings.verify_icon_color }};
+    --verify-font: {{ settings.verify_font_family }};
+    --verify-font-size: {{ settings.verify_font_size }};
+    --verify-font-weight: {{ settings.verify_font_weight }};
+    --verify-radius: {{ settings.verify_card_radius }};
+    --verify-spacing: {{ settings.verify_spacing }};
+    --verify-page-width: {{ settings.verify_page_width }};
+    --verify-shadow: {{ 'none' if settings.verify_card_shadow == 'none' else '0 18px 52px rgba(6, 63, 168, .12)' if settings.verify_card_shadow == 'soft' else '0 26px 70px rgba(6, 63, 168, .18)' }};
+    --verify-bg-image: {% if settings.verify_background_image %}url('{{ url_for('static', filename=settings.verify_background_image) }}'){% else %}none{% endif %};
+    --verify-display-photo: {{ 'block' if settings.verify_show_student_photo == 'on' else 'none' }};
+    --verify-display-logo: {{ 'block' if settings.verify_show_school_logo == 'on' else 'none' }};
+    --verify-display-badge: {{ 'grid' if settings.verify_show_badge == 'on' else 'none' }};
+    --verify-display-seal: {{ 'grid' if settings.verify_show_digital_seal == 'on' else 'none' }};
+    --verify-display-summary: {{ 'block' if settings.verify_show_result_summary == 'on' else 'none' }};
+    --verify-display-details: {{ 'block' if settings.verify_show_details == 'on' else 'none' }};
+    --verify-display-footer: {{ 'block' if settings.verify_show_footer == 'on' else 'none' }};
+  ">
+  <section class="verification-certificate {% if not verified %}is-invalid{% endif %}">
+    <header class="verification-hero">
+      <div class="verification-hero-curve"></div>
+      {% if settings.logo_path %}
+        <img class="verification-logo" src="{{ url_for('static', filename=settings.logo_path) }}" alt="{{ settings.school_name }} logo">
+      {% else %}
+        <span class="verification-logo fallback-logo"><i class="fa-solid fa-school"></i></span>
+      {% endif %}
       <h1>{{ settings.school_name }}</h1>
-      <div class="lock-details">
-        <div><i class="fa-solid fa-user-graduate"></i><span>Student Name</span><strong>{{ result.student.full_name }}</strong></div>
-        <div><i class="fa-solid fa-id-card"></i><span>{{ _('Student ID') }}</span><strong>{{ result.student.student_code }}</strong></div>
-        <div><i class="fa-solid fa-people-roof"></i><span>{{ _('Classes') }}</span><strong>{{ result.student.school_class.name }}</strong></div>
-        <div><i class="fa-solid fa-file-circle-check"></i><span>{{ _('Exams') }}</span><strong>{{ result.exam.name }}</strong></div>
-        <div><i class="fa-solid fa-calendar-days"></i><span>{{ _('Academic Year') }}</span><strong>{{ result.student.academic_year.name }}</strong></div>
-        <div><i class="fa-solid fa-circle-check"></i><span>Status</span><strong>{{ _('Verified') }}</strong></div>
-      </div>
+      <p>{{ settings.verify_school_motto or settings.school_motto }}</p>
+    </header>
+
+    {% if verified %}
+      {% set verify_order = settings.verify_section_order.split(',') %}
+      <section class="verification-status-card" style="order: {{ verify_order.index('status') + 1 if 'status' in verify_order else 1 }}">
+        <div class="verification-success-badge" aria-label="{{ settings.verify_badge_text }}">
+          <i class="fa-solid fa-check"></i>
+          <span></span>
+        </div>
+        <div class="verification-stars"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+        <h2>{{ settings.verify_page_title }}</h2>
+        <p>{{ settings.verify_page_subtitle }}</p>
+        <span class="verification-pill"><i class="fa-solid fa-shield-halved"></i>{{ settings.verify_success_message }}</span>
+      </section>
+
+      <section class="verification-student-card" style="order: {{ verify_order.index('student') + 1 if 'student' in verify_order else 2 }}">
+        <div class="verification-photo">
+          {% if result.student.photo_path %}
+            <img src="{{ url_for('static', filename=result.student.photo_path) }}" alt="{{ result.student.full_name }} photo">
+          {% elif settings.verify_default_student_photo %}
+            <img src="{{ url_for('static', filename=settings.verify_default_student_photo) }}" alt="Default student photo">
+          {% else %}
+            <i class="fa-solid fa-user-graduate"></i>
+          {% endif %}
+        </div>
+        <div class="verification-student-main">
+          {% if settings.verify_fields_student_name == 'on' %}
+            <span class="verification-eyebrow"><i class="fa-solid fa-user-check"></i> Student</span>
+            <h3>{{ result.student.full_name }}</h3>
+          {% endif %}
+          <div class="verification-info-grid">
+            {% if settings.verify_fields_student_id == 'on' %}<div><i class="fa-solid fa-id-card"></i><span>Student ID</span><strong>{{ result.student.student_code }}</strong></div>{% endif %}
+            {% if settings.verify_fields_class == 'on' %}<div><i class="fa-solid fa-graduation-cap"></i><span>Class</span><strong>{{ result.student.school_class.name }}</strong></div>{% endif %}
+            {% if settings.verify_fields_exam == 'on' %}<div><i class="fa-solid fa-book-open"></i><span>Examination</span><strong>{{ result.exam.name }}</strong></div>{% endif %}
+            {% if settings.verify_fields_academic_year == 'on' %}<div><i class="fa-solid fa-calendar-days"></i><span>Academic Year</span><strong>{{ result.student.academic_year.name }}</strong></div>{% endif %}
+          </div>
+        </div>
+      </section>
+
+      <section class="verification-summary-card" style="order: {{ verify_order.index('summary') + 1 if 'summary' in verify_order else 3 }}">
+        <div class="verification-section-title"><i class="fa-solid fa-chart-simple"></i><strong>Result Summary</strong></div>
+        <div class="verification-summary-grid">
+          {% if settings.verify_fields_total_marks == 'on' %}
+            <div><span>Total Marks</span><strong>{{ result.total }} / {{ result.max_total }}</strong></div>
+          {% endif %}
+          {% if settings.verify_fields_percentage == 'on' %}
+            <div><span>Percentage</span><strong>{{ result.average }}%</strong></div>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="verification-details-card" style="order: {{ verify_order.index('details') + 1 if 'details' in verify_order else 4 }}">
+        <div class="verification-section-title blue"><i class="fa-solid fa-shield-check"></i><strong>Verification Details</strong></div>
+        <div class="verification-details-grid">
+          {% if settings.verify_fields_status == 'on' %}<div><i class="fa-solid fa-circle-check"></i><span>Verification Status</span><strong>{{ settings.verify_status_text }}</strong></div>{% endif %}
+          <div><i class="fa-solid fa-fingerprint"></i><span>Verification ID</span><strong>{{ settings.verify_id_prefix }}-{{ verification.token[:12]|upper if verification else 'VERIFIED' }}</strong></div>
+          <div><i class="fa-solid fa-calendar-check"></i><span>Verified Date</span><strong>{{ verification.created_at.strftime('%d %b %Y') if verification and verification.created_at else '-' }}</strong></div>
+          <div><i class="fa-solid fa-clock"></i><span>Verified Time</span><strong>{{ verification.created_at.strftime('%I:%M %p') if verification and verification.created_at else '-' }}</strong></div>
+        </div>
+      </section>
+
+      <footer class="verification-footer-card" style="order: {{ verify_order.index('footer') + 1 if 'footer' in verify_order else 5 }}">
+        <div class="verification-seal">
+          <i class="fa-solid fa-shield-heart"></i>
+          <span>Official<br>Digital<br>Seal</span>
+        </div>
+        <div>
+          <h4>{{ settings.verify_footer_heading }}</h4>
+          <p>Issued by</p>
+          <strong>{{ settings.school_name }}</strong>
+          <small>{{ settings.verify_page_footer_text }}</small>
+        </div>
+      </footer>
     {% else %}
-      <span class="eyebrow warning"><i class="fa-solid fa-triangle-exclamation"></i> {{ _('Invalid Result') }}</span>
-      <h1>{{ _('Invalid Result') }}</h1>
-      <p>This verification link is invalid or no longer active.</p>
+      <section class="verification-status-card invalid-state">
+        <div class="verification-success-badge invalid-badge"><i class="fa-solid fa-xmark"></i><span></span></div>
+        <h2>{{ 'Unavailable' if disabled is defined and disabled else _('Invalid Result') }}</h2>
+        <p>{{ 'Academic verification is currently unavailable.' if disabled is defined and disabled else 'This verification link is invalid or no longer active.' }}</p>
+      </section>
     {% endif %}
-    <a class="btn premium" href="{{ url_for('public.portal') }}"><i class="fa-solid fa-arrow-left"></i> {{ _('Search') }}</a>
   </section>
 </main>
+<style>{{ settings.verify_custom_css|safe }}</style>
+<script>
+  (() => {
+    document.documentElement.classList.add("verification-ready");
+    const success = document.querySelector(".verification-success-badge");
+    if (success) {
+      setTimeout(() => success.classList.add("settled"), 10000);
+    }
+  })();
+  {{ settings.verify_custom_js|safe }}
+</script>
 {% endblock %}

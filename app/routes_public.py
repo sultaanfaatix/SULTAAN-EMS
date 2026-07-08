@@ -161,11 +161,13 @@ def api_result(student_code):
 @public_bp.route("/verify/<token>")
 def verify_report(token):
     settings = get_settings()
+    if settings.get("verify_page_enabled") != "on":
+        return render_template("verify.html", settings=settings, verified=False, disabled=True), 403
     record = ReportVerification.query.filter_by(token=token, is_valid=True).first()
     if not record:
         return render_template("verify.html", settings=settings, verified=False), 404
     payload = result_payload(record.student, exam=record.exam, public_only=True)
-    return render_template("verify.html", settings=settings, verified=True, result=payload)
+    return render_template("verify.html", settings=settings, verified=True, result=payload, verification=record)
 
 
 @public_bp.route("/verify-id/<token>")
