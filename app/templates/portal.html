@@ -44,7 +44,26 @@
   --sis-card-gap: {{ settings.result_dashboard_card_spacing }};
   --sis-card-padding: {{ settings.result_dashboard_padding }};
   --sis-page-margin: {{ settings.result_dashboard_margin }};
-  --sis-sidebar-width: {{ '260px' if settings.result_dashboard_show_sidebar == 'on' else '0px' }};
+  --sis-sidebar-width: {{ '300px' if settings.result_dashboard_show_sidebar == 'on' else '0px' }};
+  --sidebar-student-name-size: {{ settings.result_sidebar_student_name_size }};
+  --sidebar-student-name-weight: {{ settings.result_sidebar_student_name_weight }};
+  --sidebar-label-size: {{ settings.result_sidebar_label_size }};
+  --sidebar-value-size: {{ settings.result_sidebar_value_size }};
+  --sidebar-title-size: {{ settings.result_sidebar_title_size }};
+  --sidebar-school-name-size: {{ settings.result_sidebar_school_name_size }};
+  --sidebar-school-motto-size: {{ settings.result_sidebar_school_motto_size }};
+  --sidebar-display-student-photo: {{ 'block' if settings.result_sidebar_show_student_photo == 'on' else 'none' }};
+  --sidebar-display-school-logo: {{ 'block' if settings.result_sidebar_show_school_logo == 'on' else 'none' }};
+  --sidebar-display-overlay-logo: {{ 'grid' if settings.result_sidebar_show_overlay_logo == 'on' else 'none' }};
+  --sidebar-display-student-name: {{ 'block' if settings.result_sidebar_show_student_name == 'on' else 'none' }};
+  --sidebar-display-student-class: {{ 'block' if settings.result_sidebar_show_student_class == 'on' else 'none' }};
+  --sidebar-display-parent-name: {{ 'grid' if settings.result_sidebar_show_parent_name == 'on' else 'none' }};
+  --sidebar-display-student-id: {{ 'grid' if settings.result_sidebar_show_student_id == 'on' else 'none' }};
+  --sidebar-display-exam-name: {{ 'grid' if settings.result_sidebar_show_exam_name == 'on' else 'none' }};
+  --sidebar-display-download-date: {{ 'grid' if settings.result_sidebar_show_download_date == 'on' else 'none' }};
+  --sidebar-display-percentage: {{ 'grid' if settings.result_sidebar_show_percentage == 'on' else 'none' }};
+  --sidebar-display-school-name: {{ 'block' if settings.result_sidebar_show_school_name == 'on' else 'none' }};
+  --sidebar-display-school-motto: {{ 'block' if settings.result_sidebar_show_school_motto == 'on' else 'none' }};
   --sis-shadow: {{ 'none' if settings.result_dashboard_shadow == 'none' else '0 10px 26px rgba(19, 46, 92, .08)' if settings.result_dashboard_shadow == 'soft' else '0 16px 42px rgba(19, 46, 92, .13)' }};
   --sis-dashboard-bg-image: {% if settings.result_dashboard_background_image %}url('{{ url_for('static', filename=settings.result_dashboard_background_image) }}'){% else %}none{% endif %};
   --sis-display-student-photo: {{ 'block' if settings.result_dashboard_show_student_photo == 'on' else 'none' }};
@@ -111,7 +130,7 @@
 
   {% if result %}
     <section class="premium-result result-dashboard reference-one-result" data-result-status="{{ result.status }}">
-      <aside class="reference-student-panel">
+      <aside class="reference-student-panel sidebar-theme-{{ settings.result_sidebar_theme }}">
         <div class="reference-photo-wrap">
           {% if result.student.photo_path %}<img src="{{ url_for('static', filename=result.student.photo_path) }}" alt="{{ result.student.full_name }} photo">{% elif settings.result_dashboard_default_avatar %}<img src="{{ url_for('static', filename=settings.result_dashboard_default_avatar) }}" alt="Default student avatar">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}
           <span class="reference-photo-logo">{% if settings.logo_path %}<img src="{{ url_for('static', filename=settings.logo_path) }}" alt="{{ settings.school_name }} logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}</span>
@@ -119,12 +138,12 @@
         <h2>{{ result.student.full_name }}</h2>
         <p>{{ result.student.school_class.name }}</p>
         <div class="reference-side-lines">
-          <div><span><i class="fa-solid fa-user"></i></span><small>{{ settings.result_label_mother_name }}</small><strong>{{ result.student.mother_name }}</strong></div>
-          <div><span><i class="fa-solid fa-id-card"></i></span><small>{{ settings.result_label_student_id }}</small><strong>{{ result.student.student_code }}</strong></div>
-          <div><span><i class="fa-solid fa-people-roof"></i></span><small>{{ settings.result_label_student_class }}</small><strong>{{ result.student.school_class.name }}</strong></div>
-          <div><span><i class="fa-solid fa-file-lines"></i></span><small>{{ settings.result_label_exam_type }}</small><strong>{{ result.exam.name if result.exam else 'Final Examination' }}</strong></div>
-          <div><span><i class="fa-solid fa-calendar-check"></i></span><small>{{ settings.result_label_date_issued }}</small><strong>{{ result.student.updated_at.strftime('%d %b %Y') if result.student.updated_at else '-' }}</strong></div>
-          <div><span><i class="fa-solid fa-percent"></i></span><small>{{ settings.result_label_subject_percentage }}</small><strong>{{ result.average }}%</strong></div>
+          <div class="side-parent"><span><i class="fa-solid fa-user"></i></span><small>{{ settings.result_label_mother_name }}</small><strong>{{ result.student.mother_name }}</strong></div>
+          <div class="side-student-id"><span><i class="fa-solid fa-id-card"></i></span><small>{{ settings.result_label_student_id }}</small><strong>{{ result.student.student_code }}</strong></div>
+          <div class="side-student-class"><span><i class="fa-solid fa-people-roof"></i></span><small>{{ settings.result_label_student_class }}</small><strong>{{ result.student.school_class.name }}</strong></div>
+          <div class="side-exam"><span><i class="fa-solid fa-file-lines"></i></span><small>{{ settings.result_label_exam_type }}</small><strong>{{ result.exam.name if result.exam else 'Final Examination' }}</strong></div>
+          <div class="side-download-date"><span><i class="fa-solid fa-calendar-check"></i></span><small>{{ settings.result_label_date_issued }}</small><strong>{{ result.student.updated_at.strftime('%d %b %Y') if result.student.updated_at else '-' }}</strong></div>
+          <div class="side-percentage"><span><i class="fa-solid fa-percent"></i></span><small>{{ settings.result_label_subject_percentage }}</small><strong>{{ result.average }}%</strong></div>
         </div>
         <div class="reference-school-mark">
           {% if settings.logo_path %}<img src="{{ url_for('static', filename=settings.logo_path) }}" alt="{{ settings.school_name }} logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}

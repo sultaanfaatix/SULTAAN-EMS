@@ -323,6 +323,40 @@
     <label><i class="fa-solid fa-shoe-prints"></i> Footer Logo<input name="result_dashboard_footer_logo" type="file" accept="image/*"></label>
   </section>
 
+  <section class="panel form-grid premium-form result-sidebar-customizer">
+    <div class="section-heading wide"><span><i class="fa-solid fa-id-card-clip"></i></span><div><h2>Student Profile Sidebar</h2><p>Independent sidebar component settings for the online result page.</p></div></div>
+    <div class="wide sidebar-preview-admin sidebar-theme-{{ settings.result_sidebar_theme }}" id="resultSidebarPreview">
+      <div class="sidebar-preview-photo"><span></span><b></b></div>
+      <h3>KOWTHER CUMAR MAXAMUUD</h3>
+      <p>Form One</p>
+      <div class="sidebar-preview-lines">
+        <div data-sidebar-field="parent_name"><i class="fa-solid fa-user"></i><span><small>Magaca Hooyada</small><strong>Honey Faatix Cismaan</strong></span></div>
+        <div data-sidebar-field="student_id"><i class="fa-solid fa-id-card"></i><span><small>Tira-taxaha</small><strong>123</strong></span></div>
+        <div data-sidebar-field="exam_name"><i class="fa-solid fa-file-lines"></i><span><small>Nuuca Imtixaan</small><strong>Final</strong></span></div>
+        <div data-sidebar-field="download_date"><i class="fa-solid fa-calendar-check"></i><span><small>La Dejiyey</small><strong>08 Jul 2026</strong></span></div>
+        <div data-sidebar-field="percentage"><i class="fa-solid fa-percent"></i><span><small>Boqolley</small><strong>63.57%</strong></span></div>
+      </div>
+      <footer><strong>Taysir International School</strong><small>Xarunta Korriinka Maskaxda</small></footer>
+    </div>
+    <label><i class="fa-solid fa-palette"></i> Sidebar Theme<select name="result_sidebar_theme" data-sidebar-theme>{% for theme, label in [('modern_blue','Modern Blue'),('royal_purple','Royal Purple'),('emerald_green','Emerald Green'),('dark_professional','Dark Professional'),('academic_classic','Academic Classic'),('glassmorphism','Glassmorphism'),('premium_gradient','Premium Gradient')] %}<option value="{{ theme }}" {% if settings.result_sidebar_theme == theme %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+
+    <div class="section-heading wide"><span><i class="fa-solid fa-text-height"></i></span><div><h2>Typography</h2><p>Control sidebar text hierarchy independently from the dashboard.</p></div></div>
+    <label><i class="fa-solid fa-user"></i> Student Name Size<input name="result_sidebar_student_name_size" data-sidebar-var="--sidebar-preview-name-size" value="{{ settings.result_sidebar_student_name_size }}"></label>
+    <label><i class="fa-solid fa-bold"></i> Student Name Weight<input name="result_sidebar_student_name_weight" data-sidebar-var="--sidebar-preview-name-weight" value="{{ settings.result_sidebar_student_name_weight }}"></label>
+    <label><i class="fa-solid fa-tag"></i> Label Size<input name="result_sidebar_label_size" data-sidebar-var="--sidebar-preview-label-size" value="{{ settings.result_sidebar_label_size }}"></label>
+    <label><i class="fa-solid fa-font"></i> Value Size<input name="result_sidebar_value_size" data-sidebar-var="--sidebar-preview-value-size" value="{{ settings.result_sidebar_value_size }}"></label>
+    <label><i class="fa-solid fa-heading"></i> Sidebar Title Size<input name="result_sidebar_title_size" data-sidebar-var="--sidebar-preview-title-size" value="{{ settings.result_sidebar_title_size }}"></label>
+    <label><i class="fa-solid fa-school"></i> School Name Size<input name="result_sidebar_school_name_size" data-sidebar-var="--sidebar-preview-school-size" value="{{ settings.result_sidebar_school_name_size }}"></label>
+    <label><i class="fa-solid fa-quote-left"></i> School Motto Size<input name="result_sidebar_school_motto_size" data-sidebar-var="--sidebar-preview-motto-size" value="{{ settings.result_sidebar_school_motto_size }}"></label>
+
+    <div class="section-heading wide"><span><i class="fa-solid fa-eye"></i></span><div><h2>Visibility Controls</h2><p>Show or hide individual sidebar fields.</p></div></div>
+    {% for key, label in [
+      ('result_sidebar_show_student_photo','Student Photo'),('result_sidebar_show_school_logo','School Logo'),('result_sidebar_show_overlay_logo','Overlay Logo'),('result_sidebar_show_student_name','Student Name'),('result_sidebar_show_student_class','Student Class'),('result_sidebar_show_parent_name','Parent Name'),('result_sidebar_show_student_id','Student ID'),('result_sidebar_show_exam_name','Exam Name'),('result_sidebar_show_download_date','Download Date'),('result_sidebar_show_percentage','Percentage'),('result_sidebar_show_school_name','School Name'),('result_sidebar_show_school_motto','School Motto')
+    ] %}
+      <label><i class="fa-solid fa-toggle-on"></i> {{ label }}<select name="{{ key }}" data-sidebar-toggle="{{ key }}"><option value="on" {% if settings.get(key) == 'on' %}selected{% endif %}>ON</option><option value="off" {% if settings.get(key) != 'on' %}selected{% endif %}>OFF</option></select></label>
+    {% endfor %}
+  </section>
+
   <section class="panel form-grid premium-form">
     <div class="section-heading wide"><span><i class="fa-solid fa-pen-to-square"></i></span><div><h2>Result & Print Text Controls</h2><p>Super Admin labels and headings for the public result page and printable report.</p></div></div>
     <label><i class="fa-solid fa-heading"></i> Online Title Primary<input name="result_online_title_primary" value="{{ settings.result_online_title_primary }}"></label>
@@ -391,6 +425,29 @@
         if (target) target.textContent = input.value;
       };
       input.addEventListener("input", apply);
+      apply();
+    });
+  })();
+  (() => {
+    const preview = document.getElementById("resultSidebarPreview");
+    if (!preview) return;
+    const themeSelect = document.querySelector("[data-sidebar-theme]");
+    if (themeSelect) {
+      const applyTheme = () => {
+        preview.className = preview.className.replace(/\bsidebar-theme-[a-z_]+\b/g, "").trim();
+        preview.classList.add(`sidebar-theme-${themeSelect.value}`);
+      };
+      themeSelect.addEventListener("change", applyTheme);
+      applyTheme();
+    }
+    document.querySelectorAll("[data-sidebar-var]").forEach((input) => {
+      const apply = () => preview.style.setProperty(input.dataset.sidebarVar, input.value);
+      input.addEventListener("input", apply);
+      apply();
+    });
+    document.querySelectorAll("[data-sidebar-toggle]").forEach((select) => {
+      const apply = () => preview.dataset[select.dataset.sidebarToggle.replace("result_sidebar_show_", "")] = select.value;
+      select.addEventListener("change", apply);
       apply();
     });
   })();

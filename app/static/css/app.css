@@ -3970,3 +3970,324 @@ tbody tr:hover td { background: #f8fbff; }
 .reference-grade-scale table {
   font-size: var(--portal-table-text-size, inherit);
 }
+
+.reference-student-panel,
+.sidebar-preview-admin {
+  --sidebar-bg-a: #062f83;
+  --sidebar-bg-b: #031a50;
+  --sidebar-bg-c: #005fc4;
+  --sidebar-accent: #d9b95d;
+  --sidebar-chip: rgba(0, 72, 160, .42);
+  --sidebar-chip-border: rgba(96, 176, 255, .28);
+  --sidebar-wave: rgba(0, 132, 255, .74);
+  --sidebar-icon-a: #2563eb;
+  --sidebar-icon-b: #7c3aed;
+}
+.reference-student-panel.sidebar-theme_compat,
+.sidebar-theme-modern_blue { }
+.sidebar-theme-royal_purple {
+  --sidebar-bg-a: #42118f;
+  --sidebar-bg-b: #160736;
+  --sidebar-bg-c: #7c1fd1;
+  --sidebar-accent: #e6ca63;
+  --sidebar-chip: rgba(93, 20, 170, .44);
+  --sidebar-chip-border: rgba(211, 158, 255, .28);
+  --sidebar-wave: rgba(176, 36, 255, .72);
+  --sidebar-icon-a: #6366f1;
+  --sidebar-icon-b: #a855f7;
+}
+.sidebar-theme-emerald_green {
+  --sidebar-bg-a: #0f7a37;
+  --sidebar-bg-b: #06351d;
+  --sidebar-bg-c: #0a9f5a;
+  --sidebar-accent: #d8c05d;
+  --sidebar-chip: rgba(0, 113, 55, .44);
+  --sidebar-chip-border: rgba(115, 255, 177, .28);
+  --sidebar-wave: rgba(20, 199, 92, .72);
+  --sidebar-icon-a: #22c55e;
+  --sidebar-icon-b: #0ea5e9;
+}
+.sidebar-theme-dark_professional {
+  --sidebar-bg-a: #10233d;
+  --sidebar-bg-b: #030915;
+  --sidebar-bg-c: #17385f;
+  --sidebar-accent: #d6b45f;
+  --sidebar-chip: rgba(13, 31, 56, .58);
+  --sidebar-chip-border: rgba(125, 160, 210, .26);
+  --sidebar-wave: rgba(35, 120, 210, .6);
+  --sidebar-icon-a: #3b82f6;
+  --sidebar-icon-b: #64748b;
+}
+.sidebar-theme-academic_classic {
+  --sidebar-bg-a: #153b75;
+  --sidebar-bg-b: #071b42;
+  --sidebar-bg-c: #245aa1;
+  --sidebar-accent: #f1d36f;
+  --sidebar-chip: rgba(255, 255, 255, .12);
+  --sidebar-chip-border: rgba(241, 211, 111, .34);
+  --sidebar-wave: rgba(241, 211, 111, .54);
+  --sidebar-icon-a: #1d4ed8;
+  --sidebar-icon-b: #f59e0b;
+}
+.sidebar-theme-glassmorphism {
+  --sidebar-bg-a: rgba(8, 54, 132, .9);
+  --sidebar-bg-b: rgba(4, 20, 58, .9);
+  --sidebar-bg-c: rgba(14, 165, 233, .55);
+  --sidebar-accent: #e9c85f;
+  --sidebar-chip: rgba(255, 255, 255, .13);
+  --sidebar-chip-border: rgba(255, 255, 255, .26);
+  --sidebar-wave: rgba(255, 255, 255, .28);
+  --sidebar-icon-a: #38bdf8;
+  --sidebar-icon-b: #6366f1;
+}
+.sidebar-theme-premium_gradient {
+  --sidebar-bg-a: #082d78;
+  --sidebar-bg-b: #04123e;
+  --sidebar-bg-c: #0ea5e9;
+  --sidebar-accent: #f0c85a;
+  --sidebar-chip: rgba(0, 72, 160, .42);
+  --sidebar-chip-border: rgba(240, 200, 90, .32);
+  --sidebar-wave: rgba(0, 150, 255, .72);
+  --sidebar-icon-a: #2563eb;
+  --sidebar-icon-b: #22d3ee;
+}
+.reference-student-panel {
+  isolation: isolate;
+  padding: 18px 20px 24px;
+  border-radius: 22px !important;
+  background:
+    radial-gradient(circle at 82% 12%, rgba(255,255,255,.12), transparent 25%),
+    radial-gradient(circle at 28% -4%, rgba(56,189,248,.18), transparent 30%),
+    linear-gradient(150deg, var(--sidebar-bg-a), var(--sidebar-bg-b) 58%, var(--sidebar-bg-c));
+  box-shadow: 0 24px 58px rgba(0, 22, 72, .28);
+}
+.reference-student-panel::before {
+  inset: auto -28% 84px -20%;
+  height: 96px;
+  border: 0;
+  border-top: 2px solid color-mix(in srgb, var(--sidebar-wave) 78%, transparent);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--sidebar-wave) 28%, transparent), transparent 62%);
+  transform: rotate(-2deg);
+  opacity: .95;
+}
+.reference-student-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 90% 24%, rgba(255,255,255,.08) 0 1px, transparent 1px 5px),
+    linear-gradient(125deg, transparent 0 78%, rgba(255,255,255,.08) 78% 100%);
+}
+.reference-student-panel .reference-photo-wrap {
+  display: var(--sidebar-display-student-photo) !important;
+  width: 162px !important;
+  height: 176px !important;
+  aspect-ratio: auto !important;
+  margin: 2px auto 18px;
+  border: 4px solid var(--sidebar-accent) !important;
+  border-radius: 28px !important;
+  background: rgba(255,255,255,.1);
+  box-shadow: 0 18px 38px rgba(0,0,0,.28) !important;
+}
+.reference-student-panel .reference-photo-wrap > img,
+.reference-student-panel .reference-photo-wrap > i {
+  border-radius: 22px;
+}
+.reference-student-panel .reference-photo-logo {
+  display: var(--sidebar-display-overlay-logo);
+  right: -24px;
+  bottom: -22px;
+  width: 66px;
+  height: 66px;
+  border: 3px solid var(--sidebar-accent);
+  box-shadow: 0 12px 26px rgba(0,0,0,.24);
+}
+.reference-student-panel h2 {
+  display: var(--sidebar-display-student-name);
+  margin: 10px 0 4px;
+  font-size: var(--sidebar-student-name-size, 1.42rem);
+  font-weight: var(--sidebar-student-name-weight, 950);
+  letter-spacing: 0;
+  text-shadow: 0 3px 14px rgba(0,0,0,.22);
+}
+.reference-student-panel p {
+  display: var(--sidebar-display-student-class);
+  font-size: var(--sidebar-title-size, .92rem);
+  font-weight: 800;
+}
+.reference-side-lines {
+  gap: 7px;
+  border: 0;
+}
+.reference-side-lines div {
+  min-height: 48px;
+  padding: 7px 9px;
+  border: 1px solid var(--sidebar-chip-border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--sidebar-chip), rgba(255,255,255,.04));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+}
+.reference-side-lines .side-parent { display: var(--sidebar-display-parent-name); }
+.reference-side-lines .side-student-id { display: var(--sidebar-display-student-id); }
+.reference-side-lines .side-student-class { display: var(--sidebar-display-student-class); }
+.reference-side-lines .side-exam { display: var(--sidebar-display-exam-name); }
+.reference-side-lines .side-download-date { display: var(--sidebar-display-download-date); }
+.reference-side-lines .side-percentage { display: var(--sidebar-display-percentage); }
+.reference-side-lines span {
+  background: linear-gradient(135deg, var(--sidebar-icon-a), var(--sidebar-icon-b));
+}
+.reference-side-lines small {
+  font-size: var(--sidebar-label-size, .68rem);
+  color: rgba(255,255,255,.72);
+}
+.reference-side-lines strong {
+  font-size: var(--sidebar-value-size, .92rem);
+  font-weight: 900;
+}
+.reference-school-mark {
+  margin-top: auto;
+  border-top: 0;
+}
+.reference-school-mark img,
+.reference-school-mark > i {
+  display: var(--sidebar-display-school-logo);
+  border: 2px solid var(--sidebar-accent);
+  border-radius: 50%;
+  background: rgba(255,255,255,.92);
+}
+.reference-school-mark strong {
+  display: var(--sidebar-display-school-name);
+  font-size: var(--sidebar-school-name-size, .88rem);
+}
+.reference-school-mark small {
+  display: var(--sidebar-display-school-motto);
+  color: #ffd85f;
+  font-size: var(--sidebar-school-motto-size, .66rem);
+}
+.reference-result-content {
+  display: grid;
+  align-content: start;
+}
+.reference-table-panel {
+  overflow: hidden;
+}
+.reference-result-table th {
+  padding: 8px 8px;
+}
+.reference-result-table td {
+  padding: 6px 8px;
+}
+.reference-actions {
+  align-items: center;
+}
+.reference-one-result .reference-actions .result-action-button {
+  min-width: 0;
+}
+
+.sidebar-preview-admin {
+  width: min(340px, 100%);
+  min-height: 580px;
+  justify-self: center;
+  position: relative;
+  overflow: hidden;
+  padding: 22px 20px;
+  color: #fff;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 82% 12%, rgba(255,255,255,.12), transparent 25%),
+    linear-gradient(150deg, var(--sidebar-bg-a), var(--sidebar-bg-b) 58%, var(--sidebar-bg-c));
+  box-shadow: 0 24px 58px rgba(0, 22, 72, .25);
+}
+.sidebar-preview-photo {
+  position: relative;
+  width: 162px;
+  height: 176px;
+  margin: 0 auto 18px;
+  border: 4px solid var(--sidebar-accent);
+  border-radius: 28px;
+  background: linear-gradient(135deg, #dbeafe, #60a5fa);
+}
+.sidebar-preview-photo b {
+  position: absolute;
+  right: -24px;
+  bottom: -20px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid var(--sidebar-accent);
+  background: #fff;
+}
+.sidebar-preview-admin h3 {
+  margin: 0 0 6px;
+  font-size: var(--sidebar-preview-name-size, 1.42rem);
+  font-weight: var(--sidebar-preview-name-weight, 950);
+  line-height: 1.08;
+}
+.sidebar-preview-admin p {
+  margin: 0 0 14px;
+  font-size: var(--sidebar-preview-title-size, .92rem);
+  font-weight: 800;
+}
+.sidebar-preview-lines {
+  display: grid;
+  gap: 7px;
+}
+.sidebar-preview-lines div {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-height: 50px;
+  padding: 7px 10px;
+  border: 1px solid var(--sidebar-chip-border);
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--sidebar-chip), rgba(255,255,255,.04));
+}
+.sidebar-preview-lines i {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sidebar-icon-a), var(--sidebar-icon-b));
+}
+.sidebar-preview-lines small {
+  display: block;
+  color: rgba(255,255,255,.72);
+  font-size: var(--sidebar-preview-label-size, .68rem);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.sidebar-preview-lines strong {
+  font-size: var(--sidebar-preview-value-size, .92rem);
+}
+.sidebar-preview-admin footer {
+  margin-top: 24px;
+  text-align: center;
+}
+.sidebar-preview-admin footer strong {
+  display: block;
+  font-size: var(--sidebar-preview-school-size, .88rem);
+  text-transform: uppercase;
+}
+.sidebar-preview-admin footer small {
+  display: block;
+  color: #ffd85f;
+  font-size: var(--sidebar-preview-motto-size, .66rem);
+}
+.sidebar-preview-admin[data-student_photo="off"] .sidebar-preview-photo,
+.sidebar-preview-admin[data-overlay_logo="off"] .sidebar-preview-photo b,
+.sidebar-preview-admin[data-student_name="off"] h3,
+.sidebar-preview-admin[data-student_class="off"] p,
+.sidebar-preview-admin[data-parent_name="off"] [data-sidebar-field="parent_name"],
+.sidebar-preview-admin[data-student_id="off"] [data-sidebar-field="student_id"],
+.sidebar-preview-admin[data-exam_name="off"] [data-sidebar-field="exam_name"],
+.sidebar-preview-admin[data-download_date="off"] [data-sidebar-field="download_date"],
+.sidebar-preview-admin[data-percentage="off"] [data-sidebar-field="percentage"],
+.sidebar-preview-admin[data-school_name="off"] footer strong,
+.sidebar-preview-admin[data-school_motto="off"] footer small {
+  display: none;
+}
