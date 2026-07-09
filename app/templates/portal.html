@@ -2,6 +2,26 @@
 {% block title %}{{ settings.school_name }} Result Portal{% endblock %}
 {% block body_class %}public-body premium-public-body{% endblock %}
 {% block content %}
+<style>
+  .premium-homepage {
+    --portal-page-title-size: {{ settings.typography_page_title_size }};
+    --portal-subtitle-size: {{ settings.typography_subtitle_size }};
+    --portal-input-label-size: {{ settings.typography_input_label_size }};
+    --portal-input-placeholder-size: {{ settings.typography_input_placeholder_size }};
+    --portal-button-size: {{ settings.typography_button_size }};
+    --portal-footer-size: {{ settings.typography_footer_size }};
+    --portal-copyright-size: {{ settings.typography_copyright_size }};
+    --portal-student-info-size: {{ settings.typography_student_info_size }};
+    --portal-dashboard-heading-size: {{ settings.typography_dashboard_heading_size }};
+    --portal-table-text-size: {{ settings.typography_table_text_size }};
+    --portal-footer-display: {{ 'flex' if settings.search_footer_visibility == 'on' else 'none' }};
+    --portal-footer-text-color: {{ settings.search_footer_text_color }};
+    --portal-footer-bg: {{ settings.search_footer_background_color }};
+    --portal-footer-border: {{ settings.search_footer_border_color }};
+    --portal-footer-font-size: {{ settings.search_footer_font_size }};
+    --portal-footer-font-weight: {{ settings.search_footer_font_weight }};
+  }
+</style>
 <main class="public-hero student-homepage premium-homepage {% if result %}has-result{% endif %}" {% if result %}style="
   --sis-primary: {{ settings.result_dashboard_primary_color }};
   --sis-secondary: {{ settings.result_dashboard_secondary_color }};
@@ -195,7 +215,7 @@
   {% endif %}
 
   <footer class="premium-public-footer {% if result %}reference-result-footer{% endif %}">
-    <div class="premium-footer-copy">{% if result and settings.result_dashboard_footer_logo %}<img class="result-footer-logo" src="{{ url_for('static', filename=settings.result_dashboard_footer_logo) }}" alt="Footer logo">{% endif %}{% if result %}<em>&copy;</em>{% endif %}<strong>{{ settings.result_footer_owner if result else 'SULTAN' }}</strong><span>|</span><b>2026.</b><em>All Rights Reserved.</em></div>
+    <div class="premium-footer-copy">{% if result and settings.result_dashboard_footer_logo %}<img class="result-footer-logo" src="{{ url_for('static', filename=settings.result_dashboard_footer_logo) }}" alt="Footer logo">{% endif %}{% if result %}<em>&copy;</em><strong>{{ settings.result_footer_owner }}</strong><span>|</span><b>2026.</b><em>All Rights Reserved.</em>{% else %}<span class="portal-footer-text">{{ settings.search_footer_text }}</span>{% endif %}</div>
     <div class="social-links premium-social-links">
       {% if result %}
       <a href="{{ settings.call_url or '#' }}" aria-label="Phone"><i class="fa-solid fa-phone"></i></a>

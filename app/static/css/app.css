@@ -427,32 +427,29 @@ tbody tr:hover td { background: #f8fbff; }
   border: 1px solid rgba(255,255,255,.72);
   color: #09234d;
   background: linear-gradient(135deg, rgba(255,255,255,.95), rgba(232,240,252,.92));
-  font-size: clamp(1rem, 1.8vw, 1.42rem);
+  font-size: var(--portal-input-placeholder-size, clamp(1rem, 1.8vw, 1.42rem));
   font-weight: 600;
-  padding: 24px 24px 12px;
+  padding: 25px 24px 11px;
   box-shadow: inset 0 1px 8px rgba(0,0,0,.08);
 }
 .floating-field input::placeholder {
-  color: #7185aa;
-  opacity: 1;
-  transition: opacity .22s ease, transform .22s ease;
-}
-.floating-field input:focus::placeholder,
-.floating-field input:not(:placeholder-shown)::placeholder {
   opacity: 0;
-  transform: translateY(8px);
 }
 .floating-field label {
   position: absolute;
   left: 22px;
   top: 50%;
   transform: translateY(-50%);
-  color: #7185aa;
-  font-size: clamp(.95rem, 1.5vw, 1.22rem);
-  font-weight: 700;
+  z-index: 2;
+  max-width: calc(100% - 44px);
+  color: #315b8e;
+  font-size: var(--portal-input-placeholder-size, clamp(.95rem, 1.5vw, 1.18rem));
+  font-weight: 850;
+  line-height: 1.12;
   pointer-events: none;
-  opacity: 0;
-  transition: all .22s ease;
+  opacity: 1;
+  transform-origin: left center;
+  transition: top .2s ease, transform .2s ease, color .2s ease, font-size .2s ease, background .2s ease, padding .2s ease, box-shadow .2s ease;
 }
 .floating-field input:focus,
 .floating-field input:not(:placeholder-shown) {
@@ -461,13 +458,18 @@ tbody tr:hover td { background: #f8fbff; }
 }
 .floating-field input:focus + label,
 .floating-field input:not(:placeholder-shown) + label {
-  top: 12px;
-  transform: translateY(0);
+  top: 0;
+  transform: translateY(-50%);
   opacity: 1;
   color: #005cc5;
-  font-size: .76rem;
+  font-size: var(--portal-input-label-size, .76rem);
+  line-height: 1;
   letter-spacing: .04em;
   text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f8fbff, #eaf3ff);
+  box-shadow: 0 6px 16px rgba(0, 42, 120, .12);
 }
 .premium-search-button {
   grid-area: button;
@@ -475,7 +477,7 @@ tbody tr:hover td { background: #f8fbff; }
   border-radius: 13px;
   background: linear-gradient(135deg, #057bff, #033bd1);
   color: #fff;
-  font-size: clamp(1rem, 1.8vw, 1.35rem);
+  font-size: var(--portal-button-size, clamp(1rem, 1.8vw, 1.35rem));
   font-weight: 950;
   letter-spacing: .04em;
   box-shadow: 0 18px 36px rgba(0, 95, 255, .32);
@@ -513,38 +515,56 @@ tbody tr:hover td { background: #f8fbff; }
   z-index: 1;
   margin: clamp(52px, 8vw, 86px) calc(clamp(18px, 4vw, 70px) * -1) 0;
   padding: 28px clamp(18px, 7vw, 120px);
-  border-top: 1px solid rgba(255,196,61,.7);
-  display: flex;
+  border-top: 1px solid var(--portal-footer-border, rgba(255,196,61,.86));
+  display: var(--portal-footer-display, flex);
   justify-content: center;
   align-items: center;
   gap: clamp(28px, 8vw, 120px);
-  background: rgba(0, 21, 58, .52);
+  background: var(--portal-footer-bg, rgba(0, 21, 58, .72));
   backdrop-filter: blur(14px);
 }
 .premium-footer-copy {
   display: flex;
   align-items: center;
   gap: 18px;
-  color: #fff;
-  font-size: clamp(1rem, 2vw, 1.45rem);
+  color: var(--portal-footer-text-color, #f8fbff);
+  font-size: var(--portal-footer-font-size, var(--portal-footer-size, clamp(1rem, 2vw, 1.45rem)));
+  font-weight: var(--portal-footer-font-weight, 800);
+  text-shadow: 0 2px 12px rgba(0,0,0,.32);
 }
 .premium-footer-copy strong { letter-spacing: .04em; }
 .premium-footer-copy b { color: #ffc43d; }
 .premium-footer-copy em { font-style: normal; opacity: .9; }
-.premium-social-links { gap: 14px; }
+.portal-footer-text {
+  color: var(--portal-footer-text-color, #f8fbff);
+  font-size: var(--portal-copyright-size, inherit);
+}
+.premium-social-links { gap: 16px; }
 .premium-social-links a {
   width: 54px;
   height: 54px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  color: #16b8ff;
-  background: rgba(0, 67, 138, .45);
-  border: 1px solid rgba(22, 184, 255, .8);
-  box-shadow: inset 0 0 18px rgba(0, 191, 255, .1);
+  color: #72d8ff;
+  background: linear-gradient(145deg, rgba(0, 90, 180, .62), rgba(0, 38, 92, .72));
+  border: 1px solid rgba(114, 216, 255, .82);
+  box-shadow: inset 0 0 18px rgba(0, 191, 255, .12), 0 10px 24px rgba(0, 0, 0, .22);
+  transition: transform .2s ease, color .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
 }
-.premium-social-links a:first-child { color: #25d366; border-color: rgba(37,211,102,.85); }
-.premium-social-links a:hover { transform: translateY(-3px); color: #fff; background: rgba(0, 126, 255, .7); }
+.premium-social-links a[aria-label="WhatsApp"] { color: #25d366; border-color: rgba(37,211,102,.9); }
+.premium-social-links a[aria-label="Facebook"] { color: #69a7ff; }
+.premium-social-links a[aria-label="Telegram"] { color: #43c6ff; }
+.premium-social-links a[aria-label="Gmail"],
+.premium-social-links a[aria-label="Email"] { color: #7dd3fc; }
+.premium-social-links a[aria-label="Map"] { color: #93e0ff; }
+.premium-social-links a:hover {
+  transform: translateY(-4px);
+  color: #fff;
+  border-color: rgba(255,255,255,.9);
+  background: linear-gradient(145deg, rgba(0, 126, 255, .84), rgba(0, 54, 146, .86));
+  box-shadow: inset 0 0 18px rgba(255,255,255,.12), 0 16px 32px rgba(0, 92, 220, .34);
+}
 .result-dashboard {
   width: min(1180px, 100%);
   margin: clamp(26px, 4vw, 42px) auto 0;
@@ -3922,4 +3942,31 @@ tbody tr:hover td { background: #f8fbff; }
 .reference-photo-wrap > img,
 .verification-photo img {
   border-radius: inherit;
+}
+
+.premium-portal-hero h1,
+.premium-exam-title h2 {
+  font-size: var(--portal-page-title-size, inherit);
+}
+.premium-motto strong,
+.premium-exam-title p,
+.premium-search-hint {
+  font-size: var(--portal-subtitle-size, inherit);
+}
+.reference-result-header h2,
+.reference-academic-summary h3,
+.reference-grade-scale h3,
+.reference-performance h3,
+.reference-comments h3 {
+  font-size: var(--portal-dashboard-heading-size, inherit);
+}
+.reference-side-lines,
+.reference-academic-summary,
+.reference-comments,
+.result-action-button {
+  font-size: var(--portal-student-info-size, inherit);
+}
+.reference-result-table,
+.reference-grade-scale table {
+  font-size: var(--portal-table-text-size, inherit);
 }
