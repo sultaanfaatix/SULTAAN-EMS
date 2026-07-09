@@ -349,6 +349,25 @@
     <label><i class="fa-solid fa-school"></i> School Name Size<input name="result_sidebar_school_name_size" data-sidebar-var="--sidebar-preview-school-size" value="{{ settings.result_sidebar_school_name_size }}"></label>
     <label><i class="fa-solid fa-quote-left"></i> School Motto Size<input name="result_sidebar_school_motto_size" data-sidebar-var="--sidebar-preview-motto-size" value="{{ settings.result_sidebar_school_motto_size }}"></label>
 
+    <div class="section-heading wide"><span><i class="fa-solid fa-image-portrait"></i></span><div><h2>Sidebar Photo</h2><p>Dedicated photo settings for the Student Result Sidebar only.</p></div></div>
+    <label><i class="fa-solid fa-arrows-left-right"></i> Photo Width<input name="result_sidebar_photo_width" data-sidebar-var="--sidebar-preview-photo-width" value="{{ settings.result_sidebar_photo_width }}"></label>
+    <label><i class="fa-solid fa-arrows-up-down"></i> Photo Height<input name="result_sidebar_photo_height" data-sidebar-var="--sidebar-preview-photo-height" value="{{ settings.result_sidebar_photo_height }}"></label>
+    <label><i class="fa-solid fa-border-top-left"></i> Border Radius<input name="result_sidebar_photo_border_radius" data-sidebar-var="--sidebar-preview-photo-radius" value="{{ settings.result_sidebar_photo_border_radius }}"></label>
+    <label><i class="fa-solid fa-border-all"></i> Border Width<input name="result_sidebar_photo_border_width" data-sidebar-var="--sidebar-preview-photo-border-width" value="{{ settings.result_sidebar_photo_border_width }}"></label>
+    <label><i class="fa-solid fa-palette"></i> Border Color<input name="result_sidebar_photo_border_color" data-sidebar-var="--sidebar-preview-photo-border-color" type="color" value="{{ settings.result_sidebar_photo_border_color }}"></label>
+    <label><i class="fa-solid fa-grip-lines"></i> Border Style<select name="result_sidebar_photo_border_style" data-sidebar-var="--sidebar-preview-photo-border-style"><option value="solid" {% if settings.result_sidebar_photo_border_style == 'solid' %}selected{% endif %}>Solid</option><option value="dashed" {% if settings.result_sidebar_photo_border_style == 'dashed' %}selected{% endif %}>Dashed</option><option value="double" {% if settings.result_sidebar_photo_border_style == 'double' %}selected{% endif %}>Double</option><option value="none" {% if settings.result_sidebar_photo_border_style == 'none' %}selected{% endif %}>None</option></select></label>
+    <label><i class="fa-solid fa-expand"></i> Object Fit<select name="result_sidebar_photo_object_fit"><option value="cover" {% if settings.result_sidebar_photo_object_fit == 'cover' %}selected{% endif %}>Cover</option><option value="contain" {% if settings.result_sidebar_photo_object_fit == 'contain' %}selected{% endif %}>Contain</option><option value="fill" {% if settings.result_sidebar_photo_object_fit == 'fill' %}selected{% endif %}>Fill</option></select></label>
+    <label><i class="fa-solid fa-crosshairs"></i> Object Position<input name="result_sidebar_photo_object_position" value="{{ settings.result_sidebar_photo_object_position }}"></label>
+    <label class="span-2"><i class="fa-solid fa-layer-group"></i> Photo Shadow<input name="result_sidebar_photo_shadow" data-sidebar-var="--sidebar-preview-photo-shadow" value="{{ settings.result_sidebar_photo_shadow }}"></label>
+
+    <div class="section-heading wide"><span><i class="fa-solid fa-tag"></i></span><div><h2>Information Labels</h2><p>Customize labels only; values remain independently styled.</p></div></div>
+    <label><i class="fa-solid fa-palette"></i> Label Text Color<input name="result_sidebar_label_color" data-sidebar-var="--sidebar-preview-label-color" value="{{ settings.result_sidebar_label_color }}"></label>
+    <label><i class="fa-solid fa-bold"></i> Label Font Weight<input name="result_sidebar_label_font_weight" data-sidebar-var="--sidebar-preview-label-weight" value="{{ settings.result_sidebar_label_font_weight }}"></label>
+    <label><i class="fa-solid fa-text-width"></i> Label Letter Spacing<input name="result_sidebar_label_letter_spacing" data-sidebar-var="--sidebar-preview-label-spacing" value="{{ settings.result_sidebar_label_letter_spacing }}"></label>
+    <label><i class="fa-solid fa-font"></i> Label Transform<select name="result_sidebar_label_text_transform" data-sidebar-var="--sidebar-preview-label-transform"><option value="uppercase" {% if settings.result_sidebar_label_text_transform == 'uppercase' %}selected{% endif %}>Uppercase</option><option value="none" {% if settings.result_sidebar_label_text_transform != 'uppercase' %}selected{% endif %}>Normal</option></select></label>
+    <label><i class="fa-solid fa-font"></i> Value Text Color<input name="result_sidebar_value_color" data-sidebar-var="--sidebar-preview-value-color" type="color" value="{{ settings.result_sidebar_value_color }}"></label>
+    <label><i class="fa-solid fa-bold"></i> Value Font Weight<input name="result_sidebar_value_weight" data-sidebar-var="--sidebar-preview-value-weight" value="{{ settings.result_sidebar_value_weight }}"></label>
+
     <div class="section-heading wide"><span><i class="fa-solid fa-eye"></i></span><div><h2>Visibility Controls</h2><p>Show or hide individual sidebar fields.</p></div></div>
     {% for key, label in [
       ('result_sidebar_show_student_photo','Student Photo'),('result_sidebar_show_school_logo','School Logo'),('result_sidebar_show_overlay_logo','Overlay Logo'),('result_sidebar_show_student_name','Student Name'),('result_sidebar_show_student_class','Student Class'),('result_sidebar_show_parent_name','Parent Name'),('result_sidebar_show_student_id','Student ID'),('result_sidebar_show_exam_name','Exam Name'),('result_sidebar_show_download_date','Download Date'),('result_sidebar_show_percentage','Percentage'),('result_sidebar_show_school_name','School Name'),('result_sidebar_show_school_motto','School Motto')
@@ -371,6 +390,7 @@
     <label><i class="fa-solid fa-chart-simple"></i> Academic Summary Title<input name="result_academic_summary_title" value="{{ settings.result_academic_summary_title }}"></label>
     <label><i class="fa-solid fa-comment"></i> Remarks Title<input name="result_teacher_remarks_title" value="{{ settings.result_teacher_remarks_title }}"></label>
     <label><i class="fa-solid fa-copyright"></i> Online Footer Owner<input name="result_footer_owner" value="{{ settings.result_footer_owner }}"></label>
+    <label><i class="fa-solid fa-calendar-clock"></i> Download Date Format<select name="download_datetime_format"><option value="month_day_year_12" {% if settings.download_datetime_format == 'month_day_year_12' %}selected{% endif %}>July 09, 2026     08:13 PM</option><option value="day_month_year_12" {% if settings.download_datetime_format == 'day_month_year_12' %}selected{% endif %}>09 July 2026     08:13 PM</option><option value="iso_24" {% if settings.download_datetime_format == 'iso_24' %}selected{% endif %}>2026-07-09     20:13</option><option value="slash_12" {% if settings.download_datetime_format == 'slash_12' %}selected{% endif %}>09/07/2026     08:13 PM</option></select></label>
     <label><i class="fa-solid fa-school"></i> Print Brand Code<input name="print_brand_code" value="{{ settings.print_brand_code }}"></label>
     <label><i class="fa-solid fa-file-lines"></i> Print Report Title<input name="print_report_title" value="{{ settings.print_report_title }}"></label>
     <label><i class="fa-solid fa-user"></i> Print Student Heading<input name="print_student_heading" value="{{ settings.print_student_heading }}"></label>
@@ -443,6 +463,7 @@
     document.querySelectorAll("[data-sidebar-var]").forEach((input) => {
       const apply = () => preview.style.setProperty(input.dataset.sidebarVar, input.value);
       input.addEventListener("input", apply);
+      input.addEventListener("change", apply);
       apply();
     });
     document.querySelectorAll("[data-sidebar-toggle]").forEach((select) => {

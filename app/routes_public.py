@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from flask import Blueprint, jsonify, render_template, request
 from sqlalchemy import func
@@ -74,7 +74,8 @@ def result():
     return render_template(
         "portal.html",
         settings=get_settings(),
-        result=payload
+        result=payload,
+        generated_at=datetime.now()
     )
 
 
@@ -103,6 +104,7 @@ def print_report(student_code):
 
     payload = result_payload(student, exam=exam, public_only=True)
     payload["verification"] = verification_payload(student, exam)
+    payload["generated_at"] = datetime.now()
     db.session.commit()
 
     return render_template("print_report.html", result=payload)

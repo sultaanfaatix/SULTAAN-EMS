@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, send_file, session, url_for
@@ -326,6 +327,7 @@ def admin_print_report(student_id, exam_id):
     from .verification import verification_payload
 
     payload["verification"] = verification_payload(student, exam)
+    payload["generated_at"] = datetime.now()
     db.session.commit()
     return render_template("print_report.html", result=payload)
 
@@ -564,6 +566,21 @@ def settings():
             "result_sidebar_title_size",
             "result_sidebar_school_name_size",
             "result_sidebar_school_motto_size",
+            "result_sidebar_photo_border_width",
+            "result_sidebar_photo_border_color",
+            "result_sidebar_photo_border_style",
+            "result_sidebar_photo_border_radius",
+            "result_sidebar_photo_width",
+            "result_sidebar_photo_height",
+            "result_sidebar_photo_object_fit",
+            "result_sidebar_photo_object_position",
+            "result_sidebar_photo_shadow",
+            "result_sidebar_label_color",
+            "result_sidebar_label_font_weight",
+            "result_sidebar_label_letter_spacing",
+            "result_sidebar_label_text_transform",
+            "result_sidebar_value_color",
+            "result_sidebar_value_weight",
             "result_sidebar_show_student_photo",
             "result_sidebar_show_school_logo",
             "result_sidebar_show_overlay_logo",
@@ -592,6 +609,7 @@ def settings():
             "result_academic_summary_title",
             "result_teacher_remarks_title",
             "result_footer_owner",
+            "download_datetime_format",
             "print_brand_code",
             "print_report_title",
             "print_exam_banner_text",

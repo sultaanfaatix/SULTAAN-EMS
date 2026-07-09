@@ -50,6 +50,16 @@
 </head>
 <body onload="prepareReportPrint()">
   <article class="sheet tis-print-report">
+    {% set download_dt = result.generated_at if result.generated_at is defined else none %}
+    {% if result.settings.download_datetime_format == 'day_month_year_12' %}
+      {% set download_date_text = download_dt.strftime('%d %B %Y     %I:%M %p') if download_dt else '-' %}
+    {% elif result.settings.download_datetime_format == 'iso_24' %}
+      {% set download_date_text = download_dt.strftime('%Y-%m-%d     %H:%M') if download_dt else '-' %}
+    {% elif result.settings.download_datetime_format == 'slash_12' %}
+      {% set download_date_text = download_dt.strftime('%d/%m/%Y     %I:%M %p') if download_dt else '-' %}
+    {% else %}
+      {% set download_date_text = download_dt.strftime('%B %d, %Y     %I:%M %p') if download_dt else '-' %}
+    {% endif %}
     <div class="tis-print-watermark"></div>
     <header class="tis-print-header">
       <div class="tis-print-brand">
@@ -84,7 +94,7 @@
           <div><span><i class="fa-solid fa-person-dress"></i></span><small>Magaca Hooyada</small><strong>{{ result.student.mother_name }}</strong></div>
           <div><span><i class="fa-solid fa-id-card"></i></span><small>Tirataxaane (ID)</small><strong>{{ result.student.student_code }}</strong></div>
           <div><span><i class="fa-solid fa-graduation-cap"></i></span><small>Fasalka</small><strong>{{ result.student.school_class.name }}</strong></div>
-          <div class="download-date-row"><span><i class="fa-solid fa-calendar-day"></i></span><small>Download Date</small><strong id="downloadDate">-</strong></div>
+          <div class="download-date-row"><span><i class="fa-solid fa-calendar-day"></i></span><small>Download Date</small><strong>{{ download_date_text }}</strong></div>
         </div>
         <div class="tis-verify-qr">
           {% if result.verification %}<img src="{{ result.verification.qr_code }}" alt="Verification QR Code">{% else %}<i class="fa-solid fa-qrcode"></i>{% endif %}
@@ -147,14 +157,6 @@
   </article>
   <script>
     function prepareReportPrint() {
-      const target = document.getElementById("downloadDate");
-      if (target) {
-        target.textContent = new Intl.DateTimeFormat("en-GB", {
-          day: "2-digit",
-          month: "long",
-          year: "numeric"
-        }).format(new Date());
-      }
       window.print();
     }
   </script>
