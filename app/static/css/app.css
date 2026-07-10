@@ -4384,3 +4384,219 @@ tbody tr:hover td { background: #f8fbff; }
   line-height: 1.16;
   overflow-wrap: anywhere;
 }
+
+/* Result page reference polish: summary, comments, and share card */
+.reference-one-result .reference-academic-summary,
+.reference-one-result .reference-comments {
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid rgba(124, 58, 237, .18);
+  border-radius: 12px;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, .1);
+}
+.reference-one-result .reference-academic-summary {
+  padding: 0 0 8px;
+}
+.reference-one-result .reference-academic-summary h3 {
+  display: grid;
+  place-items: center;
+  min-height: 48px;
+  margin: 0;
+  padding: 10px 14px;
+  color: #ffffff;
+  background: linear-gradient(100deg, #1677ff 0%, #6839d7 45%, #ff6b25 100%);
+  font-size: 1.14rem;
+  font-weight: 900;
+  letter-spacing: .035em;
+  text-align: center;
+  text-transform: uppercase;
+}
+.reference-one-result .reference-academic-summary div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 41px;
+  margin: 0 13px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, .22);
+}
+.reference-one-result .reference-academic-summary div:last-child {
+  border-bottom: 0;
+}
+.reference-one-result .reference-academic-summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: #111827;
+  font-size: .84rem;
+  font-weight: 650;
+  line-height: 1.2;
+}
+.reference-one-result .reference-academic-summary i {
+  flex: 0 0 25px;
+  width: 25px;
+  height: 25px;
+  display: inline-grid;
+  place-items: center;
+  color: #ffffff;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2dd4bf, #0ea5e9);
+  font-size: .72rem;
+  box-shadow: 0 6px 14px rgba(14, 165, 233, .18);
+}
+.reference-one-result .reference-academic-summary div:nth-of-type(2) i,
+.reference-one-result .reference-academic-summary div:nth-of-type(7) i {
+  background: linear-gradient(135deg, #22d3ee, #14b8a6);
+}
+.reference-one-result .reference-academic-summary div:nth-of-type(3) i,
+.reference-one-result .reference-academic-summary div:nth-of-type(5) i {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+}
+.reference-one-result .reference-academic-summary div:nth-of-type(4) i {
+  background: linear-gradient(135deg, #7c3aed, #5b7cfa);
+}
+.reference-one-result .reference-academic-summary div:nth-of-type(6) i {
+  background: linear-gradient(135deg, #38bdf8, #06b6d4);
+}
+.reference-one-result .reference-academic-summary strong {
+  flex: 0 0 auto;
+  color: #0f172a;
+  font-size: .9rem;
+  font-weight: 900;
+  line-height: 1;
+  text-align: right;
+}
+.reference-one-result .reference-academic-summary .pill {
+  min-width: 25px;
+  min-height: 25px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 7px;
+  color: #ffffff;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #16a34a, #10b981);
+  box-shadow: 0 8px 18px rgba(16, 185, 129, .22);
+}
+.reference-one-result .reference-comments {
+  padding: 0;
+  border-color: rgba(109, 40, 217, .28);
+}
+.reference-one-result .reference-comments h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 16px 20px 9px;
+  color: #3b168f;
+  font-size: .94rem;
+  font-weight: 900;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+.reference-one-result .reference-comments h3 i {
+  flex: 0 0 29px;
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6d28d9, #4f46e5);
+  box-shadow: 0 8px 18px rgba(79, 70, 229, .24);
+}
+.reference-one-result .reference-comment-body {
+  max-height: 155px;
+  margin: 0 20px;
+  padding: 4px 10px 2px 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, .58) transparent;
+}
+.reference-one-result .reference-comment-body::-webkit-scrollbar {
+  width: 5px;
+}
+.reference-one-result .reference-comment-body::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(100, 116, 139, .55);
+}
+.reference-one-result .reference-comments p {
+  margin: 0;
+  padding: 0;
+  color: #101827;
+  font-size: .92rem;
+  font-weight: 520;
+  line-height: 1.7;
+}
+.reference-one-result .reference-comment-auth {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin: 16px 20px 18px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(148, 163, 184, .2);
+}
+.reference-one-result .reference-auth-item {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+}
+.reference-one-result .reference-auth-item strong {
+  color: #151827;
+  font-size: .82rem;
+  font-weight: 900;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+.reference-one-result .reference-auth-item img {
+  width: auto;
+  max-width: 100%;
+  height: 82px;
+  object-fit: contain;
+}
+.reference-one-result .reference-signature-placeholder {
+  min-height: 82px;
+  display: grid;
+  place-items: center;
+  color: #111827;
+  font-family: "Brush Script MT", "Segoe Script", cursive;
+  font-size: 1.8rem;
+  line-height: 1;
+}
+.reference-one-result .reference-stamp-placeholder {
+  width: 82px;
+  height: 82px;
+  display: grid;
+  place-items: center;
+  color: #0b3d91;
+  border: 2px solid #0b3d91;
+  border-radius: 50%;
+  font-weight: 950;
+  letter-spacing: .06em;
+}
+.reference-one-result .reference-actions {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.reference-one-result .reference-actions .result-action-button.share {
+  min-height: 76px;
+  justify-content: flex-start;
+  padding: 14px 22px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #7c3aed, #5626b4);
+  border: 1px solid rgba(255, 255, 255, .16);
+  box-shadow: 0 16px 30px rgba(91, 38, 180, .28);
+}
+.reference-one-result .reference-actions .result-action-button.share i {
+  flex: 0 0 34px;
+  font-size: 1.5rem;
+}
+.reference-one-result .reference-actions .result-action-button.share span,
+.reference-one-result .reference-actions .result-action-button.share small {
+  text-align: left;
+}

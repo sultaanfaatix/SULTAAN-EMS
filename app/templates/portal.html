@@ -206,7 +206,7 @@
           </section>
 
           <aside class="reference-academic-summary">
-            <h3>{{ settings.result_academic_summary_title }}</h3>
+            <h3>{{ settings.result_academic_summary_title if settings.result_academic_summary_title != 'Academic Summary' else 'SOO KOOBID' }}</h3>
             <div><span><i class="fa-solid fa-book-open"></i> Total Subjects</span><strong>{{ result.subjects|length }}</strong></div>
             <div><span><i class="fa-solid fa-list-check"></i> Total Marks</span><strong>{{ result.max_total }}</strong></div>
             <div><span><i class="fa-solid fa-chart-line"></i> Total Obtained Marks</span><strong>{{ result.total }}</strong></div>
@@ -245,8 +245,28 @@
             </div>
           </div>
           <div class="reference-comments">
-            <h3><i class="fa-solid fa-comment"></i> {{ settings.result_teacher_remarks_title }}</h3>
-            <p>{{ result.comment }}</p>
+            <h3><i class="fa-solid fa-comment-dots"></i> {{ settings.result_teacher_remarks_title if settings.result_teacher_remarks_title != "Teacher's Remarks" else 'COMMENT' }}</h3>
+            <div class="reference-comment-body">
+              <p>{{ result.comment }}</p>
+            </div>
+            <div class="reference-comment-auth">
+              <div class="reference-auth-item">
+                <strong>SIGNATURE</strong>
+                {% if settings.principal_signature_path %}
+                  <img src="{{ url_for('static', filename=settings.principal_signature_path) }}" alt="Official signature">
+                {% else %}
+                  <span class="reference-signature-placeholder">Signature</span>
+                {% endif %}
+              </div>
+              <div class="reference-auth-item">
+                <strong>STAMP</strong>
+                {% if settings.school_stamp_path %}
+                  <img src="{{ url_for('static', filename=settings.school_stamp_path) }}" alt="School stamp">
+                {% else %}
+                  <span class="reference-stamp-placeholder">TIS</span>
+                {% endif %}
+              </div>
+            </div>
           </div>
         </section>
 
