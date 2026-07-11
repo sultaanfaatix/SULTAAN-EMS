@@ -1,4 +1,3 @@
-from .cloudinary_service import upload_image
 from datetime import datetime
 from pathlib import Path
 
@@ -71,9 +70,11 @@ def student_form(student_id=None):
             if not allowed_file(photo.filename, ALLOWED_PHOTOS):
                 flash("Photo must be JPG, PNG, or WEBP.", "danger")
                 return redirect(request.url)
-
-            photo_url = upload_image(photo, "school/students")
-            student.photo_path = photo_url
+            filename = f"{student.student_code}_{safe_upload_name(photo.filename)}"
+            upload_dir = Path(current_app_config("UPLOAD_FOLDER"))
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            photo.save(upload_dir / filename)
+            student.photo_path = f"uploads/{filename}"
         db.session.add(student)
         audit("Student Updates", f"Saved student {student.student_code}")
         db.session.commit()
@@ -406,9 +407,11 @@ def users():
             if not allowed_file(photo.filename, ALLOWED_PHOTOS):
                 flash("Admin photo must be JPG, PNG, or WEBP.", "danger")
                 return redirect(url_for("admin.users"))
-
-            photo_url = upload_image(photo, "school/admins")
-            user.photo_path = photo_url
+            filename = f"admin_{user.username}_{safe_upload_name(photo.filename)}"
+            upload_dir = Path(current_app_config("UPLOAD_FOLDER"))
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            photo.save(upload_dir / filename)
+            user.photo_path = f"uploads/{filename}"
         password = request.form.get("password", "")
         if password:
             user.set_password(password)
@@ -736,9 +739,12 @@ def settings():
             if not allowed_file(upload.filename, ALLOWED_PHOTOS):
                 flash("Uploaded images must be JPG, PNG, or WEBP.", "danger")
                 return redirect(url_for("admin.settings"))
-            image_url = upload_image(upload, "school/settings")
+            filename = f"{setting_key}_{safe_upload_name(upload.filename)}"
+            upload_dir = Path(current_app_config("UPLOAD_FOLDER"))
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            upload.save(upload_dir / filename)
             setting = db.session.get(Setting, setting_key) or Setting(key=setting_key)
-            setting.value = image_url
+            setting.value = f"uploads/{filename}"
             db.session.add(setting)
         for subject in Subject.query.order_by(Subject.name).all():
             field_name = f"subject_icon_{subject.id}"
@@ -748,10 +754,13 @@ def settings():
             if not allowed_file(upload.filename, ALLOWED_PHOTOS):
                 flash("Uploaded subject icons must be JPG, PNG, or WEBP.", "danger")
                 return redirect(url_for("admin.settings"))
-            image_url = upload_image(upload, "school/subjects")
+            filename = f"subject_icon_{subject.id}_{safe_upload_name(upload.filename)}"
+            upload_dir = Path(current_app_config("UPLOAD_FOLDER"))
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            upload.save(upload_dir / filename)
             setting_key = f"subject_icon_{slug(subject.name)}"
             setting = db.session.get(Setting, setting_key) or Setting(key=setting_key)
-            setting.value = image_url
+            setting.value = f"uploads/{filename}"
             db.session.add(setting)
         for grade in GradeScale.query.all():
             grade.min_score = request.form.get(f"min_{grade.id}", grade.min_score)
