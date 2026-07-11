@@ -6,7 +6,7 @@
     <a class="admin-brand" href="{{ url_for('admin.dashboard') }}">
       <span class="brand-logo">
         {% if ui_settings.admin_logo_path or ui_settings.logo_path %}
-          <img src="{{ url_for('static', filename=ui_settings.admin_logo_path or ui_settings.logo_path) }}" alt="Admin logo">
+          <img src="{{ asset_url(ui_settings.admin_logo_path or ui_settings.logo_path) }}" alt="Admin logo">
         {% else %}
           <i class="fa-solid fa-graduation-cap"></i>
         {% endif %}
@@ -15,7 +15,7 @@
     </a>
     <div class="admin-profile">
       <span class="admin-avatar">
-        {% if current_user.photo_path %}<img src="{{ url_for('static', filename=current_user.photo_path) }}" alt="{{ current_user.full_name }} photo">{% else %}<i class="fa-solid fa-user-shield"></i>{% endif %}
+        {% if current_user.photo_path %}<img src="{{ asset_url(current_user.photo_path) }}" alt="{{ current_user.full_name }} photo">{% else %}<i class="fa-solid fa-user-shield"></i>{% endif %}
       </span>
       <span><strong>{{ current_user.full_name }}</strong><small>{{ current_user.role|replace('_', ' ')|title }}</small></span>
     </div>
@@ -40,7 +40,7 @@
     <button class="logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
   </form>
 </aside>
-<main class="admin-main" {% if ui_settings.dashboard_background %}style="background-image: linear-gradient(135deg, #f6f9ffdd, #eef4ffef), url('{{ url_for('static', filename=ui_settings.dashboard_background) }}');"{% endif %}>
+<main class="admin-main" {% if ui_settings.dashboard_background %}style="background-image: linear-gradient(135deg, #f6f9ffdd, #eef4ffef), url('{{ asset_url(ui_settings.dashboard_background) }}');"{% endif %}>
   <header class="admin-top glass-card">
     <div>
       <span class="eyebrow"><i class="fa-solid fa-shield-halved"></i> Secure Admin Workspace</span>

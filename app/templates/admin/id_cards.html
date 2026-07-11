@@ -76,7 +76,7 @@
       {% for s in students %}
         <tr>
           <td data-label="Select"><input type="checkbox" name="student_ids" value="{{ s.id }}"></td>
-          <td data-label="Photo">{% if s.photo_path %}<img class="mini-avatar" src="{{ url_for('static', filename=s.photo_path) }}" alt="Photo">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}</td>
+          <td data-label="Photo">{% if s.photo_path %}<img class="mini-avatar" src="{{ asset_url(s.photo_path) }}" alt="Photo">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}</td>
           <td data-label="ID">{{ s.student_code }}</td><td data-label="Name">{{ s.full_name }}</td><td data-label="Class">{{ s.school_class.name }}</td><td data-label="Level">{{ s.level or '-' }}</td><td data-label="Section">{{ s.section or '-' }}</td>
           <td data-label="Action"><form method="post" action="{{ url_for('admin_id_cards.generate', student_id=s.id) }}" class="inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="icon-btn small" title="Generate"><i class="fa-solid fa-id-card-clip"></i></button></form></td>
         </tr>

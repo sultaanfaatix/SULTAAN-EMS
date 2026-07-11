@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, url_for
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
@@ -42,6 +42,15 @@ def create_app(config_class=Config):
 
         settings = get_settings()
         lang = current_language(settings.get("default_language", "en"))
+
+        def asset_url(path):
+            if not path:
+                return ""
+            value = str(path)
+            if value.startswith(("http://", "https://", "data:")):
+                return value
+            return url_for("static", filename=value)
+
         return {
             "ui_settings": settings,
             "_": translate,
@@ -49,6 +58,7 @@ def create_app(config_class=Config):
             "current_language": lang,
             "text_direction": "rtl" if lang == "ar" else "ltr",
             "can": can,
+            "asset_url": asset_url,
         }
 
     from .routes_admin import admin_bp

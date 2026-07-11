@@ -24,7 +24,7 @@
     --verify-spacing: {{ settings.verify_spacing }};
     --verify-page-width: {{ settings.verify_page_width }};
     --verify-shadow: {{ 'none' if settings.verify_card_shadow == 'none' else '0 18px 52px rgba(6, 63, 168, .12)' if settings.verify_card_shadow == 'soft' else '0 26px 70px rgba(6, 63, 168, .18)' }};
-    --verify-bg-image: {% if settings.verify_background_image %}url('{{ url_for('static', filename=settings.verify_background_image) }}'){% else %}none{% endif %};
+    --verify-bg-image: {% if settings.verify_background_image %}url('{{ asset_url(settings.verify_background_image) }}'){% else %}none{% endif %};
     --verify-display-photo: {{ 'block' if settings.verify_show_student_photo == 'on' else 'none' }};
     --verify-display-logo: {{ 'block' if settings.verify_show_school_logo == 'on' else 'none' }};
     --verify-display-badge: {{ 'grid' if settings.verify_show_badge == 'on' else 'none' }};
@@ -37,7 +37,7 @@
     <header class="verification-hero">
       <div class="verification-hero-curve"></div>
       {% if settings.logo_path %}
-        <img class="verification-logo" src="{{ url_for('static', filename=settings.logo_path) }}" alt="{{ settings.school_name }} logo">
+        <img class="verification-logo" src="{{ asset_url(settings.logo_path) }}" alt="{{ settings.school_name }} logo">
       {% else %}
         <span class="verification-logo fallback-logo"><i class="fa-solid fa-school"></i></span>
       {% endif %}
@@ -61,9 +61,9 @@
       <section class="verification-student-card" style="order: {{ verify_order.index('student') + 1 if 'student' in verify_order else 2 }}">
         <div class="verification-photo">
           {% if result.student.photo_path %}
-            <img src="{{ url_for('static', filename=result.student.photo_path) }}" alt="{{ result.student.full_name }} photo">
+            <img src="{{ asset_url(result.student.photo_path) }}" alt="{{ result.student.full_name }} photo">
           {% elif settings.verify_default_student_photo %}
-            <img src="{{ url_for('static', filename=settings.verify_default_student_photo) }}" alt="Default student photo">
+            <img src="{{ asset_url(settings.verify_default_student_photo) }}" alt="Default student photo">
           {% else %}
             <i class="fa-solid fa-user-graduate"></i>
           {% endif %}
@@ -107,7 +107,7 @@
       <footer class="verification-footer-card" style="order: {{ verify_order.index('footer') + 1 if 'footer' in verify_order else 5 }}">
         <div class="verification-seal">
           {% if settings.school_stamp_path %}
-            <img src="{{ url_for('static', filename=settings.school_stamp_path) }}" alt="{{ settings.school_name }} official seal">
+            <img src="{{ asset_url(settings.school_stamp_path) }}" alt="{{ settings.school_name }} official seal">
           {% else %}
             <i class="fa-solid fa-shield-heart"></i>
             <span>Official<br>Digital<br>Seal</span>

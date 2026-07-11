@@ -394,7 +394,7 @@
               {% endif %}
               <header class="card-head">
                 <div class="logo-box">
-                  {% if settings.logo_path %}<img src="{{ url_for('static', filename=settings.logo_path) }}" alt="Logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}
+                  {% if settings.logo_path %}<img src="{{ asset_url(settings.logo_path) }}" alt="Logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}
                 </div>
                 <div class="school-block">
                   <h1>{{ settings.school_name }}</h1>
@@ -411,7 +411,7 @@
               <section class="card-body">
                 <div class="photo-column">
                   <div class="photo-frame">
-                    {% if issue.student.photo_path %}<img src="{{ url_for('static', filename=issue.student.photo_path) }}" alt="Photo">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}
+                    {% if issue.student.photo_path %}<img src="{{ asset_url(issue.student.photo_path) }}" alt="Photo">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}
                   </div>
                   <div class="phone-tag"><i class="fa-solid fa-phone"></i>{{ issue.student.phone or '-' }}</div>
                 </div>

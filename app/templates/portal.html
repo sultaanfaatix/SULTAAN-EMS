@@ -81,7 +81,7 @@
   --sidebar-display-school-name: {{ 'block' if settings.result_sidebar_show_school_name == 'on' else 'none' }};
   --sidebar-display-school-motto: {{ 'block' if settings.result_sidebar_show_school_motto == 'on' else 'none' }};
   --sis-shadow: {{ 'none' if settings.result_dashboard_shadow == 'none' else '0 10px 26px rgba(19, 46, 92, .08)' if settings.result_dashboard_shadow == 'soft' else '0 16px 42px rgba(19, 46, 92, .13)' }};
-  --sis-dashboard-bg-image: {% if settings.result_dashboard_background_image %}url('{{ url_for('static', filename=settings.result_dashboard_background_image) }}'){% else %}none{% endif %};
+  --sis-dashboard-bg-image: {% if settings.result_dashboard_background_image %}url('{{ asset_url(settings.result_dashboard_background_image) }}'){% else %}none{% endif %};
   --sis-display-student-photo: {{ 'block' if settings.result_dashboard_show_student_photo == 'on' else 'none' }};
   --sis-display-school-logo: {{ 'block' if settings.result_dashboard_show_school_logo == 'on' else 'none' }};
   --sis-display-sidebar: {{ 'flex' if settings.result_dashboard_show_sidebar == 'on' else 'none' }};
@@ -111,7 +111,7 @@
   {% if not result %}
   <section class="premium-portal-hero">
     <div class="premium-school-logo">
-      {% if settings.logo_path %}<img src="{{ url_for('static', filename=settings.logo_path) }}" alt="{{ settings.school_name }} logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}
+      {% if settings.logo_path %}<img src="{{ asset_url(settings.logo_path) }}" alt="{{ settings.school_name }} logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}
     </div>
     <h1>Taysiir International School <span>(TIS)</span></h1>
     <div class="premium-motto"><span></span><strong>{{ settings.school_motto }}</strong><span></span></div>
@@ -158,8 +158,8 @@
     <section class="premium-result result-dashboard reference-one-result" data-result-status="{{ result.status }}">
       <aside class="reference-student-panel sidebar-theme-{{ settings.result_sidebar_theme }}">
         <div class="reference-photo-wrap">
-          {% if result.student.photo_path %}<img src="{{ url_for('static', filename=result.student.photo_path) }}" alt="{{ result.student.full_name }} photo">{% elif settings.result_dashboard_default_avatar %}<img src="{{ url_for('static', filename=settings.result_dashboard_default_avatar) }}" alt="Default student avatar">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}
-          <span class="reference-photo-logo">{% if settings.logo_path %}<img src="{{ url_for('static', filename=settings.logo_path) }}" alt="{{ settings.school_name }} logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}</span>
+          {% if result.student.photo_path %}<img src="{{ asset_url(result.student.photo_path) }}" alt="{{ result.student.full_name }} photo">{% elif settings.result_dashboard_default_avatar %}<img src="{{ asset_url(settings.result_dashboard_default_avatar) }}" alt="Default student avatar">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}
+          <span class="reference-photo-logo">{% if settings.logo_path %}<img src="{{ asset_url(settings.logo_path) }}" alt="{{ settings.school_name }} logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}</span>
         </div>
         <h2>{{ result.student.full_name }}</h2>
         <p>{{ result.student.school_class.name }}</p>
@@ -172,7 +172,7 @@
           <div class="side-percentage"><span><i class="fa-solid fa-percent"></i></span><small>{{ settings.result_label_subject_percentage }}</small><strong>{{ result.average }}%</strong></div>
         </div>
         <div class="reference-school-mark">
-          {% if settings.logo_path %}<img src="{{ url_for('static', filename=settings.logo_path) }}" alt="{{ settings.school_name }} logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}
+          {% if settings.logo_path %}<img src="{{ asset_url(settings.logo_path) }}" alt="{{ settings.school_name }} logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}
           <strong>{{ settings.school_name }}</strong>
           <small>{{ settings.school_motto }}</small>
         </div>
@@ -226,7 +226,7 @@
                 <div class="reference-auth-item">
                   <strong>SIGNATURE</strong>
                   {% if settings.principal_signature_path %}
-                    <img src="{{ url_for('static', filename=settings.principal_signature_path) }}" alt="Official signature">
+                    <img src="{{ asset_url(settings.principal_signature_path) }}" alt="Official signature">
                   {% else %}
                     <span class="reference-signature-placeholder">Signature</span>
                   {% endif %}
@@ -234,7 +234,7 @@
                 <div class="reference-auth-item">
                   <strong>STAMP</strong>
                   {% if settings.school_stamp_path %}
-                    <img src="{{ url_for('static', filename=settings.school_stamp_path) }}" alt="School stamp">
+                    <img src="{{ asset_url(settings.school_stamp_path) }}" alt="School stamp">
                   {% else %}
                     <span class="reference-stamp-placeholder">TIS</span>
                   {% endif %}
@@ -283,7 +283,7 @@
   {% endif %}
 
   <footer class="premium-public-footer {% if result %}reference-result-footer{% endif %}">
-    <div class="premium-footer-copy">{% if result and settings.result_dashboard_footer_logo %}<img class="result-footer-logo" src="{{ url_for('static', filename=settings.result_dashboard_footer_logo) }}" alt="Footer logo">{% endif %}{% if result %}<em>&copy;</em><strong>{{ settings.result_footer_owner }}</strong><span>|</span><b>2026.</b><em>All Rights Reserved.</em>{% else %}<span class="portal-footer-text">{{ settings.search_footer_text }}</span>{% endif %}</div>
+    <div class="premium-footer-copy">{% if result and settings.result_dashboard_footer_logo %}<img class="result-footer-logo" src="{{ asset_url(settings.result_dashboard_footer_logo) }}" alt="Footer logo">{% endif %}{% if result %}<em>&copy;</em><strong>{{ settings.result_footer_owner }}</strong><span>|</span><b>2026.</b><em>All Rights Reserved.</em>{% else %}<span class="portal-footer-text">{{ settings.search_footer_text }}</span>{% endif %}</div>
     <div class="social-links premium-social-links">
       {% if result %}
       <a href="{{ settings.call_url or '#' }}" aria-label="Phone"><i class="fa-solid fa-phone"></i></a>

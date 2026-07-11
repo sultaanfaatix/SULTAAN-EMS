@@ -4,7 +4,7 @@
 <main class="login-page">
   <form method="post" class="login-card glass-card">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="login-mark">{% if ui_settings.logo_path %}<img src="{{ url_for('static', filename=ui_settings.logo_path) }}" alt="{{ ui_settings.school_name }} logo">{% else %}<i class="fa-solid fa-shield-halved"></i>{% endif %}</div>
+    <div class="login-mark">{% if ui_settings.logo_path %}<img src="{{ asset_url(ui_settings.logo_path) }}" alt="{{ ui_settings.school_name }} logo">{% else %}<i class="fa-solid fa-shield-halved"></i>{% endif %}</div>
     <span class="eyebrow"><i class="fa-solid fa-lock"></i> Secure Admin Access</span>
     <h1>{{ ui_settings.school_name }}</h1>
     <p>{{ ui_settings.school_name }} administration workspace.</p>

@@ -7,7 +7,7 @@
     <header class="verify-header">
       <div class="verify-school">
         <span class="verify-logo">
-          {% if settings.logo_path %}<img src="{{ url_for('static', filename=settings.logo_path) }}" alt="{{ settings.school_name }} logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}
+          {% if settings.logo_path %}<img src="{{ asset_url(settings.logo_path) }}" alt="{{ settings.school_name }} logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}
         </span>
         <div>
           <span class="eyebrow"><i class="fa-solid fa-shield-check"></i> {{ 'Verified Student ID' if verified else 'Invalid ID Card' }}</span>
@@ -21,7 +21,7 @@
     {% if verified %}
       <section class="verify-body">
         <div class="verify-photo">
-          {% if issue.student.photo_path %}<img src="{{ url_for('static', filename=issue.student.photo_path) }}" alt="{{ issue.student.full_name }} photo">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}
+          {% if issue.student.photo_path %}<img src="{{ asset_url(issue.student.photo_path) }}" alt="{{ issue.student.full_name }} photo">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}
         </div>
         <div class="verify-details">
           <h2>{{ issue.student.full_name }}</h2>

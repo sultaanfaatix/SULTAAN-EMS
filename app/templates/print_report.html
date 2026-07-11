@@ -39,8 +39,8 @@
       --print-display-principal-signature: {{ 'grid' if result.settings.print_show_principal_signature == 'on' else 'none' }};
       --print-display-footer: {{ 'flex' if result.settings.print_show_footer == 'on' else 'none' }};
       --print-display-watermark: {{ 'block' if result.settings.print_show_watermark == 'on' else 'none' }};
-      --print-bg-image: {% if result.settings.print_background_image %}url('{{ url_for('static', filename=result.settings.print_background_image) }}'){% else %}none{% endif %};
-      --print-watermark-image: {% if result.settings.print_watermark_image %}url('{{ url_for('static', filename=result.settings.print_watermark_image) }}'){% else %}none{% endif %};
+      --print-bg-image: {% if result.settings.print_background_image %}url('{{ asset_url(result.settings.print_background_image) }}'){% else %}none{% endif %};
+      --print-watermark-image: {% if result.settings.print_watermark_image %}url('{{ asset_url(result.settings.print_watermark_image) }}'){% else %}none{% endif %};
       --student-photo-size: {{ '27mm' if result.settings.student_photo_size == 'small' else '35mm' if result.settings.student_photo_size == 'large' else '31mm' }};
       --student-photo-radius: {{ '3mm' if result.settings.student_photo_shape == 'rounded' else '50%' }};
       --student-photo-border: {{ '1px solid var(--print-border)' if result.settings.student_photo_border == 'on' else '0' }};
@@ -64,7 +64,7 @@
     <header class="tis-print-header">
       <div class="tis-print-brand">
         <div class="tis-print-logo">
-          {% if result.settings.logo_path %}<img src="{{ url_for('static', filename=result.settings.logo_path) }}" alt="{{ result.settings.school_name }} logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}
+          {% if result.settings.logo_path %}<img src="{{ asset_url(result.settings.logo_path) }}" alt="{{ result.settings.school_name }} logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}
         </div>
         <div>
           <h1>{{ result.settings.school_name }}</h1>
@@ -87,7 +87,7 @@
       <h2><i class="fa-solid fa-user"></i> {{ result.settings.print_student_heading }}</h2>
       <div class="tis-student-body">
         <div class="tis-student-photo">
-          {% if result.student.photo_path %}<img src="{{ url_for('static', filename=result.student.photo_path) }}" alt="{{ result.student.full_name }} photo">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}
+          {% if result.student.photo_path %}<img src="{{ asset_url(result.student.photo_path) }}" alt="{{ result.student.full_name }} photo">{% else %}<i class="fa-solid fa-user-graduate"></i>{% endif %}
         </div>
         <div class="tis-student-lines">
           <div><span><i class="fa-solid fa-user"></i></span><small>Magaca Ardeyga</small><strong>{{ result.student.full_name }}</strong></div>
@@ -136,22 +136,22 @@
         <p>{{ result.comment }}</p>
       </div>
       <div class="tis-teacher-sign">
-        {% if result.settings.vice_principal_signature_path %}<img src="{{ url_for('static', filename=result.settings.vice_principal_signature_path) }}" alt="Teacher signature">{% else %}<span>Signature</span>{% endif %}
+        {% if result.settings.vice_principal_signature_path %}<img src="{{ asset_url(result.settings.vice_principal_signature_path) }}" alt="Teacher signature">{% else %}<span>Signature</span>{% endif %}
         <strong>Class Teacher</strong>
         <small>Teacher Signature</small>
       </div>
       <div class="tis-official-sign">
-        {% if result.settings.principal_signature_path %}<img src="{{ url_for('static', filename=result.settings.principal_signature_path) }}" alt="Official signature">{% else %}<span>Signature</span>{% endif %}
+        {% if result.settings.principal_signature_path %}<img src="{{ asset_url(result.settings.principal_signature_path) }}" alt="Official signature">{% else %}<span>Signature</span>{% endif %}
         <strong>{{ result.settings.print_signature_title }}</strong>
         <small>{{ result.settings.print_signature_subtitle }}</small>
       </div>
       <div class="tis-official-stamp">
-        {% if result.settings.school_stamp_path %}<img src="{{ url_for('static', filename=result.settings.school_stamp_path) }}" alt="School stamp">{% else %}<strong>TIS</strong>{% endif %}
+        {% if result.settings.school_stamp_path %}<img src="{{ asset_url(result.settings.school_stamp_path) }}" alt="School stamp">{% else %}<strong>TIS</strong>{% endif %}
       </div>
     </section>
 
     <footer class="tis-print-footer">
-      {% if result.settings.print_footer_logo %}<img src="{{ url_for('static', filename=result.settings.print_footer_logo) }}" alt="Footer logo">{% endif %}
+      {% if result.settings.print_footer_logo %}<img src="{{ asset_url(result.settings.print_footer_logo) }}" alt="Footer logo">{% endif %}
       <span>{{ result.settings.report_footer_text or result.settings.school_footer }}</span>
     </footer>
   </article>

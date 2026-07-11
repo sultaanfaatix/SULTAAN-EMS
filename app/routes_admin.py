@@ -1,5 +1,4 @@
 from datetime import datetime
-from pathlib import Path
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required
@@ -8,10 +7,11 @@ from sqlalchemy import or_
 
 from . import db
 from .audit import audit
+from .cloudinary_service import upload_image
 from .import_wizard import preview_results, preview_students, result_template, student_template
 from .models import AcademicYear, AuditLog, Exam, GradeScale, Result, SchoolClass, Setting, Student, Subject, User
 from .permissions import PERMISSIONS, can, enforce_endpoint_permission, permission_required
-from .security import ALLOWED_PHOTOS, ALLOWED_SHEETS, allowed_file, safe_upload_name
+from .security import ALLOWED_PHOTOS, ALLOWED_SHEETS, allowed_file
 from .services import get_settings, grade_for, result_payload
 from .services import slug
 
@@ -70,11 +70,8 @@ def student_form(student_id=None):
             if not allowed_file(photo.filename, ALLOWED_PHOTOS):
                 flash("Photo must be JPG, PNG, or WEBP.", "danger")
                 return redirect(request.url)
-            filename = f"{student.student_code}_{safe_upload_name(photo.filename)}"
-            upload_dir = Path(current_app_config("UPLOAD_FOLDER"))
-            upload_dir.mkdir(parents=True, exist_ok=True)
-            photo.save(upload_dir / filename)
-            student.photo_path = f"uploads/{filename}"
+            photo_url = upload_image(photo, "school/students")
+            student.photo_path = photo_url
         db.session.add(student)
         audit("Student Updates", f"Saved student {student.student_code}")
         db.session.commit()
@@ -407,11 +404,8 @@ def users():
             if not allowed_file(photo.filename, ALLOWED_PHOTOS):
                 flash("Admin photo must be JPG, PNG, or WEBP.", "danger")
                 return redirect(url_for("admin.users"))
-            filename = f"admin_{user.username}_{safe_upload_name(photo.filename)}"
-            upload_dir = Path(current_app_config("UPLOAD_FOLDER"))
-            upload_dir.mkdir(parents=True, exist_ok=True)
-            photo.save(upload_dir / filename)
-            user.photo_path = f"uploads/{filename}"
+            photo_url = upload_image(photo, "school/admins")
+            user.photo_path = photo_url
         password = request.form.get("password", "")
         if password:
             user.set_password(password)
@@ -739,12 +733,9 @@ def settings():
             if not allowed_file(upload.filename, ALLOWED_PHOTOS):
                 flash("Uploaded images must be JPG, PNG, or WEBP.", "danger")
                 return redirect(url_for("admin.settings"))
-            filename = f"{setting_key}_{safe_upload_name(upload.filename)}"
-            upload_dir = Path(current_app_config("UPLOAD_FOLDER"))
-            upload_dir.mkdir(parents=True, exist_ok=True)
-            upload.save(upload_dir / filename)
+            image_url = upload_image(upload, "school/settings")
             setting = db.session.get(Setting, setting_key) or Setting(key=setting_key)
-            setting.value = f"uploads/{filename}"
+            setting.value = image_url
             db.session.add(setting)
         for subject in Subject.query.order_by(Subject.name).all():
             field_name = f"subject_icon_{subject.id}"
@@ -754,13 +745,10 @@ def settings():
             if not allowed_file(upload.filename, ALLOWED_PHOTOS):
                 flash("Uploaded subject icons must be JPG, PNG, or WEBP.", "danger")
                 return redirect(url_for("admin.settings"))
-            filename = f"subject_icon_{subject.id}_{safe_upload_name(upload.filename)}"
-            upload_dir = Path(current_app_config("UPLOAD_FOLDER"))
-            upload_dir.mkdir(parents=True, exist_ok=True)
-            upload.save(upload_dir / filename)
+            image_url = upload_image(upload, "school/subjects")
             setting_key = f"subject_icon_{slug(subject.name)}"
             setting = db.session.get(Setting, setting_key) or Setting(key=setting_key)
-            setting.value = f"uploads/{filename}"
+            setting.value = image_url
             db.session.add(setting)
         for grade in GradeScale.query.all():
             grade.min_score = request.form.get(f"min_{grade.id}", grade.min_score)

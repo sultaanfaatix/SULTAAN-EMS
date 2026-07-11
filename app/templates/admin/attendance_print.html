@@ -26,7 +26,7 @@
 <body onload="window.print()">
   <header>
     <div class="brand">
-      <div class="logo">{% if settings.logo_path %}<img src="{{ url_for('static', filename=settings.logo_path) }}" alt="Logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}</div>
+      <div class="logo">{% if settings.logo_path %}<img src="{{ asset_url(settings.logo_path) }}" alt="Logo">{% else %}<i class="fa-solid fa-school"></i>{% endif %}</div>
       <div><h1>{{ settings.school_name }}</h1><p>Examination Attendance Sheet</p><p>{{ settings.school_address }} | {{ settings.school_phone }}</p></div>
     </div>
     <div class="meta">
