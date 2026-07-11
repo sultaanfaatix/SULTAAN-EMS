@@ -450,7 +450,6 @@ def settings():
             "school_motto",
             "principal_name",
             "school_footer",
-            "passing_mark",
             "dashboard_title",
             "dashboard_subtitle",
             "dashboard_theme",
@@ -751,9 +750,34 @@ def settings():
             setting.value = image_url
             db.session.add(setting)
         for grade in GradeScale.query.all():
+            grade.grade = request.form.get(f"grade_{grade.id}", grade.grade).strip() or grade.grade
             grade.min_score = request.form.get(f"min_{grade.id}", grade.min_score)
             grade.max_score = request.form.get(f"max_{grade.id}", grade.max_score)
-            grade.comment = request.form.get(f"comment_{grade.id}", grade.comment)
+            grade.grade_point = request.form.get(f"point_{grade.id}", grade.grade_point)
+            grade.comment = request.form.get(f"comment_{grade.id}", grade.comment).strip()
+            grade.is_pass = request.form.get(f"status_{grade.id}", "fail") == "pass"
+            grade.badge_color = request.form.get(f"badge_color_{grade.id}", grade.badge_color)
+            grade.text_color = request.form.get(f"text_color_{grade.id}", grade.text_color)
+            grade.background_color = request.form.get(f"background_color_{grade.id}", grade.background_color)
+            grade.border_color = request.form.get(f"border_color_{grade.id}", grade.border_color)
+            grade.sort_order = int(request.form.get(f"sort_order_{grade.id}") or grade.sort_order or 0)
+            grade.is_active = request.form.get(f"active_{grade.id}") == "on"
+        new_grade = request.form.get("new_grade", "").strip()
+        if new_grade:
+            db.session.add(GradeScale(
+                grade=new_grade,
+                min_score=request.form.get("new_min") or 0,
+                max_score=request.form.get("new_max") or 0,
+                grade_point=request.form.get("new_point") or 0,
+                comment=request.form.get("new_comment", "").strip() or "Custom grade",
+                is_pass=request.form.get("new_status", "pass") == "pass",
+                badge_color=request.form.get("new_badge_color") or "#2563eb",
+                text_color=request.form.get("new_text_color") or "#ffffff",
+                background_color=request.form.get("new_background_color") or "#eff6ff",
+                border_color=request.form.get("new_border_color") or "#93c5fd",
+                sort_order=int(request.form.get("new_sort_order") or 0),
+                is_active=request.form.get("new_active", "on") == "on",
+            ))
         audit("Settings Changes", "Updated system settings")
         db.session.commit()
         flash("Settings saved.", "success")
@@ -761,10 +785,21 @@ def settings():
     return render_template(
         "admin/settings.html",
         settings=get_settings(),
-        scales=GradeScale.query.order_by(GradeScale.min_score.desc()).all(),
+        scales=GradeScale.query.order_by(GradeScale.sort_order.asc(), GradeScale.min_score.desc()).all(),
         subjects=Subject.query.order_by(Subject.name).all(),
         slug=slug,
     )
+
+
+@admin_bp.route("/settings/grade-scale/<int:grade_id>/delete", methods=["POST"])
+@permission_required("settings")
+def delete_grade_scale(grade_id):
+    grade = db.session.get(GradeScale, grade_id) or abort_404()
+    db.session.delete(grade)
+    audit("Settings Changes", f"Deleted grade scale {grade.grade}")
+    db.session.commit()
+    flash("Grade deleted.", "success")
+    return redirect(url_for("admin.settings"))
 
 
 @admin_bp.route("/audit-logs")

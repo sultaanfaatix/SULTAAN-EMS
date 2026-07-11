@@ -52,7 +52,6 @@ DEFAULT_SETTINGS = {
     "principal_signature_path": "",
     "vice_principal_signature_path": "",
     "exam_officer_signature_path": "",
-    "passing_mark": "50",
     "enable_phone_verification": "off",
     "report_header_style": "classic",
     "report_footer_text": "",
@@ -309,6 +308,21 @@ DEFAULT_SETTINGS = {
     "verify_default_student_photo": "",
 }
 
+DEFAULT_GRADE_SCALES = [
+    {"grade": "A+", "min_score": 95, "max_score": 100, "grade_point": 4.0, "comment": "Outstanding", "is_pass": True, "badge_color": "#065f46", "text_color": "#ffffff", "background_color": "#d1fae5", "border_color": "#10b981", "sort_order": 1},
+    {"grade": "A", "min_score": 90, "max_score": 94, "grade_point": 3.9, "comment": "Excellent", "is_pass": True, "badge_color": "#16a34a", "text_color": "#ffffff", "background_color": "#dcfce7", "border_color": "#22c55e", "sort_order": 2},
+    {"grade": "A-", "min_score": 85, "max_score": 89, "grade_point": 3.7, "comment": "Very Good", "is_pass": True, "badge_color": "#22c55e", "text_color": "#052e16", "background_color": "#f0fdf4", "border_color": "#86efac", "sort_order": 3},
+    {"grade": "B+", "min_score": 80, "max_score": 84, "grade_point": 3.5, "comment": "Good", "is_pass": True, "badge_color": "#2563eb", "text_color": "#ffffff", "background_color": "#dbeafe", "border_color": "#60a5fa", "sort_order": 4},
+    {"grade": "B", "min_score": 75, "max_score": 79, "grade_point": 3.2, "comment": "Above Average", "is_pass": True, "badge_color": "#3b82f6", "text_color": "#ffffff", "background_color": "#eff6ff", "border_color": "#93c5fd", "sort_order": 5},
+    {"grade": "B-", "min_score": 70, "max_score": 74, "grade_point": 3.0, "comment": "Average", "is_pass": True, "badge_color": "#0ea5e9", "text_color": "#ffffff", "background_color": "#e0f2fe", "border_color": "#7dd3fc", "sort_order": 6},
+    {"grade": "C+", "min_score": 65, "max_score": 69, "grade_point": 2.7, "comment": "Fair", "is_pass": True, "badge_color": "#f97316", "text_color": "#ffffff", "background_color": "#ffedd5", "border_color": "#fdba74", "sort_order": 7},
+    {"grade": "C", "min_score": 60, "max_score": 64, "grade_point": 2.4, "comment": "Satisfactory", "is_pass": True, "badge_color": "#fb923c", "text_color": "#431407", "background_color": "#fff7ed", "border_color": "#fed7aa", "sort_order": 8},
+    {"grade": "C-", "min_score": 50, "max_score": 59, "grade_point": 2.0, "comment": "Needs Improvement", "is_pass": True, "badge_color": "#facc15", "text_color": "#422006", "background_color": "#fef9c3", "border_color": "#fde047", "sort_order": 9},
+    {"grade": "D", "min_score": 40, "max_score": 49, "grade_point": 1.0, "comment": "Weak", "is_pass": True, "badge_color": "#eab308", "text_color": "#422006", "background_color": "#fef3c7", "border_color": "#facc15", "sort_order": 10},
+    {"grade": "E", "min_score": 20, "max_score": 39, "grade_point": 0.5, "comment": "Very Weak", "is_pass": False, "badge_color": "#ef4444", "text_color": "#ffffff", "background_color": "#fee2e2", "border_color": "#f87171", "sort_order": 11},
+    {"grade": "F", "min_score": 0, "max_score": 19, "grade_point": 0.0, "comment": "Fail", "is_pass": False, "badge_color": "#7f1d1d", "text_color": "#ffffff", "background_color": "#fee2e2", "border_color": "#991b1b", "sort_order": 12},
+]
+
 
 def get_settings():
     rows = Setting.query.all()
@@ -354,13 +368,63 @@ def slug(value):
 
 def grade_for(score):
     scale = (
-        GradeScale.query.filter(GradeScale.min_score <= score, GradeScale.max_score >= score)
-        .order_by(GradeScale.min_score.desc())
+        GradeScale.query.filter(
+            GradeScale.is_active.is_(True),
+            GradeScale.min_score <= score,
+            GradeScale.max_score >= score,
+        )
+        .order_by(GradeScale.sort_order.asc(), GradeScale.min_score.desc())
         .first()
     )
     if scale:
-        return {"grade": scale.grade, "comment": scale.comment}
-    return {"grade": "F", "comment": "Needs improvement"}
+        return grade_scale_payload(scale)
+    fallback = GradeScale.query.filter_by(is_active=True).order_by(GradeScale.sort_order.asc(), GradeScale.min_score.asc()).first()
+    if fallback:
+        return grade_scale_payload(fallback)
+    return {"grade": "-", "comment": "", "grade_point": 0.0, "is_pass": False, "badge_color": "#64748b", "text_color": "#ffffff", "background_color": "#f1f5f9", "border_color": "#cbd5e1"}
+
+
+def grade_scale_payload(scale):
+    return {
+        "id": scale.id,
+        "grade": scale.grade,
+        "comment": scale.comment,
+        "grade_point": float(scale.grade_point or 0),
+        "is_pass": bool(scale.is_pass),
+        "badge_color": scale.badge_color,
+        "text_color": scale.text_color,
+        "background_color": scale.background_color,
+        "border_color": scale.border_color,
+    }
+
+
+def seed_grade_scales():
+    """Create default grade rows, then backfill new metadata without replacing existing bands."""
+    from . import db
+
+    if not GradeScale.query.first():
+        for item in DEFAULT_GRADE_SCALES:
+            db.session.add(GradeScale(**item))
+        return
+
+    defaults = {item["grade"]: item for item in DEFAULT_GRADE_SCALES}
+    for scale in GradeScale.query.all():
+        item = defaults.get(scale.grade)
+        if not item:
+            continue
+        if not scale.sort_order:
+            scale.sort_order = item["sort_order"]
+        if not scale.grade_point and scale.grade != "F":
+            scale.grade_point = item["grade_point"]
+        if scale.badge_color == "#10b981":
+            scale.badge_color = item["badge_color"]
+        if scale.text_color == "#ffffff":
+            scale.text_color = item["text_color"]
+        if scale.background_color == "#ecfdf5":
+            scale.background_color = item["background_color"]
+        if scale.border_color == "#10b981":
+            scale.border_color = item["border_color"]
+        scale.is_pass = item["is_pass"] if scale.grade in {"E", "F"} else scale.is_pass
 
 
 def result_payload(student, exam=None, public_only=True):
@@ -377,18 +441,16 @@ def result_payload(student, exam=None, public_only=True):
     max_total = sum(Decimal(row.subject.max_score) for row in rows) or Decimal("0")
     average = (total / max_total * 100) if max_total else Decimal("0")
     settings = get_settings()
-    passing = Decimal(settings.get("passing_mark") or "50")
-    status = "Gudbay" if average >= passing else "Haray"
     overall = grade_for(average)
+    status = "Gudbay" if overall.get("is_pass") else "Haray"
 
     subject_rows = []
     for row in rows:
         percentage = Decimal(row.score) / Decimal(row.subject.max_score) * 100 if row.subject.max_score else 0
         automatic_grade = grade_for(percentage)
-        displayed_grade = {
-            "grade": row.grade_override or automatic_grade["grade"],
-            "comment": row.comment or automatic_grade["comment"],
-        }
+        displayed_grade = dict(automatic_grade)
+        displayed_grade["grade"] = row.grade_override or automatic_grade["grade"]
+        displayed_grade["comment"] = row.comment or automatic_grade["comment"]
         subject_rows.append(
             {
                 "id": row.id,
@@ -397,7 +459,7 @@ def result_payload(student, exam=None, public_only=True):
                 "max_score": float(row.subject.max_score),
                 "grade": displayed_grade,
                 "automatic_grade": automatic_grade,
-                "status": "Pass" if percentage >= passing else "Needs Support",
+                "status": "Pass" if displayed_grade.get("is_pass", automatic_grade.get("is_pass")) else "Needs Support",
                 "percentage": float(round(percentage, 2)),
                 "icon": subject_icon(row.subject.name, settings),
             }
@@ -430,6 +492,7 @@ def result_payload(student, exam=None, public_only=True):
         "average": float(round(average, 2)),
         "status": status,
         "overall_grade": overall,
+        "grade_scales": GradeScale.query.filter_by(is_active=True).order_by(GradeScale.sort_order.asc(), GradeScale.min_score.desc()).all(),
         "rank": rank,
         "comment": automatic_comment(average),
         "settings": settings,
@@ -437,10 +500,4 @@ def result_payload(student, exam=None, public_only=True):
 
 
 def automatic_comment(average):
-    if average >= 90:
-        return "Masha Allah! Waxaad gaadhay heer sare oo tusaale u ah dedaalka iyo kartida wanaagsan."
-    if average >= 75:
-        return "Waxaad si wanaagsan u muujisay faham qoto dheer. Sii wad dadaalkaaga."
-    if average >= 50:
-        return "Waxaad muujisay dadaal muuqda. Xoogga saar meelaha u baahan horumar."
-    return "Ha niyad jabin. La shaqee macallimiinta, joogtee akhriska, hana quusan."
+    return grade_for(average).get("comment") or ""

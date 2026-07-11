@@ -11,7 +11,7 @@ from . import db
 from .audit import audit
 from .models import AcademicYear, Exam, Result, SchoolClass, Student, Subject
 from .permissions import enforce_endpoint_permission
-from .services import get_settings, result_payload
+from .services import grade_for, result_payload
 
 advanced_results_bp = Blueprint("admin_advanced_results", __name__)
 
@@ -162,9 +162,8 @@ def group_results(rows):
 
 
 def build_stats(payloads, rows):
-    passing = Decimal(get_settings().get("passing_mark") or "50")
     averages = [Decimal(str(payload["average"])) for payload in payloads if payload.get("subjects")]
-    pass_count = sum(1 for avg in averages if avg >= passing)
+    pass_count = sum(1 for avg in averages if grade_for(avg).get("is_pass"))
     subject_totals = defaultdict(list)
     for row in rows:
         subject_totals[row.subject.name].append(Decimal(row.score) / Decimal(row.subject.max_score) * 100 if row.subject.max_score else Decimal("0"))

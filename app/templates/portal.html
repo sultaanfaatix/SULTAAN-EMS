@@ -197,8 +197,8 @@
                     <td data-label="Subject">{{ row.subject }}</td>
                     <td data-label="Full Mark">{{ row.max_score }}</td>
                     <td data-label="Mark Obtained">{{ row.score }}</td>
-                    <td data-label="Grade">{{ row.grade.grade }}</td>
-                    <td data-label="Grade Point">{{ '5.0' if row.percentage >= 90 else '4.0' if row.percentage >= 80 else '3.5' if row.percentage >= 70 else '3.0' if row.percentage >= 60 else '2.0' if row.percentage >= 50 else '0.0' }}</td>
+                    <td data-label="Grade"><span class="dynamic-grade-badge" style="background: {{ row.grade.background_color }}; border-color: {{ row.grade.border_color }}; color: {{ row.grade.badge_color }};"><b style="background: {{ row.grade.badge_color }}; color: {{ row.grade.text_color }};">{{ row.grade.grade }}</b></span></td>
+                    <td data-label="Grade Point">{{ row.grade.grade_point }}</td>
                   </tr>
                 {% endfor %}
               </tbody>
@@ -212,7 +212,7 @@
               <div><span><i class="fa-solid fa-list-check"></i> Total Marks</span><strong>{{ result.max_total }}</strong></div>
               <div><span><i class="fa-solid fa-chart-line"></i> Total Obtained Marks</span><strong>{{ result.total }}</strong></div>
               <div><span><i class="fa-solid fa-chart-pie"></i> Average Percentage</span><strong>{{ result.average }}%</strong></div>
-              <div><span><i class="fa-solid fa-star"></i> Overall Grade</span><strong class="pill">{{ result.overall_grade.grade }}</strong></div>
+              <div><span><i class="fa-solid fa-star"></i> Overall Grade</span><strong class="pill" style="background: {{ result.overall_grade.badge_color }}; color: {{ result.overall_grade.text_color }};">{{ result.overall_grade.grade }}</strong></div>
               <div><span><i class="fa-solid fa-ranking-star"></i> Position in Class</span><strong>{{ result.rank or '-' }}</strong></div>
               <div><span><i class="fa-solid fa-face-smile"></i> Behavior</span><strong>Excellent</strong></div>
             </section>
@@ -249,12 +249,9 @@
             <h3>Grade Scale</h3>
             <table>
               <tr><th>Percentage</th><th>Grade</th><th>Point</th></tr>
-              <tr><td>90 - 100</td><td>A+</td><td>5.0</td></tr>
-              <tr><td>80 - 89</td><td>A</td><td>4.0</td></tr>
-              <tr><td>70 - 79</td><td>B+</td><td>3.5</td></tr>
-              <tr><td>60 - 69</td><td>B</td><td>3.0</td></tr>
-              <tr><td>50 - 59</td><td>C</td><td>2.0</td></tr>
-              <tr><td>0 - 49</td><td>F</td><td>0.0</td></tr>
+              {% for scale in result.grade_scales %}
+              <tr><td>{{ scale.min_score }} - {{ scale.max_score }}</td><td>{{ scale.grade }}</td><td>{{ scale.grade_point }}</td></tr>
+              {% endfor %}
             </table>
           </div>
           <div class="reference-performance">

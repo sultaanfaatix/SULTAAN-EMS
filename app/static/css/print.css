@@ -516,6 +516,15 @@ body {
   font-size: 7.2pt;
   font-weight: 800;
 }
+.print-grade-badge {
+  display: inline-grid;
+  min-width: 9mm;
+  place-items: center;
+  padding: .8mm 1.6mm;
+  border: .25mm solid;
+  border-radius: 99mm;
+  font-weight: 900;
+}
 @media print {
   html, body { width: 210mm; height: 297mm; background: #fff; }
   .tis-print-report { width: 202mm; height: 289mm; box-shadow: none; page-break-inside: avoid; break-inside: avoid; }

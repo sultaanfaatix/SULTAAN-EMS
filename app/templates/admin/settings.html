@@ -12,7 +12,6 @@
     <label><i class="fa-solid fa-envelope"></i> Email<input name="school_email" value="{{ settings.school_email }}"></label>
     <label><i class="fa-solid fa-globe"></i> Website<input name="school_website" value="{{ settings.school_website }}"></label>
     <label><i class="fa-solid fa-user-tie"></i> Principal Name<input name="principal_name" value="{{ settings.principal_name }}"></label>
-    <label><i class="fa-solid fa-percent"></i> Passing Mark<input name="passing_mark" type="number" step="0.01" value="{{ settings.passing_mark }}"></label>
     <label><i class="fa-solid fa-phone-volume"></i> Enable Phone Verification<select name="enable_phone_verification"><option value="off" {% if settings.enable_phone_verification != 'on' %}selected{% endif %}>OFF</option><option value="on" {% if settings.enable_phone_verification == 'on' %}selected{% endif %}>ON</option></select></label>
     <label><i class="fa-solid fa-image"></i> School Logo<input name="logo" type="file" accept="image/*"></label>
     <label class="wide"><i class="fa-solid fa-shoe-prints"></i> Footer Text<input name="school_footer" value="{{ settings.school_footer }}"></label>
@@ -403,15 +402,65 @@
   </section>
 
   <section class="panel form-grid premium-form">
-    <div class="section-heading wide"><span><i class="fa-solid fa-ranking-star"></i></span><div><h2>Grade Scale</h2><p>Adjust score bands and comments used across reports.</p></div></div>
-    {% for s in scales %}
-      <label>{{ s.grade }} Min<input name="min_{{ s.id }}" value="{{ s.min_score }}"></label>
-      <label>{{ s.grade }} Max<input name="max_{{ s.id }}" value="{{ s.max_score }}"></label>
-      <label class="span-2">{{ s.grade }} Comment<input name="comment_{{ s.id }}" value="{{ s.comment }}"></label>
-    {% endfor %}
+    <div class="section-heading wide"><span><i class="fa-solid fa-ranking-star"></i></span><div><h2>Grade Scale Management</h2><p>Fully dynamic grade bands, GPA points, pass/fail status, colors, comments, ordering, and activation.</p></div></div>
+    <div class="wide grade-scale-toolbar">
+      <span class="status-pill ok"><i class="fa-solid fa-database"></i> Database driven</span>
+      <span class="status-pill"><i class="fa-solid fa-grip-vertical"></i> Drag rows to reorder</span>
+      <span class="status-pill warn"><i class="fa-solid fa-eye"></i> Live preview colors</span>
+    </div>
+    <div class="wide grade-scale-table-wrap">
+      <table class="premium-table grade-scale-table" data-grade-table>
+        <thead>
+          <tr>
+            <th>Order</th><th>Grade</th><th>Min</th><th>Max</th><th>Point</th><th>Status</th><th>Comment</th><th>Badge</th><th>Text</th><th>BG</th><th>Border</th><th>Active</th><th>Preview</th><th>Delete</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in scales %}
+          <tr draggable="true" data-grade-row>
+            <td><input class="tiny-input" name="sort_order_{{ s.id }}" value="{{ s.sort_order or loop.index }}" data-grade-order></td>
+            <td><input class="tiny-input" name="grade_{{ s.id }}" value="{{ s.grade }}"></td>
+            <td><input class="tiny-input" name="min_{{ s.id }}" type="number" step="0.01" value="{{ s.min_score }}"></td>
+            <td><input class="tiny-input" name="max_{{ s.id }}" type="number" step="0.01" value="{{ s.max_score }}"></td>
+            <td><input class="tiny-input" name="point_{{ s.id }}" type="number" step="0.01" value="{{ s.grade_point }}"></td>
+            <td><select name="status_{{ s.id }}"><option value="pass" {% if s.is_pass %}selected{% endif %}>Pass</option><option value="fail" {% if not s.is_pass %}selected{% endif %}>Fail</option></select></td>
+            <td><input name="comment_{{ s.id }}" value="{{ s.comment }}"></td>
+            <td><input name="badge_color_{{ s.id }}" type="color" value="{{ s.badge_color }}"></td>
+            <td><input name="text_color_{{ s.id }}" type="color" value="{{ s.text_color }}"></td>
+            <td><input name="background_color_{{ s.id }}" type="color" value="{{ s.background_color }}"></td>
+            <td><input name="border_color_{{ s.id }}" type="color" value="{{ s.border_color }}"></td>
+            <td><input name="active_{{ s.id }}" type="checkbox" {% if s.is_active %}checked{% endif %}></td>
+            <td><span class="grade-preview" style="--grade-bg: {{ s.background_color }}; --grade-border: {{ s.border_color }}; --grade-text: {{ s.badge_color }};"><b style="background: {{ s.badge_color }}; color: {{ s.text_color }};">{{ s.grade }}</b>{{ s.comment }}</span></td>
+            <td><button type="submit" class="icon-btn danger" form="delete-grade-{{ s.id }}" title="Delete {{ s.grade }}"><i class="fa-solid fa-trash"></i></button></td>
+          </tr>
+          {% endfor %}
+          <tr class="grade-new-row">
+            <td><input class="tiny-input" name="new_sort_order" placeholder="#"></td>
+            <td><input class="tiny-input" name="new_grade" placeholder="New"></td>
+            <td><input class="tiny-input" name="new_min" type="number" step="0.01" placeholder="0"></td>
+            <td><input class="tiny-input" name="new_max" type="number" step="0.01" placeholder="100"></td>
+            <td><input class="tiny-input" name="new_point" type="number" step="0.01" placeholder="0.0"></td>
+            <td><select name="new_status"><option value="pass">Pass</option><option value="fail">Fail</option></select></td>
+            <td><input name="new_comment" placeholder="Performance comment"></td>
+            <td><input name="new_badge_color" type="color" value="#2563eb"></td>
+            <td><input name="new_text_color" type="color" value="#ffffff"></td>
+            <td><input name="new_background_color" type="color" value="#eff6ff"></td>
+            <td><input name="new_border_color" type="color" value="#93c5fd"></td>
+            <td><input name="new_active" type="checkbox" checked></td>
+            <td><span class="grade-preview"><b>New</b>Add grade</span></td>
+            <td><span class="status-pill"><i class="fa-solid fa-plus"></i> Add</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
   <button class="floating-save premium"><i class="fa-solid fa-floppy-disk"></i> Save All Settings</button>
 </form>
+{% for s in scales %}
+<form id="delete-grade-{{ s.id }}" method="post" action="{{ url_for('admin.delete_grade_scale', grade_id=s.id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+{% endfor %}
 <script>
   (() => {
     const preview = document.getElementById("resultDashboardPreview");
@@ -471,6 +520,64 @@
       select.addEventListener("change", apply);
       apply();
     });
+  })();
+  (() => {
+    const table = document.querySelector("[data-grade-table]");
+    if (!table) return;
+    const tbody = table.querySelector("tbody");
+    let dragged = null;
+    const syncOrder = () => {
+      tbody.querySelectorAll("[data-grade-row]").forEach((row, index) => {
+        const input = row.querySelector("[data-grade-order]");
+        if (input) input.value = index + 1;
+      });
+    };
+    const previewRows = () => {
+      tbody.querySelectorAll("tr").forEach((row) => {
+        const preview = row.querySelector(".grade-preview");
+        if (!preview) return;
+        const badge = preview.querySelector("b");
+        const gradeInput = row.querySelector('input[name^="grade_"], input[name="new_grade"]');
+        const commentInput = row.querySelector('input[name^="comment_"], input[name="new_comment"]');
+        const badgeColor = row.querySelector('input[name^="badge_color_"], input[name="new_badge_color"]');
+        const textColor = row.querySelector('input[name^="text_color_"], input[name="new_text_color"]');
+        const backgroundColor = row.querySelector('input[name^="background_color_"], input[name="new_background_color"]');
+        const borderColor = row.querySelector('input[name^="border_color_"], input[name="new_border_color"]');
+        if (badge && gradeInput) badge.textContent = gradeInput.value || "New";
+        if (commentInput) {
+          const text = [...preview.childNodes].find((node) => node.nodeType === Node.TEXT_NODE);
+          if (text) text.textContent = commentInput.value || "Add grade";
+        }
+        if (badgeColor) {
+          preview.style.setProperty("--grade-text", badgeColor.value);
+          if (badge) badge.style.background = badgeColor.value;
+        }
+        if (textColor && badge) badge.style.color = textColor.value;
+        if (backgroundColor) preview.style.setProperty("--grade-bg", backgroundColor.value);
+        if (borderColor) preview.style.setProperty("--grade-border", borderColor.value);
+      });
+    };
+    tbody.querySelectorAll("[data-grade-row]").forEach((row) => {
+      row.addEventListener("dragstart", () => {
+        dragged = row;
+        row.classList.add("is-dragging");
+      });
+      row.addEventListener("dragend", () => {
+        row.classList.remove("is-dragging");
+        dragged = null;
+        syncOrder();
+      });
+      row.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        if (!dragged || dragged === row) return;
+        const rect = row.getBoundingClientRect();
+        const after = event.clientY > rect.top + rect.height / 2;
+        tbody.insertBefore(dragged, after ? row.nextSibling : row);
+      });
+    });
+    syncOrder();
+    table.querySelectorAll("input, select").forEach((input) => input.addEventListener("input", previewRows));
+    previewRows();
   })();
 </script>
 {% endblock %}

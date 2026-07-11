@@ -62,6 +62,7 @@ ENDPOINT_PERMISSIONS = {
     "admin.users": "users",
     "admin.reset_user_password": "users",
     "admin.settings": ("settings", "system_settings"),
+    "admin.delete_grade_scale": ("settings", "system_settings"),
     "admin.audit_logs": "system_settings",
     "admin_attendance.dashboard": "attendance",
     "admin_attendance.save": "attendance",

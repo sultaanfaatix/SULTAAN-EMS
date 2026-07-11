@@ -135,7 +135,7 @@ class Result(TimestampMixin, db.Model):
     subject_id = db.Column(db.Integer, db.ForeignKey("subjects.id"), nullable=False)
 
     score = db.Column(db.Numeric(6, 2), nullable=False)
-    grade_override = db.Column(db.String(10))
+    grade_override = db.Column(db.String(20))
     comment = db.Column(db.String(255))
     is_published = db.Column(db.Boolean, default=True, nullable=False)
 
@@ -159,10 +159,18 @@ class GradeScale(TimestampMixin, db.Model):
     __tablename__ = "grade_scales"
 
     id = db.Column(db.Integer, primary_key=True)
-    grade = db.Column(db.String(5), nullable=False)
+    grade = db.Column(db.String(20), nullable=False)
     min_score = db.Column(db.Numeric(6, 2), nullable=False)
     max_score = db.Column(db.Numeric(6, 2), nullable=False)
     comment = db.Column(db.String(120), nullable=False)
+    grade_point = db.Column(db.Numeric(4, 2), default=0, nullable=False)
+    is_pass = db.Column(db.Boolean, default=True, nullable=False)
+    badge_color = db.Column(db.String(20), default="#10b981", nullable=False)
+    text_color = db.Column(db.String(20), default="#ffffff", nullable=False)
+    background_color = db.Column(db.String(20), default="#ecfdf5", nullable=False)
+    border_color = db.Column(db.String(20), default="#10b981", nullable=False)
+    sort_order = db.Column(db.Integer, default=0, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
 
 
 class ReportVerification(TimestampMixin, db.Model):

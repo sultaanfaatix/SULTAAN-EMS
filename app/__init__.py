@@ -22,7 +22,7 @@ def create_app(config_class=Config):
 
     from .models import User, Setting
     from .permissions import can
-    from .services import DEFAULT_SETTINGS
+    from .services import DEFAULT_SETTINGS, seed_grade_scales
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -91,6 +91,7 @@ def create_app(config_class=Config):
             for key, value in DEFAULT_SETTINGS.items():
                 if not db.session.get(Setting, key):
                     db.session.add(Setting(key=key, value=value))
+            seed_grade_scales()
             db.session.commit()
 
         # 🔥 AUTO ADMIN FIX (IMPORTANT)
@@ -115,7 +116,7 @@ def register_cli(app):
     import click
 
     from .models import AcademicYear, GradeScale, Setting, User
-    from .services import DEFAULT_SETTINGS
+    from .services import DEFAULT_SETTINGS, seed_grade_scales
 
     @app.cli.command("init-db")
     def init_db_command():
@@ -128,27 +129,7 @@ def register_cli(app):
             if not db.session.get(Setting, key):
                 db.session.add(Setting(key=key, value=value))
 
-        if not GradeScale.query.first():
-            for grade, min_score, max_score, comment in [
-                ("A+", 95, 100, "Heer Sare"),
-                ("A", 90, 94.99, "Heer Sare"),
-                ("A-", 85, 89.99, "Heer Sare"),
-                ("B+", 80, 84.99, "Aad u Wanaagsan"),
-                ("B", 75, 79.99, "Aad u Wanaagsan"),
-                ("B-", 70, 74.99, "Wanaagsan"),
-                ("C+", 65, 69.99, "Wanaagsan"),
-                ("C", 60, 64.99, "Wanaagsan"),
-                ("C-", 50, 59.99, "Dhexdhexaad"),
-                ("D", 40, 49.99, "Liita"),
-                ("E", 20, 39.99, "Liita"),
-                ("F", 0, 19.99, "Liita"),
-            ]:
-                db.session.add(GradeScale(
-                    grade=grade,
-                    min_score=min_score,
-                    max_score=max_score,
-                    comment=comment
-                ))
+        seed_grade_scales()
 
         if not AcademicYear.query.first():
             db.session.add(AcademicYear(name="2024-2025", is_current=True))

@@ -4692,3 +4692,102 @@ tbody tr:hover td { background: #f8fbff; }
   display: none;
   content: none;
 }
+
+/* Dynamic grade scale manager */
+.grade-scale-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.grade-scale-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 16px 34px rgba(0, 32, 96, .08);
+}
+.grade-scale-table {
+  min-width: 1320px;
+  border: 0;
+  box-shadow: none;
+}
+.grade-scale-table th,
+.grade-scale-table td {
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.grade-scale-table input,
+.grade-scale-table select {
+  min-height: 36px;
+  padding: 7px 9px;
+  border: 1px solid #d8e2ef;
+  border-radius: 10px;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+}
+.grade-scale-table input[type="color"] {
+  width: 44px;
+  padding: 3px;
+}
+.grade-scale-table input[type="checkbox"] {
+  width: 20px;
+  min-height: 20px;
+}
+.grade-scale-table .tiny-input {
+  width: 74px;
+}
+.grade-scale-table tr[draggable="true"] {
+  cursor: grab;
+}
+.grade-scale-table tr.is-dragging {
+  opacity: .5;
+  outline: 2px dashed var(--secondary);
+}
+.grade-new-row td {
+  background: #f8fbff;
+}
+.grade-preview {
+  min-width: 132px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  color: var(--grade-text, #0f172a);
+  background: var(--grade-bg, #eff6ff);
+  border: 1px solid var(--grade-border, #93c5fd);
+  border-radius: 999px;
+  font-size: .78rem;
+  font-weight: 800;
+}
+.grade-preview b {
+  min-width: 34px;
+  display: inline-grid;
+  place-items: center;
+  padding: 4px 8px;
+  color: #fff;
+  background: #2563eb;
+  border-radius: 999px;
+}
+.icon-btn.danger {
+  color: #dc2626;
+  background: #fee2e2;
+  border-color: #fecaca;
+}
+.dynamic-grade-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  padding: 3px 7px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-weight: 900;
+}
+.dynamic-grade-badge b {
+  min-width: 30px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  line-height: 1;
+}

@@ -114,7 +114,7 @@
               <td>{{ row.subject }}</td>
               <td>{{ row.max_score }}</td>
               <td>{{ row.score }}</td>
-              <td><strong>{{ row.grade.grade }}</strong></td>
+              <td><strong class="print-grade-badge" style="background: {{ row.grade.background_color }}; border-color: {{ row.grade.border_color }}; color: {{ row.grade.badge_color }};">{{ row.grade.grade }}</strong></td>
               <td>{{ row.grade.comment }}</td>
             </tr>
           {% endfor %}
@@ -126,7 +126,7 @@
       <div><i class="fa-solid fa-clipboard-check"></i><span>Total Marks</span><strong>{{ result.max_total }}</strong><small>Out of {{ result.max_total }}</small></div>
       <div><i class="fa-solid fa-chart-line"></i><span>Marks Obtained</span><strong>{{ result.total }}</strong><small>Out of {{ result.max_total }}</small></div>
       <div><i class="fa-solid fa-chart-pie"></i><span>Percentage</span><strong>{{ result.average }}%</strong></div>
-      <div><i class="fa-solid fa-award"></i><span>Grade</span><strong>{{ result.overall_grade.grade }}</strong><small>{{ result.overall_grade.comment }}</small></div>
+      <div><i class="fa-solid fa-award"></i><span>Grade</span><strong style="color: {{ result.overall_grade.badge_color }};">{{ result.overall_grade.grade }}</strong><small>{{ result.overall_grade.comment }}</small></div>
       <div><i class="fa-solid fa-trophy"></i><span>Rank</span><strong>{{ result.rank or '-' }}</strong><small>In Class</small></div>
     </section>
 
