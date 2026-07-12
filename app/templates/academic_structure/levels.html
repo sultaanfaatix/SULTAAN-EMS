@@ -1,0 +1,50 @@
+{% extends "admin/base.html" %}
+{% block title %}Academic Levels{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <h1><i class="fa-solid fa-layer-group"></i> Academic Levels</h1>
+    <a href="{{ url_for('academic_structure.academic_level_form') }}" class="btn btn-primary">
+        <i class="fa-solid fa-plus"></i> New Level
+    </a>
+</div>
+
+<div class="panel">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Sort Order</th>
+                <th>Classes</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for level in levels %}
+            <tr>
+                <td><strong>{{ level.name }}</strong></td>
+                <td>{{ level.sort_order }}</td>
+                <td>{{ level.classes.count() }}</td>
+                <td>
+                    {% if level.is_active %}
+                        <span class="badge badge-success">Active</span>
+                    {% else %}
+                        <span class="badge badge-secondary">Inactive</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('academic_structure.academic_level_form', level_id=level.id) }}" class="btn btn-sm">
+                        <i class="fa-solid fa-edit"></i>
+                    </a>
+                    <form method="POST" action="{{ url_for('academic_structure.delete_academic_level', level_id=level.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this level?')">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

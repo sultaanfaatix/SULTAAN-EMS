@@ -29,6 +29,7 @@ PERMISSIONS = [
     ("system_settings", "System Settings"),
     ("backup", "Backup"),
     ("restore", "Restore"),
+    ("manage_academic_structure", "Manage Academic Structure"),
 ]
 
 ENDPOINT_PERMISSIONS = {
@@ -91,6 +92,16 @@ ENDPOINT_PERMISSIONS = {
     "admin_teachers.teacher_settings": "teachers",
     "admin_teachers.export_teachers": ("teachers", "export"),
     "admin_teachers.print_teachers": ("teachers", "print"),
+    "academic_structure.index": "manage_academic_structure",
+    "academic_structure.academic_levels": "manage_academic_structure",
+    "academic_structure.academic_level_form": "manage_academic_structure",
+    "academic_structure.delete_academic_level": "manage_academic_structure",
+    "academic_structure.academic_classes": "manage_academic_structure",
+    "academic_structure.academic_class_form": "manage_academic_structure",
+    "academic_structure.delete_academic_class": "manage_academic_structure",
+    "academic_structure.academic_sections": "manage_academic_structure",
+    "academic_structure.academic_section_form": "manage_academic_structure",
+    "academic_structure.delete_academic_section": "manage_academic_structure",
 }
 
 

@@ -9,7 +9,7 @@ from . import db
 from .audit import audit
 from .cloudinary_service import upload_image
 from .import_wizard import preview_results, preview_students, result_template, student_template
-from .models import AcademicYear, AuditLog, Exam, GradeScale, Result, SchoolClass, Setting, Student, Subject, User
+from .models import AcademicLevel, AcademicClass, AcademicSection, AcademicYear, AuditLog, Exam, GradeScale, Result, SchoolClass, Setting, Student, Subject, User
 from .permissions import PERMISSIONS, can, enforce_endpoint_permission, permission_required
 from .security import ALLOWED_PHOTOS, ALLOWED_SHEETS, allowed_file
 from .services import get_settings, grade_for, result_payload
@@ -57,10 +57,18 @@ def student_form(student_id=None):
         student.full_name = request.form["full_name"].strip()
         student.mother_name = request.form.get("mother_name", "").strip()
         student.phone = request.form.get("phone", "").strip()
-        student.class_id = int(request.form["class_id"])
+        
+        # New academic hierarchy
+        student.academic_level_id = int(request.form.get("academic_level_id")) if request.form.get("academic_level_id") else None
+        student.academic_class_id = int(request.form.get("academic_class_id")) if request.form.get("academic_class_id") else None
+        student.academic_section_id = int(request.form.get("academic_section_id")) if request.form.get("academic_section_id") else None
+        
+        # Legacy fields for backward compatibility
+        student.class_id = int(request.form["class_id"]) if request.form.get("class_id") else None
         student.academic_year_id = int(request.form["academic_year_id"])
         student.level = request.form.get("level", "").strip()
         student.section = request.form.get("section", "").strip()
+        
         student.note = request.form.get("note", "").strip()
         student.is_result_locked = bool(request.form.get("is_result_locked"))
         student.lock_reason = request.form.get("lock_reason", "").strip()
@@ -77,11 +85,14 @@ def student_form(student_id=None):
         db.session.commit()
         flash("Student saved successfully.", "success")
         return redirect(url_for("admin.students"))
+    
+    academic_levels = AcademicLevel.query.filter_by(is_active=True).order_by(AcademicLevel.sort_order).all()
     return render_template(
         "admin/student_form.html",
         student=student,
         classes=SchoolClass.query.order_by(SchoolClass.name).all(),
         years=AcademicYear.query.order_by(AcademicYear.name.desc()).all(),
+        academic_levels=academic_levels,
     )
 
 

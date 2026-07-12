@@ -8,7 +8,7 @@ from openpyxl import Workbook
 from . import db
 from .audit import audit
 from .cloudinary_service import upload_image
-from .models import SchoolClass, Setting, Subject, Teacher, TeacherActivity
+from .models import AcademicClass, AcademicLevel, AcademicSection, SchoolClass, Setting, Subject, Teacher, TeacherActivity
 from .permissions import enforce_endpoint_permission
 from .security import ALLOWED_PHOTOS, allowed_file
 from .teacher_services import (
@@ -86,6 +86,7 @@ def teacher_form(teacher_id=None):
     teacher = db.session.get(Teacher, teacher_id) if teacher_id else Teacher()
     subjects = Subject.query.order_by(Subject.sort_order, Subject.name).all()
     classes = SchoolClass.query.order_by(SchoolClass.name).all()
+    academic_levels = AcademicLevel.query.filter_by(is_active=True).order_by(AcademicLevel.sort_order).all()
     settings = get_teacher_settings()
 
     if request.method == "POST":
@@ -126,9 +127,20 @@ def teacher_form(teacher_id=None):
                 teacher.photo_path = upload_image(photo, "school/teachers")
 
             selected_subjects = [int(value) for value in request.form.getlist("subject_ids") if value.isdigit()]
-            selected_classes = [int(value) for value in request.form.getlist("class_ids") if value.isdigit()]
             teacher.subjects = Subject.query.filter(Subject.id.in_(selected_subjects)).all() if selected_subjects else []
-            teacher.classes = SchoolClass.query.filter(SchoolClass.id.in_(selected_classes)).all() if selected_classes else []
+            
+            # New academic hierarchy assignments
+            selected_academic_levels = [int(value) for value in request.form.getlist("academic_level_ids") if value.isdigit()]
+            selected_academic_classes = [int(value) for value in request.form.getlist("academic_class_ids") if value.isdigit()]
+            selected_academic_sections = [int(value) for value in request.form.getlist("academic_section_ids") if value.isdigit()]
+            
+            teacher.academic_levels = AcademicLevel.query.filter(AcademicLevel.id.in_(selected_academic_levels)).all() if selected_academic_levels else []
+            teacher.classes = AcademicClass.query.filter(AcademicClass.id.in_(selected_academic_classes)).all() if selected_academic_classes else []
+            teacher.sections = AcademicSection.query.filter(AcademicSection.id.in_(selected_academic_sections)).all() if selected_academic_sections else []
+            
+            # Legacy class assignments for backward compatibility
+            selected_legacy_classes = [int(value) for value in request.form.getlist("class_ids") if value.isdigit()]
+            # Note: We don't assign to teacher.classes here anymore since it now references AcademicClass
 
             db.session.add(teacher)
             db.session.flush()
@@ -162,6 +174,7 @@ def teacher_form(teacher_id=None):
         teacher=teacher,
         subjects=subjects,
         classes=classes,
+        academic_levels=academic_levels,
         settings=settings,
         school_levels=SCHOOL_LEVELS,
         employment_types=EMPLOYMENT_TYPES,

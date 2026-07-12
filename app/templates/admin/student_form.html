@@ -8,10 +8,27 @@
   <label class="span-2"><i class="fa-solid fa-user-graduate"></i> Full Name<input name="full_name" value="{{ student.full_name or '' }}" required></label>
   <label class="span-2"><i class="fa-solid fa-person-dress"></i> Mother Name<input name="mother_name" value="{{ student.mother_name or '' }}"></label>
   <label><i class="fa-solid fa-phone"></i> Phone Number<input name="phone" value="{{ student.phone or '' }}"></label>
-  <label><i class="fa-solid fa-people-roof"></i> Class<select name="class_id" required>{% for c in classes %}<option value="{{ c.id }}" {% if student.class_id==c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
+  
+  <!-- New Academic Hierarchy -->
+  <label><i class="fa-solid fa-layer-group"></i> Academic Level<select name="academic_level_id" id="academic_level_id">
+    <option value="">Select Level</option>
+    {% for level in academic_levels %}
+    <option value="{{ level.id }}" {% if student.academic_level_id==level.id %}selected{% endif %}>{{ level.name }}</option>
+    {% endfor %}
+  </select></label>
+  <label><i class="fa-solid fa-graduation-cap"></i> Class<select name="academic_class_id" id="academic_class_id">
+    <option value="">Select Class</option>
+  </select></label>
+  <label><i class="fa-solid fa-table-cells"></i> Section<select name="academic_section_id" id="academic_section_id">
+    <option value="">Select Section</option>
+  </select></label>
+  
+  <!-- Legacy Fields for Backward Compatibility -->
+  <label><i class="fa-solid fa-people-roof"></i> Legacy Class<select name="class_id">{% for c in classes %}<option value="{{ c.id }}" {% if student.class_id==c.id %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
   <label><i class="fa-solid fa-calendar-days"></i> Academic Year<select name="academic_year_id" required>{% for y in years %}<option value="{{ y.id }}" {% if student.academic_year_id==y.id %}selected{% endif %}>{{ y.name }}</option>{% endfor %}</select></label>
-  <label><i class="fa-solid fa-layer-group"></i> Level<input name="level" value="{{ student.level or '' }}" placeholder="Optional level"></label>
-  <label><i class="fa-solid fa-table-cells"></i> Section<input name="section" value="{{ student.section or '' }}" placeholder="Optional section"></label>
+  <label><i class="fa-solid fa-layer-group"></i> Legacy Level<input name="level" value="{{ student.level or '' }}" placeholder="Optional level"></label>
+  <label><i class="fa-solid fa-table-cells"></i> Legacy Section<input name="section" value="{{ student.section or '' }}" placeholder="Optional section"></label>
+  
   <label><i class="fa-solid fa-image"></i> Student Photo<input type="file" name="photo" accept="image/*"></label>
   <label class="wide"><i class="fa-solid fa-message"></i> Special Comment<textarea name="note">{{ student.note or '' }}</textarea></label>
   <label class="wide"><i class="fa-solid fa-triangle-exclamation"></i> Lock Reason<input name="lock_reason" value="{{ student.lock_reason or '' }}" placeholder="Outstanding school fees, missing documents, library fine..."></label>
@@ -19,4 +36,67 @@
   <label class="check"><input type="checkbox" name="is_active" {% if student.is_active or not student.id %}checked{% endif %}> <i class="fa-solid fa-circle-check"></i> Active Student</label>
   <button class="premium"><i class="fa-solid fa-floppy-disk"></i> Save Student</button>
 </form>
+
+<script>
+// Academic hierarchy cascading dropdowns
+const academicClasses = {
+  {% for level in academic_levels %}
+  {{ level.id }}: [
+    {% for cls in level.classes %}
+    {id: {{ cls.id }}, name: "{{ cls.name }}", sections: [
+      {% for section in cls.sections %}
+      {id: {{ section.id }}, name: "{{ section.name }}"}
+      {% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]}{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]{% if not loop.last %},{% endif %}
+  {% endfor %}
+};
+
+const levelSelect = document.getElementById('academic_level_id');
+const classSelect = document.getElementById('academic_class_id');
+const sectionSelect = document.getElementById('academic_section_id');
+
+levelSelect.addEventListener('change', function() {
+  const levelId = parseInt(this.value);
+  classSelect.innerHTML = '<option value="">Select Class</option>';
+  sectionSelect.innerHTML = '<option value="">Select Section</option>';
+  
+  if (levelId && academicClasses[levelId]) {
+    academicClasses[levelId].forEach(cls => {
+      const option = document.createElement('option');
+      option.value = cls.id;
+      option.textContent = cls.name;
+      classSelect.appendChild(option);
+    });
+  }
+});
+
+classSelect.addEventListener('change', function() {
+  const levelId = parseInt(levelSelect.value);
+  const classId = parseInt(this.value);
+  sectionSelect.innerHTML = '<option value="">Select Section</option>';
+  
+  if (levelId && classId && academicClasses[levelId]) {
+    const selectedClass = academicClasses[levelId].find(cls => cls.id === classId);
+    if (selectedClass && selectedClass.sections) {
+      selectedClass.sections.forEach(section => {
+        const option = document.createElement('option');
+        option.value = section.id;
+        option.textContent = section.name;
+        sectionSelect.appendChild(option);
+      });
+    }
+  }
+});
+
+// Initialize on page load
+if (levelSelect.value) {
+  levelSelect.dispatchEvent(new Event('change'));
+  if (classSelect.value) {
+    classSelect.dispatchEvent(new Event('change'));
+  }
+}
+</script>
 {% endblock %}

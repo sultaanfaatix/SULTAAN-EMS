@@ -25,6 +25,21 @@ def ensure_schema_compatibility():
     add_column_if_missing("grade_scales", "border_color", column_sql(dialect, "border_color", "VARCHAR(20) NOT NULL DEFAULT '#10b981'"))
     add_column_if_missing("grade_scales", "sort_order", column_sql(dialect, "sort_order", "INTEGER NOT NULL DEFAULT 0"))
     add_column_if_missing("grade_scales", "is_active", column_sql(dialect, "is_active", "BOOLEAN NOT NULL DEFAULT TRUE"))
+    
+    # New academic structure columns
+    add_column_if_missing("students", "academic_level_id", column_sql(dialect, "academic_level_id", "INTEGER"))
+    add_column_if_missing("students", "academic_class_id", column_sql(dialect, "academic_class_id", "INTEGER"))
+    add_column_if_missing("students", "academic_section_id", column_sql(dialect, "academic_section_id", "INTEGER"))
+    add_column_if_missing("subjects", "academic_level_id", column_sql(dialect, "academic_level_id", "INTEGER"))
+    add_column_if_missing("exams", "academic_level_id", column_sql(dialect, "academic_level_id", "INTEGER"))
+    add_column_if_missing("exams", "academic_class_id", column_sql(dialect, "academic_class_id", "INTEGER"))
+    add_column_if_missing("exams", "academic_section_id", column_sql(dialect, "academic_section_id", "INTEGER"))
+    add_column_if_missing("attendance_records", "academic_level_id", column_sql(dialect, "academic_level_id", "INTEGER"))
+    add_column_if_missing("attendance_records", "academic_class_id", column_sql(dialect, "academic_class_id", "INTEGER"))
+    add_column_if_missing("attendance_records", "academic_section_id", column_sql(dialect, "academic_section_id", "INTEGER"))
+    
+    # Update teacher_classes foreign key to reference academic_classes instead of school_classes
+    # This requires manual migration for existing data
 
 
 def add_column_if_missing(table, column, ddl):

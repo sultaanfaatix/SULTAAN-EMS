@@ -24,18 +24,47 @@
   <label><i class="fa-solid fa-building"></i> Department<input name="department" value="{{ teacher.department or '' }}"></label>
   <label><i class="fa-solid fa-toggle-on"></i> Employment Status<select name="employment_status"><option {% if teacher.employment_status == 'Active' or not teacher.id %}selected{% endif %}>Active</option><option {% if teacher.employment_status == 'Inactive' %}selected{% endif %}>Inactive</option></select></label>
 
-  <div class="section-heading wide"><span><i class="fa-solid fa-school"></i></span><div><h2>Academic Assignment</h2><p>Assign one or multiple subjects and classes.</p></div></div>
+  <div class="section-heading wide"><span><i class="fa-solid fa-school"></i></span><div><h2>Academic Assignment</h2><p>Assign one or multiple subjects and classes using the new academic hierarchy.</p></div></div>
   <label><i class="fa-solid fa-layer-group"></i> School Level<select name="school_level"><option value="">Select level</option>{% for level in school_levels %}<option value="{{ level }}" {% if teacher.school_level == level %}selected{% endif %}>{{ level }}</option>{% endfor %}</select></label>
+  
+  <!-- New Academic Hierarchy -->
+  <div class="wide permission-grid">
+    <strong><i class="fa-solid fa-layer-group"></i> Assigned Academic Levels</strong>
+    {% for level in academic_levels %}
+      <label class="check"><input type="checkbox" name="academic_level_ids" value="{{ level.id }}" {% if level in teacher.academic_levels %}checked{% endif %}> {{ level.name }}</label>
+    {% endfor %}
+  </div>
+  <div class="wide permission-grid">
+    <strong><i class="fa-solid fa-graduation-cap"></i> Assigned Academic Classes</strong>
+    {% for level in academic_levels %}
+      {% for cls in level.classes %}
+        <label class="check"><input type="checkbox" name="academic_class_ids" value="{{ cls.id }}" {% if cls in teacher.classes %}checked{% endif %}> {{ level.name }} - {{ cls.name }}</label>
+      {% endfor %}
+    {% endfor %}
+  </div>
+  <div class="wide permission-grid">
+    <strong><i class="fa-solid fa-table-cells"></i> Assigned Academic Sections</strong>
+    {% for level in academic_levels %}
+      {% for cls in level.classes %}
+        {% for section in cls.sections %}
+          <label class="check"><input type="checkbox" name="academic_section_ids" value="{{ section.id }}" {% if section in teacher.sections %}checked{% endif %}> {{ level.name }} - {{ cls.name }} - {{ section.name }}</label>
+        {% endfor %}
+      {% endfor %}
+    {% endfor %}
+  </div>
+  
+  <!-- Legacy Assignment for Backward Compatibility -->
+  <div class="wide permission-grid" style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 15px;">
+    <strong><i class="fa-solid fa-people-roof"></i> Legacy Class Assignments (Backward Compatibility)</strong>
+    {% for school_class in classes %}
+      <label class="check"><input type="checkbox" name="class_ids" value="{{ school_class.id }}" {% if school_class in teacher.classes %}checked{% endif %}> {{ school_class.name }}</label>
+    {% endfor %}
+  </div>
+  
   <div class="wide permission-grid">
     <strong><i class="fa-solid fa-book"></i> Assigned Subjects</strong>
     {% for subject in subjects %}
       <label class="check"><input type="checkbox" name="subject_ids" value="{{ subject.id }}" {% if subject in teacher.subjects %}checked{% endif %}> {{ subject.name }}</label>
-    {% endfor %}
-  </div>
-  <div class="wide permission-grid">
-    <strong><i class="fa-solid fa-people-roof"></i> Assigned Classes</strong>
-    {% for school_class in classes %}
-      <label class="check"><input type="checkbox" name="class_ids" value="{{ school_class.id }}" {% if school_class in teacher.classes %}checked{% endif %}> {{ school_class.name }}</label>
     {% endfor %}
   </div>
 

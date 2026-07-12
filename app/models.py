@@ -60,6 +60,47 @@ class AcademicYear(TimestampMixin, db.Model):
     is_current = db.Column(db.Boolean, default=False, nullable=False)
 
 
+class AcademicLevel(TimestampMixin, db.Model):
+    __tablename__ = "academic_levels"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    sort_order = db.Column(db.Integer, default=0, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+
+
+class AcademicClass(TimestampMixin, db.Model):
+    __tablename__ = "academic_classes"
+
+    id = db.Column(db.Integer, primary_key=True)
+    academic_level_id = db.Column(db.Integer, db.ForeignKey("academic_levels.id"), nullable=False)
+    name = db.Column(db.String(80), nullable=False)
+    sort_order = db.Column(db.Integer, default=0, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+
+    academic_level = db.relationship("AcademicLevel", backref=db.backref("classes", lazy="dynamic"))
+
+    __table_args__ = (
+        UniqueConstraint("academic_level_id", "name", name="uq_level_class"),
+    )
+
+
+class AcademicSection(TimestampMixin, db.Model):
+    __tablename__ = "academic_sections"
+
+    id = db.Column(db.Integer, primary_key=True)
+    academic_class_id = db.Column(db.Integer, db.ForeignKey("academic_classes.id"), nullable=False)
+    name = db.Column(db.String(80), nullable=False)
+    sort_order = db.Column(db.Integer, default=0, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+
+    academic_class = db.relationship("AcademicClass", backref=db.backref("sections", lazy="dynamic"))
+
+    __table_args__ = (
+        UniqueConstraint("academic_class_id", "name", name="uq_class_section"),
+    )
+
+
 class SchoolClass(TimestampMixin, db.Model):
     __tablename__ = "school_classes"
 
@@ -72,9 +113,16 @@ class Subject(TimestampMixin, db.Model):
     __tablename__ = "subjects"
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120), unique=True, nullable=False)
+    name = db.Column(db.String(120), nullable=False)
+    academic_level_id = db.Column(db.Integer, db.ForeignKey("academic_levels.id"), nullable=True)
     max_score = db.Column(db.Numeric(6, 2), default=100, nullable=False)
     sort_order = db.Column(db.Integer, default=0, nullable=False)
+
+    academic_level = db.relationship("AcademicLevel", backref=db.backref("subjects", lazy="dynamic"))
+
+    __table_args__ = (
+        UniqueConstraint("name", "academic_level_id", name="uq_subject_level"),
+    )
 
 
 class Exam(TimestampMixin, db.Model):
@@ -83,9 +131,18 @@ class Exam(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     academic_year_id = db.Column(db.Integer, db.ForeignKey("academic_years.id"), nullable=False)
+    
+    # New academic hierarchy fields
+    academic_level_id = db.Column(db.Integer, db.ForeignKey("academic_levels.id"), nullable=True)
+    academic_class_id = db.Column(db.Integer, db.ForeignKey("academic_classes.id"), nullable=True)
+    academic_section_id = db.Column(db.Integer, db.ForeignKey("academic_sections.id"), nullable=True)
+    
     is_published = db.Column(db.Boolean, default=False, nullable=False)
 
     academic_year = db.relationship("AcademicYear")
+    academic_level = db.relationship("AcademicLevel")
+    academic_class = db.relationship("AcademicClass")
+    academic_section = db.relationship("AcademicSection")
 
     __table_args__ = (
         UniqueConstraint("name", "academic_year_id", name="uq_exam_year"),
@@ -104,10 +161,16 @@ class Student(TimestampMixin, db.Model):
     mother_name = db.Column(db.String(180))
     phone = db.Column(db.String(40))
 
-    class_id = db.Column(db.Integer, db.ForeignKey("school_classes.id"), nullable=False)
+    # Legacy fields for backward compatibility during migration
+    class_id = db.Column(db.Integer, db.ForeignKey("school_classes.id"), nullable=True)
     academic_year_id = db.Column(db.Integer, db.ForeignKey("academic_years.id"), nullable=False)
     level = db.Column(db.String(80))
     section = db.Column(db.String(80))
+
+    # New academic hierarchy fields
+    academic_level_id = db.Column(db.Integer, db.ForeignKey("academic_levels.id"), nullable=True)
+    academic_class_id = db.Column(db.Integer, db.ForeignKey("academic_classes.id"), nullable=True)
+    academic_section_id = db.Column(db.Integer, db.ForeignKey("academic_sections.id"), nullable=True)
 
     photo_path = db.Column(db.String(255))
     note = db.Column(db.Text)
@@ -118,6 +181,9 @@ class Student(TimestampMixin, db.Model):
 
     school_class = db.relationship("SchoolClass")
     academic_year = db.relationship("AcademicYear")
+    academic_level = db.relationship("AcademicLevel")
+    academic_class = db.relationship("AcademicClass")
+    academic_section = db.relationship("AcademicSection")
 
     # ✅ FIX: allow system to use "student_id" in queries safely
     @property
@@ -196,7 +262,15 @@ class AttendanceRecord(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
     academic_year_id = db.Column(db.Integer, db.ForeignKey("academic_years.id"), nullable=False, index=True)
-    class_id = db.Column(db.Integer, db.ForeignKey("school_classes.id"), nullable=False, index=True)
+    
+    # Legacy field for backward compatibility
+    class_id = db.Column(db.Integer, db.ForeignKey("school_classes.id"), nullable=True, index=True)
+    
+    # New academic hierarchy fields
+    academic_level_id = db.Column(db.Integer, db.ForeignKey("academic_levels.id"), nullable=True)
+    academic_class_id = db.Column(db.Integer, db.ForeignKey("academic_classes.id"), nullable=True)
+    academic_section_id = db.Column(db.Integer, db.ForeignKey("academic_sections.id"), nullable=True)
+    
     exam_id = db.Column(db.Integer, db.ForeignKey("exams.id", ondelete="SET NULL"), index=True)
     attendance_date = db.Column(db.Date, nullable=False, index=True)
     status = db.Column(
@@ -211,6 +285,9 @@ class AttendanceRecord(TimestampMixin, db.Model):
     student = db.relationship("Student")
     academic_year = db.relationship("AcademicYear")
     school_class = db.relationship("SchoolClass")
+    academic_level = db.relationship("AcademicLevel")
+    academic_class = db.relationship("AcademicClass")
+    academic_section = db.relationship("AcademicSection")
     exam = db.relationship("Exam")
     marked_by = db.relationship("User")
 
@@ -251,7 +328,19 @@ teacher_subjects = db.Table(
 teacher_classes = db.Table(
     "teacher_classes",
     db.Column("teacher_id", db.Integer, db.ForeignKey("teachers.id", ondelete="CASCADE"), primary_key=True),
-    db.Column("class_id", db.Integer, db.ForeignKey("school_classes.id", ondelete="CASCADE"), primary_key=True),
+    db.Column("class_id", db.Integer, db.ForeignKey("academic_classes.id", ondelete="CASCADE"), primary_key=True),
+)
+
+teacher_sections = db.Table(
+    "teacher_sections",
+    db.Column("teacher_id", db.Integer, db.ForeignKey("teachers.id", ondelete="CASCADE"), primary_key=True),
+    db.Column("section_id", db.Integer, db.ForeignKey("academic_sections.id", ondelete="CASCADE"), primary_key=True),
+)
+
+teacher_academic_levels = db.Table(
+    "teacher_academic_levels",
+    db.Column("teacher_id", db.Integer, db.ForeignKey("teachers.id", ondelete="CASCADE"), primary_key=True),
+    db.Column("academic_level_id", db.Integer, db.ForeignKey("academic_levels.id", ondelete="CASCADE"), primary_key=True),
 )
 
 
@@ -283,7 +372,9 @@ class Teacher(TimestampMixin, db.Model):
 
     user = db.relationship("User", backref=db.backref("teacher_profile", uselist=False))
     subjects = db.relationship("Subject", secondary=teacher_subjects, backref=db.backref("assigned_teachers", lazy="dynamic"))
-    classes = db.relationship("SchoolClass", secondary=teacher_classes, backref=db.backref("assigned_teachers", lazy="dynamic"))
+    classes = db.relationship("AcademicClass", secondary=teacher_classes, backref=db.backref("assigned_teachers", lazy="dynamic"))
+    sections = db.relationship("AcademicSection", secondary=teacher_sections, backref=db.backref("assigned_teachers", lazy="dynamic"))
+    academic_levels = db.relationship("AcademicLevel", secondary=teacher_academic_levels, backref=db.backref("assigned_teachers", lazy="dynamic"))
 
 
 class TeacherPermission(db.Model):

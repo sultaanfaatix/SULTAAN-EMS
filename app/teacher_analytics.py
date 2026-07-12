@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from . import db
-from .models import AcademicYear, AttendanceRecord, Exam, Result, SchoolClass, Student, Subject
+from .models import AcademicClass, AcademicLevel, AcademicSection, AcademicYear, AttendanceRecord, Exam, Result, SchoolClass, Student, Subject
 from .services import grade_for
 
 
@@ -34,15 +34,26 @@ def _safe_stdev(values):
 
 
 def teacher_assignments(teacher):
-    classes = list(teacher.classes)
+    """Get teacher's academic assignments using new hierarchy with legacy fallback"""
+    # New academic hierarchy
+    academic_levels = list(teacher.academic_levels)
+    academic_classes = list(teacher.classes)  # Now references AcademicClass
+    sections = list(teacher.sections)
     subjects = list(teacher.subjects)
-    class_ids = {school_class.id for school_class in classes}
+    
+    # Legacy fallback for SchoolClass
+    legacy_classes = [cls for cls in academic_classes if hasattr(cls, 'name')]
+    
+    academic_level_ids = {level.id for level in academic_levels}
+    class_ids = {cls.id for cls in academic_classes}
+    section_ids = {section.id for section in sections}
     subject_ids = {subject.id for subject in subjects}
-    return classes, subjects, class_ids, subject_ids
+    
+    return academic_levels, academic_classes, sections, subjects, academic_level_ids, class_ids, section_ids, subject_ids
 
 
 def validate_filter_ids(teacher, filters):
-    _, _, class_ids, subject_ids = teacher_assignments(teacher)
+    _, _, _, _, _, class_ids, _, subject_ids = teacher_assignments(teacher)
     validated = dict(filters)
     if validated.get("class_id") and validated["class_id"] not in class_ids:
         validated["class_id"] = None
@@ -56,12 +67,28 @@ def validate_filter_ids(teacher, filters):
 
 
 def scoped_students(teacher, filters):
-    _, _, class_ids, _ = teacher_assignments(teacher)
-    if not class_ids:
-        return []
-    query = Student.query.filter(Student.class_id.in_(class_ids), Student.is_active.is_(True))
+    """Get students scoped to teacher's assignments using new academic hierarchy with legacy fallback"""
+    _, academic_classes, sections, _, _, class_ids, section_ids, _ = teacher_assignments(teacher)
+    
+    # Build query using new academic hierarchy fields
+    query = Student.query.filter(Student.is_active.is_(True))
+    
+    # Filter by new academic hierarchy
+    if class_ids:
+        query = query.filter(Student.academic_class_id.in_(class_ids))
+    if section_ids:
+        query = query.filter(Student.academic_section_id.in_(section_ids))
+    
+    # Legacy fallback - if no new hierarchy assignments, use legacy class_id
+    if not class_ids and not section_ids:
+        # Try to get legacy class IDs from teacher's classes
+        legacy_class_ids = {cls.id for cls in academic_classes if hasattr(cls, 'name')}
+        if legacy_class_ids:
+            query = query.filter(Student.class_id.in_(legacy_class_ids))
+    
+    # Apply additional filters
     if filters.get("class_id"):
-        query = query.filter(Student.class_id == filters["class_id"])
+        query = query.filter(Student.academic_class_id == filters["class_id"])
     if filters.get("section"):
         query = query.filter(Student.section == filters["section"])
     if filters.get("academic_year_id"):
@@ -69,11 +96,13 @@ def scoped_students(teacher, filters):
     if filters.get("q"):
         q = f"%{filters['q']}%"
         query = query.filter(db.or_(Student.full_name.like(q), Student.student_code.like(q)))
+    
     return query.order_by(Student.full_name.asc()).all()
 
 
 def scoped_results(teacher, filters, students=None):
-    _, _, class_ids, subject_ids = teacher_assignments(teacher)
+    """Get results scoped to teacher's assignments using new academic hierarchy with legacy fallback"""
+    _, _, _, _, _, class_ids, _, subject_ids = teacher_assignments(teacher)
     if not class_ids or not subject_ids:
         return []
     students = students if students is not None else scoped_students(teacher, filters)
@@ -116,7 +145,8 @@ def student_overall_averages(results):
 
 
 def filter_options(teacher, filters):
-    classes, subjects, class_ids, subject_ids = teacher_assignments(teacher)
+    """Get filter options for teacher portal using new academic hierarchy with legacy fallback"""
+    _, academic_classes, sections, subjects, _, class_ids, _, subject_ids = teacher_assignments(teacher)
     students = scoped_students(teacher, {})
     year_ids = sorted({student.academic_year_id for student in students})
     years = AcademicYear.query.filter(AcademicYear.id.in_(year_ids)).order_by(AcademicYear.name.desc()).all() if year_ids else []
@@ -124,14 +154,14 @@ def filter_options(teacher, filters):
     if year_ids:
         exam_query = exam_query.filter(Exam.academic_year_id.in_(year_ids))
     exams = exam_query.order_by(Exam.created_at.desc()).all()
-    sections = sorted({student.section for student in students if student.section})
+    sections_list = sorted({student.section for student in students if student.section})
     scoped = scoped_students(teacher, filters)
     return {
         "academic_years": years,
         "exams": exams,
         "subjects": subjects,
-        "classes": classes,
-        "sections": sections,
+        "classes": academic_classes,
+        "sections": sections_list,
         "students": scoped,
     }
 

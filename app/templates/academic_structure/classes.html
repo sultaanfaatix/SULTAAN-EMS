@@ -1,0 +1,52 @@
+{% extends "admin/base.html" %}
+{% block title %}Academic Classes{% endblock %}
+{% block content %}
+<div class="admin-header">
+    <h1><i class="fa-solid fa-graduation-cap"></i> Academic Classes</h1>
+    <a href="{{ url_for('academic_structure.academic_class_form') }}" class="btn btn-primary">
+        <i class="fa-solid fa-plus"></i> New Class
+    </a>
+</div>
+
+<div class="panel">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Level</th>
+                <th>Class Name</th>
+                <th>Sort Order</th>
+                <th>Sections</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cls in classes %}
+            <tr>
+                <td>{{ cls.academic_level.name }}</td>
+                <td><strong>{{ cls.name }}</strong></td>
+                <td>{{ cls.sort_order }}</td>
+                <td>{{ cls.sections.count() }}</td>
+                <td>
+                    {% if cls.is_active %}
+                        <span class="badge badge-success">Active</span>
+                    {% else %}
+                        <span class="badge badge-secondary">Inactive</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('academic_structure.academic_class_form', class_id=cls.id) }}" class="btn btn-sm">
+                        <i class="fa-solid fa-edit"></i>
+                    </a>
+                    <form method="POST" action="{{ url_for('academic_structure.delete_academic_class', class_id=cls.id) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this class?')">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
