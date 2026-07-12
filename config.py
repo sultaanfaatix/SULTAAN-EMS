@@ -13,8 +13,11 @@ load_dotenv(BASE_DIR / ".env")
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-change-me")
 
-    # IMPORTANT: must come ONLY from environment
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
+    # IMPORTANT: must come ONLY from environment, with SQLite fallback for local dev
+    SQLALCHEMY_DATABASE_URI = os.environ.get(
+        "DATABASE_URL",
+        f"sqlite:///{BASE_DIR / 'instance' / 'visual_review.db'}"
+    )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
