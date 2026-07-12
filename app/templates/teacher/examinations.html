@@ -1,0 +1,31 @@
+{% extends "teacher/base.html" %}
+{% block teacher_content %}
+<section class="panel glass-card">
+  <div class="section-heading"><span><i class="fa-solid fa-file-circle-check"></i></span><div><h2>Examinations</h2><p>Published results within your assigned scope</p></div></div>
+  <div class="responsive-table">
+    <table class="premium-table">
+      <thead>
+        <tr><th>Exam</th><th>Academic Year</th><th>Students</th><th>Results</th><th>Average</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td>{{ row.exam.name }}</td>
+            <td>{{ row.academic_year }}</td>
+            <td>{{ row.student_count }}</td>
+            <td>{{ row.result_count }}</td>
+            <td>{{ row.average }}%</td>
+            <td class="action-cell">
+              {% if teacher_can('future_analysis_features') %}
+                <a class="icon-btn small" href="{{ url_for('teacher_portal.exam_analysis', exam_id=row.exam.id, **filters) }}" title="Open analysis"><i class="fa-solid fa-chart-column"></i></a>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6">No examinations found for the selected filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

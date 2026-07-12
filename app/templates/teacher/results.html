@@ -1,0 +1,28 @@
+{% extends "teacher/base.html" %}
+{% block teacher_content %}
+<section class="panel glass-card">
+  <div class="section-heading"><span><i class="fa-solid fa-clipboard-list"></i></span><div><h2>Student Results</h2><p>Published marks for your assigned subjects and classes</p></div></div>
+  <div class="responsive-table">
+    <table class="premium-table">
+      <thead>
+        <tr><th>Student</th><th>Exam</th><th>Subject</th><th>Score</th><th>%</th><th>Grade</th><th>Published</th></tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td>{{ row.student.student_code }} — {{ row.student.full_name }}</td>
+            <td>{{ row.exam.name }}</td>
+            <td>{{ row.subject.name }}</td>
+            <td>{{ row.score }} / {{ row.max_score }}</td>
+            <td>{{ row.percentage }}%</td>
+            <td>{{ row.grade }}</td>
+            <td><span class="status-pill {{ 'ok' if row.is_published else 'warn' }}">{{ 'Yes' if row.is_published else 'No' }}</span></td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7">No results found for the selected filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

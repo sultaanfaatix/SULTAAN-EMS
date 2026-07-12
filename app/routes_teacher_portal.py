@@ -2,7 +2,7 @@ import io
 from datetime import datetime
 
 from flask import Blueprint, abort, flash, jsonify, make_response, redirect, render_template, request, url_for
-from flask_login import current_user
+from flask_login import current_user, login_user, logout_user
 from openpyxl import Workbook
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
@@ -15,6 +15,7 @@ from .teacher_analytics import (
     classes_cards,
     comparison_data,
     dashboard_summary,
+    examinations_list_data,
     exam_analysis_data,
     filter_options,
     generate_ai_insights,
@@ -22,7 +23,9 @@ from .teacher_analytics import (
     pass_fail_analysis_data,
     performance_trends_data,
     report_summary,
+    results_list_data,
     student_analysis_data,
+    students_list_data,
     subject_analysis_data,
     subjects_cards,
     top_performers_data,
@@ -30,34 +33,40 @@ from .teacher_analytics import (
     weak_students_data,
 )
 from .teacher_portal import (
+    TEACHER_PUBLIC_ENDPOINTS,
     get_current_teacher,
     is_teacher_account,
     parse_teacher_filters,
     record_teacher_visit,
+    safe_teacher_next_url,
     teacher_can,
     teacher_login_required,
     teacher_nav_items,
     teacher_permission_required,
+    teacher_requires_password_change,
     teacher_theme,
 )
-from .teacher_services import get_teacher_settings, log_teacher_activity
+from .teacher_services import (
+    authenticate_teacher_login,
+    get_teacher_settings,
+    log_teacher_activity,
+    record_teacher_login,
+    record_teacher_logout,
+    request_teacher_password_reset,
+    teacher_activity_summary,
+    validate_teacher_password,
+)
 
 teacher_portal_bp = Blueprint("teacher_portal", __name__)
 
 
 @teacher_portal_bp.before_request
 def protect_teacher_portal():
-    if request.endpoint and request.endpoint.startswith("teacher_portal."):
-        if request.endpoint == "teacher_portal.login_redirect":
-            return None
-        if not current_user.is_authenticated:
-            return redirect(url_for("auth.login", next=request.url))
-        if not is_teacher_account():
-            if current_user.role in ("super_admin", "admin"):
-                flash("Admin accounts should use the admin portal.", "warning")
-                return redirect(url_for("admin.dashboard"))
-            flash("This area is only available to teacher accounts.", "danger")
-            return redirect(url_for("auth.login"))
+    if not request.endpoint or not request.endpoint.startswith("teacher_portal."):
+        return None
+    if request.endpoint in TEACHER_PUBLIC_ENDPOINTS:
+        return None
+    return None
 
 
 def _ctx(teacher, filters, page_title, active_endpoint):
@@ -75,9 +84,81 @@ def _ctx(teacher, filters, page_title, active_endpoint):
     }
 
 
+@teacher_portal_bp.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated and is_teacher_account():
+        return redirect(safe_teacher_next_url(request.args.get("next")))
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        user, teacher, error = authenticate_teacher_login(username, password)
+        if error:
+            flash(error, "danger")
+        else:
+            login_user(user)
+            record_teacher_login(teacher)
+            db.session.commit()
+            return redirect(safe_teacher_next_url(request.args.get("next")))
+    return render_template("teacher/login.html")
+
+
+@teacher_portal_bp.route("/logout", methods=["POST"])
+@teacher_login_required
+def logout():
+    teacher = get_current_teacher()
+    record_teacher_logout(teacher)
+    db.session.commit()
+    logout_user()
+    flash("You have been logged out.", "success")
+    return redirect(url_for("teacher_portal.login"))
+
+
+@teacher_portal_bp.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if current_user.is_authenticated and is_teacher_account():
+        return redirect(url_for("teacher_portal.dashboard"))
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        request_teacher_password_reset(username)
+        db.session.commit()
+        flash("If the account exists, your request has been logged. Please contact your school administrator.", "success")
+        return redirect(url_for("teacher_portal.login"))
+    return render_template("teacher/forgot_password.html")
+
+
+@teacher_portal_bp.route("/change-password", methods=["GET", "POST"])
+@teacher_login_required
+def change_password():
+    teacher = get_current_teacher()
+    if request.method == "POST":
+        current = request.form.get("current_password", "")
+        new_password = request.form.get("new_password", "")
+        confirm = request.form.get("confirm_password", "")
+        if not current_user.check_password(current):
+            flash("Current password is incorrect.", "danger")
+        else:
+            error = validate_teacher_password(new_password)
+            if error:
+                flash(error, "danger")
+            elif new_password != confirm:
+                flash("Passwords do not match.", "danger")
+            else:
+                current_user.set_password(new_password)
+                teacher.force_password_change = False
+                log_teacher_activity(teacher, "Password Change", "Updated account password")
+                db.session.commit()
+                flash("Password changed successfully.", "success")
+                return redirect(url_for("teacher_portal.dashboard"))
+    return render_template(
+        "teacher/change_password.html",
+        forced=teacher_requires_password_change(),
+        teacher_theme=teacher_theme(),
+    )
+
+
 @teacher_portal_bp.route("/")
 @teacher_login_required
-@teacher_permission_required("view_examination_results")
+@teacher_permission_required("view_dashboard")
 def dashboard():
     teacher = get_current_teacher()
     filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
@@ -114,9 +195,60 @@ def classes():
     return render_template("teacher/classes.html", **ctx)
 
 
+@teacher_portal_bp.route("/profile")
+@teacher_login_required
+def profile():
+    teacher = get_current_teacher()
+    filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
+    record_teacher_visit(teacher, "My Profile")
+    ctx = _ctx(teacher, filters, "My Profile", "teacher_portal.profile")
+    ctx["activity"] = teacher_activity_summary(teacher)
+    db.session.commit()
+    return render_template("teacher/profile.html", **ctx)
+
+
+@teacher_portal_bp.route("/my-students")
+@teacher_login_required
+@teacher_permission_required("view_students")
+def my_students():
+    teacher = get_current_teacher()
+    filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
+    record_teacher_visit(teacher, "My Students")
+    ctx = _ctx(teacher, filters, "My Students", "teacher_portal.my_students")
+    ctx["rows"] = students_list_data(teacher, filters)
+    db.session.commit()
+    return render_template("teacher/my_students.html", **ctx)
+
+
+@teacher_portal_bp.route("/examinations")
+@teacher_login_required
+@teacher_permission_required("view_examinations")
+def examinations():
+    teacher = get_current_teacher()
+    filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
+    record_teacher_visit(teacher, "Examinations")
+    ctx = _ctx(teacher, filters, "Examinations", "teacher_portal.examinations")
+    ctx["rows"] = examinations_list_data(teacher, filters)
+    db.session.commit()
+    return render_template("teacher/examinations.html", **ctx)
+
+
+@teacher_portal_bp.route("/results")
+@teacher_login_required
+@teacher_permission_required("view_student_results")
+def results():
+    teacher = get_current_teacher()
+    filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
+    record_teacher_visit(teacher, "Results")
+    ctx = _ctx(teacher, filters, "Results", "teacher_portal.results")
+    ctx["rows"] = results_list_data(teacher, filters)
+    db.session.commit()
+    return render_template("teacher/results.html", **ctx)
+
+
 @teacher_portal_bp.route("/exam-analysis")
 @teacher_login_required
-@teacher_permission_required("view_examination_results")
+@teacher_permission_required("future_analysis_features")
 def exam_analysis():
     teacher = get_current_teacher()
     filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
@@ -129,7 +261,7 @@ def exam_analysis():
 
 @teacher_portal_bp.route("/subject-analysis")
 @teacher_login_required
-@teacher_permission_required("subject_analysis")
+@teacher_permission_required("future_analysis_features")
 def subject_analysis():
     teacher = get_current_teacher()
     filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
@@ -142,7 +274,7 @@ def subject_analysis():
 
 @teacher_portal_bp.route("/students")
 @teacher_login_required
-@teacher_permission_required("student_analysis")
+@teacher_permission_required("view_student_profiles")
 def student_analysis():
     teacher = get_current_teacher()
     filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
@@ -160,7 +292,7 @@ def student_analysis():
 
 @teacher_portal_bp.route("/trends")
 @teacher_login_required
-@teacher_permission_required("performance_trends")
+@teacher_permission_required("future_analysis_features")
 def trends():
     teacher = get_current_teacher()
     filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
@@ -173,7 +305,7 @@ def trends():
 
 @teacher_portal_bp.route("/grades")
 @teacher_login_required
-@teacher_permission_required("grade_distribution")
+@teacher_permission_required("future_analysis_features")
 def grades():
     teacher = get_current_teacher()
     filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
@@ -186,7 +318,7 @@ def grades():
 
 @teacher_portal_bp.route("/pass-fail")
 @teacher_login_required
-@teacher_permission_required("grade_distribution")
+@teacher_permission_required("future_analysis_features")
 def pass_fail():
     teacher = get_current_teacher()
     filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
@@ -199,7 +331,7 @@ def pass_fail():
 
 @teacher_portal_bp.route("/top-performers")
 @teacher_login_required
-@teacher_permission_required("top_performers")
+@teacher_permission_required("future_analysis_features")
 def top_performers():
     teacher = get_current_teacher()
     filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
@@ -212,7 +344,7 @@ def top_performers():
 
 @teacher_portal_bp.route("/weak-students")
 @teacher_login_required
-@teacher_permission_required("weak_students")
+@teacher_permission_required("future_analysis_features")
 def weak_students():
     teacher = get_current_teacher()
     filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
@@ -225,7 +357,7 @@ def weak_students():
 
 @teacher_portal_bp.route("/comparison")
 @teacher_login_required
-@teacher_permission_required("exam_comparison")
+@teacher_permission_required("future_analysis_features")
 def comparison():
     teacher = get_current_teacher()
     filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
@@ -238,7 +370,7 @@ def comparison():
 
 @teacher_portal_bp.route("/reports")
 @teacher_login_required
-@teacher_permission_required("reports")
+@teacher_permission_required("generate_reports")
 def reports():
     teacher = get_current_teacher()
     filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
@@ -251,7 +383,7 @@ def reports():
 
 @teacher_portal_bp.route("/ai-insights")
 @teacher_login_required
-@teacher_permission_required("ai_insights")
+@teacher_permission_required("future_ai_features")
 def ai_insights():
     teacher = get_current_teacher()
     filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
@@ -308,7 +440,7 @@ def api_filter_options():
 
 @teacher_portal_bp.route("/reports/export/excel")
 @teacher_login_required
-@teacher_permission_required("download_reports")
+@teacher_permission_required("export_excel")
 def export_excel():
     teacher = get_current_teacher()
     filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
@@ -339,7 +471,7 @@ def export_excel():
 
 @teacher_portal_bp.route("/reports/export/pdf")
 @teacher_login_required
-@teacher_permission_required("download_reports")
+@teacher_permission_required("export_pdf")
 def export_pdf():
     teacher = get_current_teacher()
     filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))
@@ -385,7 +517,7 @@ def export_pdf():
 
 @teacher_portal_bp.route("/reports/print")
 @teacher_login_required
-@teacher_permission_required("reports")
+@teacher_permission_required("print_reports")
 def print_report():
     teacher = get_current_teacher()
     filters = validate_filter_ids(teacher, parse_teacher_filters(request.args))

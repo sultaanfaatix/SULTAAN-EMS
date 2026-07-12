@@ -1,0 +1,34 @@
+{% extends "teacher/base.html" %}
+{% block teacher_filters %}{% endblock %}
+{% block teacher_content %}
+<section class="td-charts-grid">
+  <div class="panel glass-card">
+    <div class="section-heading"><span><i class="fa-solid fa-user"></i></span><div><h2>Profile Information</h2></div></div>
+    <div class="td-data-metrics">
+      <div><span>Teacher ID</span><strong>{{ teacher.teacher_id }}</strong></div>
+      <div><span>Teacher Code</span><strong>{{ teacher.teacher_code }}</strong></div>
+      <div><span>Department</span><strong>{{ teacher.department or '-' }}</strong></div>
+      <div><span>School Level</span><strong>{{ teacher.school_level or '-' }}</strong></div>
+      <div><span>Employment Type</span><strong>{{ teacher.employment_type }}</strong></div>
+      <div><span>Status</span><strong>{{ teacher.employment_status }}</strong></div>
+      <div><span>Phone</span><strong>{{ teacher.phone or '-' }}</strong></div>
+      <div><span>Email</span><strong>{{ teacher.email or '-' }}</strong></div>
+      <div><span>Qualification</span><strong>{{ teacher.qualification or '-' }}</strong></div>
+      <div><span>Experience</span><strong>{{ teacher.years_experience }} years</strong></div>
+    </div>
+  </div>
+  <div class="panel glass-card">
+    <div class="section-heading"><span><i class="fa-solid fa-book"></i></span><div><h2>Assignments</h2></div></div>
+    <p><strong>Subjects:</strong> {{ teacher.subjects|map(attribute='name')|join(', ') or 'None assigned' }}</p>
+    <p><strong>Classes:</strong> {{ teacher.classes|map(attribute='name')|join(', ') or 'None assigned' }}</p>
+    <div class="section-heading" style="margin-top:18px;"><span><i class="fa-solid fa-clock-rotate-left"></i></span><div><h3>Recent Activity</h3></div></div>
+    <ul class="td-list">
+      {% for item in activity.recent_actions[:8] %}
+        <li>{{ item.action }} — {{ item.details or 'No details' }} <small class="muted">({{ item.created_at.strftime('%Y-%m-%d %H:%M') }})</small></li>
+      {% else %}
+        <li>No activity recorded yet.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>
+{% endblock %}

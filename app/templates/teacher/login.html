@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block body_class %}login-body{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/teacher-dashboard.css') }}">
+<main class="login-page">
+  <form method="post" class="login-card glass-card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="login-mark"><i class="fa-solid fa-chalkboard-user"></i></div>
+    <span class="eyebrow"><i class="fa-solid fa-lock"></i> Teacher Portal</span>
+    <h1>{{ ui_settings.school_name or 'School' }}</h1>
+    <p>Sign in to view your classes, students, and examination results.</p>
+    <label><i class="fa-solid fa-user"></i> Username<input name="username" required autofocus></label>
+    <label><i class="fa-solid fa-key"></i> Password<input name="password" type="password" required></label>
+    <button type="submit" class="premium"><i class="fa-solid fa-right-to-bracket"></i> Sign In</button>
+    <p style="margin:0;text-align:center;"><a href="{{ url_for('teacher_portal.forgot_password') }}">Forgot password?</a></p>
+    <p style="margin:0;text-align:center;color:var(--muted);font-size:.9rem;">Administrators should use the <a href="{{ url_for('auth.login') }}">admin login</a>.</p>
+  </form>
+</main>
+{% endblock %}

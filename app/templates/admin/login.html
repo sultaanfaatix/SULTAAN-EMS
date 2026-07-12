@@ -11,6 +11,7 @@
     <label><i class="fa-solid fa-user"></i> Username<input name="username" required autofocus></label>
     <label><i class="fa-solid fa-key"></i> Password<input name="password" type="password" required></label>
     <button type="submit" class="premium"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
+    <p style="margin:0;text-align:center;color:var(--muted);font-size:.9rem;">Teachers: use the <a href="{{ url_for('teacher_portal.login') }}">Teacher Portal login</a>.</p>
   </form>
 </main>
 {% endblock %}

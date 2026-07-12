@@ -42,10 +42,15 @@ def login():
 @auth_bp.route("/admin/logout", methods=["POST"])
 @login_required
 def logout():
+    from .teacher_portal import is_teacher_account
+
+    was_teacher = is_teacher_account()
     audit("Logout", f"User {current_user.username} logged out")
     db.session.commit()
     logout_user()
     flash("You have been logged out.", "success")
+    if was_teacher:
+        return redirect(url_for("teacher_portal.login"))
     return redirect(url_for("auth.login"))
 
 

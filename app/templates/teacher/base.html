@@ -7,7 +7,7 @@
   <div class="teacher-sidebar-fixed">
     <a class="teacher-brand" href="{{ url_for('teacher_portal.dashboard') }}">
       <span class="brand-logo"><i class="fa-solid fa-chart-line"></i></span>
-      <span><strong>Teacher Analytics</strong><small>Analysis Dashboard</small></span>
+      <span><strong>Teacher Portal</strong><small>Analysis Dashboard</small></span>
     </a>
     <div class="teacher-profile">
       <span class="teacher-avatar">
@@ -32,7 +32,7 @@
       {% endif %}
     {% endfor %}
   </nav>
-  <form method="post" action="{{ url_for('auth.logout') }}" class="teacher-logout">
+  <form method="post" action="{{ url_for('teacher_portal.logout') }}" class="teacher-logout">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <button type="submit" class="logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
   </form>
@@ -46,10 +46,10 @@
     </div>
     <div class="top-actions">
       <button type="button" class="icon-btn" id="themeToggle" title="Toggle theme"><i class="fa-solid fa-moon"></i></button>
-      <a class="icon-btn" href="{{ url_for('auth.change_password') }}" title="Change password"><i class="fa-solid fa-key"></i></a>
+      <a class="icon-btn" href="{{ url_for('teacher_portal.change_password') }}" title="Change password"><i class="fa-solid fa-key"></i></a>
     </div>
   </header>
-  {% include "teacher/_filters.html" %}
+  {% block teacher_filters %}{% include "teacher/_filters.html" %}{% endblock %}
   {% block teacher_content %}{% endblock %}
 </main>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>

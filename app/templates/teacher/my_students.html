@@ -1,0 +1,32 @@
+{% extends "teacher/base.html" %}
+{% block teacher_content %}
+<section class="panel glass-card">
+  <div class="section-heading"><span><i class="fa-solid fa-user-graduate"></i></span><div><h2>Assigned Students</h2><p>Students in your assigned classes only</p></div></div>
+  <div class="responsive-table">
+    <table class="premium-table">
+      <thead>
+        <tr><th>Student ID</th><th>Name</th><th>Class</th><th>Section</th><th>Average</th><th>Grade</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td>{{ row.student.student_code }}</td>
+            <td>{{ row.student.full_name }}</td>
+            <td>{{ row.class_name }}</td>
+            <td>{{ row.section }}</td>
+            <td>{{ row.average }}%</td>
+            <td>{{ row.grade }}</td>
+            <td class="action-cell">
+              {% if teacher_can('view_student_profiles') %}
+                <a class="icon-btn small" href="{{ url_for('teacher_portal.student_analysis', student_id=row.student.id, **filters) }}" title="View analysis"><i class="fa-solid fa-chart-line"></i></a>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7">No students found for the selected filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
