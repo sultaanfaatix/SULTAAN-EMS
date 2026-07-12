@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Teacher Directory Print</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/print.css') }}">
+</head>
+<body class="print-body">
+  <header class="print-header">
+    <h1>Teacher Department Directory</h1>
+    <p>Generated {{ generated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+  </header>
+  <table class="premium-table">
+    <thead>
+      <tr><th>Teacher ID</th><th>Teacher Code</th><th>Name</th><th>Phone</th><th>Email</th><th>Department</th><th>Level</th><th>Subjects</th><th>Classes</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      {% for teacher in teachers %}
+        <tr>
+          <td>{{ teacher.teacher_id }}</td>
+          <td>{{ teacher.teacher_code }}</td>
+          <td>{{ teacher.full_name }}</td>
+          <td>{{ teacher.phone or '-' }}</td>
+          <td>{{ teacher.email or '-' }}</td>
+          <td>{{ teacher.department or '-' }}</td>
+          <td>{{ teacher.school_level or '-' }}</td>
+          <td>{{ teacher.subjects|map(attribute='name')|join(', ') or '-' }}</td>
+          <td>{{ teacher.classes|map(attribute='name')|join(', ') or '-' }}</td>
+          <td>{{ teacher.employment_status }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="10">No teachers found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <script>window.print()</script>
+</body>
+</html>

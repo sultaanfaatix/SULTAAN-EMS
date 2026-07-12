@@ -1,0 +1,27 @@
+{% extends "admin/base.html" %}
+{% block title %}Teacher Settings{% endblock %}
+{% block page_title %}Teacher Settings{% endblock %}
+{% block admin_content %}
+<form method="post" class="panel form-grid premium-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="section-heading wide"><span><i class="fa-solid fa-sliders"></i></span><div><h2>Teacher Department Settings</h2><p>Configure teacher codes, accounts, themes, and defaults.</p></div></div>
+
+  <label class="check wide"><input type="checkbox" name="teacher_code_auto_generate" {% if settings.teacher_code_auto_generate == 'on' %}checked{% endif %}> <i class="fa-solid fa-barcode"></i> Auto-generate Teacher Code when left empty</label>
+  <label class="span-2"><i class="fa-solid fa-code"></i> Teacher Code Format<input name="teacher_code_format" value="{{ settings.teacher_code_format }}" placeholder="TC-{seq:04d}, TIS-T{seq:03d}, SCI-{seq:03d}"><small>Use <code>{seq:04d}</code> for padded sequence number.</small></label>
+  <label class="span-2"><i class="fa-solid fa-user"></i> Default Username Format<input name="teacher_default_username_format" value="{{ settings.teacher_default_username_format }}" placeholder="{teacher_id}, {teacher_code}, {email}"></label>
+  <label><i class="fa-solid fa-lock"></i> Minimum Password Length<input type="number" min="6" name="teacher_password_min_length" value="{{ settings.teacher_password_min_length }}"></label>
+  <label><i class="fa-solid fa-shield"></i> Password Policy<select name="teacher_default_password_policy"><option value="alphanumeric" {% if settings.teacher_default_password_policy == 'alphanumeric' %}selected{% endif %}>Letters and numbers</option><option value="any" {% if settings.teacher_default_password_policy == 'any' %}selected{% endif %}>Any characters</option></select></label>
+  <label><i class="fa-solid fa-palette"></i> Teacher Theme<select name="teacher_theme"><option value="light" {% if settings.teacher_theme == 'light' %}selected{% endif %}>Light</option><option value="dark" {% if settings.teacher_theme == 'dark' %}selected{% endif %}>Dark</option></select></label>
+  <label><i class="fa-solid fa-image"></i> Profile Photo Size<select name="teacher_profile_photo_size"><option value="small" {% if settings.teacher_profile_photo_size == 'small' %}selected{% endif %}>Small</option><option value="medium" {% if settings.teacher_profile_photo_size == 'medium' %}selected{% endif %}>Medium</option><option value="large" {% if settings.teacher_profile_photo_size == 'large' %}selected{% endif %}>Large</option></select></label>
+  <label><i class="fa-solid fa-upload"></i> Maximum Upload Size (bytes)<input type="number" name="teacher_max_upload_size" value="{{ settings.teacher_max_upload_size }}"></label>
+  <label><i class="fa-solid fa-toggle-on"></i> Default Teacher Status<select name="teacher_default_status"><option value="Active" {% if settings.teacher_default_status == 'Active' %}selected{% endif %}>Active</option><option value="Inactive" {% if settings.teacher_default_status == 'Inactive' %}selected{% endif %}>Inactive</option></select></label>
+  <label><i class="fa-solid fa-id-card"></i> Teacher Card Style<select name="teacher_card_style"><option value="classic" {% if settings.teacher_card_style == 'classic' %}selected{% endif %}>Classic</option><option value="modern" {% if settings.teacher_card_style == 'modern' %}selected{% endif %}>Modern</option><option value="premium" {% if settings.teacher_card_style == 'premium' %}selected{% endif %}>Premium</option><option value="minimal" {% if settings.teacher_card_style == 'minimal' %}selected{% endif %}>Minimal</option></select></label>
+
+  <div class="wide" style="padding: 14px; background: #f8fbff; border-radius: 14px; border: 1px solid var(--line);">
+    <strong>Example Teacher Code Formats</strong>
+    <p style="margin: 8px 0 0;">TC-{seq:04d} → TC-0001 • TCH-{seq:04d} → TCH-0001 • TIS-T{seq:03d} → TIS-T001 • T2026-{seq:03d} → T2026-001 • SCI-{seq:03d} → SCI-001 • MATH-{seq:03d} → MATH-015</p>
+  </div>
+
+  <button class="premium"><i class="fa-solid fa-floppy-disk"></i> Save Teacher Settings</button>
+</form>
+{% endblock %}

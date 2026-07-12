@@ -240,3 +240,82 @@ class AuditLog(db.Model):
     ip_address = db.Column(db.String(80))
     action = db.Column(db.String(120), nullable=False)
     details = db.Column(db.Text)
+
+
+teacher_subjects = db.Table(
+    "teacher_subjects",
+    db.Column("teacher_id", db.Integer, db.ForeignKey("teachers.id", ondelete="CASCADE"), primary_key=True),
+    db.Column("subject_id", db.Integer, db.ForeignKey("subjects.id", ondelete="CASCADE"), primary_key=True),
+)
+
+teacher_classes = db.Table(
+    "teacher_classes",
+    db.Column("teacher_id", db.Integer, db.ForeignKey("teachers.id", ondelete="CASCADE"), primary_key=True),
+    db.Column("class_id", db.Integer, db.ForeignKey("school_classes.id", ondelete="CASCADE"), primary_key=True),
+)
+
+
+class Teacher(TimestampMixin, db.Model):
+    __tablename__ = "teachers"
+
+    id = db.Column(db.Integer, primary_key=True)
+    teacher_id = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    teacher_code = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    full_name = db.Column(db.String(180), nullable=False)
+    gender = db.Column(db.Enum("Male", "Female", "Other"), nullable=True)
+    phone = db.Column(db.String(40))
+    email = db.Column(db.String(120))
+    address = db.Column(db.Text)
+    emergency_contact = db.Column(db.String(180))
+    employment_date = db.Column(db.Date)
+    employment_type = db.Column(db.Enum("Full Time", "Part Time", "Contract"), default="Full Time", nullable=False)
+    qualification = db.Column(db.String(255))
+    years_experience = db.Column(db.Integer, default=0, nullable=False)
+    department = db.Column(db.String(120))
+    employment_status = db.Column(db.Enum("Active", "Inactive"), default="Active", nullable=False)
+    school_level = db.Column(db.Enum("Primary", "Middle", "Secondary", "High School"), nullable=True)
+    photo_path = db.Column(db.String(255))
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), unique=True)
+    force_password_change = db.Column(db.Boolean, default=False, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    last_login_at = db.Column(db.DateTime)
+    last_logout_at = db.Column(db.DateTime)
+
+    user = db.relationship("User", backref=db.backref("teacher_profile", uselist=False))
+    subjects = db.relationship("Subject", secondary=teacher_subjects, backref=db.backref("assigned_teachers", lazy="dynamic"))
+    classes = db.relationship("SchoolClass", secondary=teacher_classes, backref=db.backref("assigned_teachers", lazy="dynamic"))
+
+
+class TeacherPermission(db.Model):
+    __tablename__ = "teacher_permissions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    teacher_id = db.Column(db.Integer, db.ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False, index=True)
+    permission = db.Column(db.String(80), nullable=False)
+
+    teacher = db.relationship("Teacher", backref=db.backref("permission_rows", cascade="all, delete-orphan"))
+
+    __table_args__ = (
+        UniqueConstraint("teacher_id", "permission", name="uq_teacher_permission"),
+    )
+
+
+class TeacherActivity(db.Model):
+    __tablename__ = "teacher_activities"
+
+    id = db.Column(db.Integer, primary_key=True)
+    teacher_id = db.Column(db.Integer, db.ForeignKey("teachers.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    action = db.Column(db.String(120), nullable=False)
+    details = db.Column(db.Text)
+    ip_address = db.Column(db.String(80))
+
+    teacher = db.relationship("Teacher", backref=db.backref("activities", cascade="all, delete-orphan", order_by="TeacherActivity.created_at.desc()"))
+
+
+class TeacherCodeSequence(db.Model):
+    __tablename__ = "teacher_code_sequences"
+
+    id = db.Column(db.Integer, primary_key=True)
+    prefix = db.Column(db.String(40), unique=True, nullable=False)
+    last_number = db.Column(db.Integer, default=0, nullable=False)

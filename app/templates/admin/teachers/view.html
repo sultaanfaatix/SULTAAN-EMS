@@ -1,0 +1,53 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ teacher.full_name }}{% endblock %}
+{% block page_title %}Teacher Profile{% endblock %}
+{% block admin_content %}
+<section class="toolbar glass-card">
+  <div class="toolbar-actions">
+    <a class="btn premium" href="{{ url_for('admin_teachers.teacher_form', teacher_id=teacher.id) }}"><i class="fa-solid fa-pen"></i> Edit</a>
+    <a class="btn ghost" href="{{ url_for('admin_teachers.teacher_permissions', teacher_id=teacher.id) }}"><i class="fa-solid fa-key"></i> Permissions</a>
+    <a class="btn ghost" href="{{ url_for('admin_teachers.performance', teacher_id=teacher.id) }}"><i class="fa-solid fa-chart-line"></i> Performance</a>
+    <a class="btn ghost" href="{{ url_for('admin_teachers.activity', teacher_id=teacher.id) }}"><i class="fa-solid fa-clock-rotate-left"></i> Activity</a>
+    <a class="btn ghost" href="{{ url_for('admin_teachers.teacher_list') }}"><i class="fa-solid fa-arrow-left"></i> Back</a>
+  </div>
+</section>
+
+<section class="dashboard-grid">
+  <div class="panel">
+    <div class="section-heading"><span><i class="fa-solid fa-user-tie"></i></span><div><h2>{{ teacher.full_name }}</h2><p>{{ teacher.department or 'No department' }} • {{ teacher.school_level or 'No level' }}</p></div></div>
+    <div class="result-info-grid">
+      <div>{% if teacher.photo_path %}<img src="{{ asset_url(teacher.photo_path) }}" alt="{{ teacher.full_name }}" style="width:120px;height:120px;border-radius:18px;object-fit:cover;border:3px solid var(--primary);">{% else %}<span class="table-avatar placeholder" style="width:120px;height:120px;font-size:2rem;"><i class="fa-solid fa-user"></i></span>{% endif %}</div>
+      <div><span>Teacher ID</span><strong>{{ teacher.teacher_id }}</strong></div>
+      <div><span>Teacher Code</span><strong>{{ teacher.teacher_code }}</strong></div>
+      <div><span>Phone</span><strong>{{ teacher.phone or '-' }}</strong></div>
+      <div><span>Email</span><strong>{{ teacher.email or '-' }}</strong></div>
+      <div><span>Gender</span><strong>{{ teacher.gender or '-' }}</strong></div>
+      <div><span>Employment Type</span><strong>{{ teacher.employment_type }}</strong></div>
+      <div><span>Qualification</span><strong>{{ teacher.qualification or '-' }}</strong></div>
+      <div><span>Experience</span><strong>{{ teacher.years_experience }} years</strong></div>
+      <div><span>Status</span><strong>{{ teacher.employment_status }}</strong></div>
+      <div><span>Username</span><strong>{{ teacher.user.username if teacher.user else 'No account' }}</strong></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="section-heading"><span><i class="fa-solid fa-chart-line"></i></span><div><h2>Performance Snapshot</h2><p>Based on assigned students and subjects.</p></div></div>
+    <div class="stat-grid" style="grid-template-columns: repeat(2, 1fr);">
+      <div class="stat-card success"><i class="fa-solid fa-circle-check"></i><span>Pass Rate</span><strong>{{ performance.pass_rate }}%</strong></div>
+      <div class="stat-card warning"><i class="fa-solid fa-circle-xmark"></i><span>Fail Rate</span><strong>{{ performance.fail_rate }}%</strong></div>
+      <div class="stat-card"><i class="fa-solid fa-percent"></i><span>Subject Average</span><strong>{{ performance.subject_average }}%</strong></div>
+      <div class="stat-card"><i class="fa-solid fa-users"></i><span>Students</span><strong>{{ performance.student_count }}</strong></div>
+    </div>
+    <p><strong>Best Class:</strong> {{ performance.best_class or '-' }}</p>
+    <p><strong>Lowest Class:</strong> {{ performance.lowest_class or '-' }}</p>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="section-heading"><span><i class="fa-solid fa-book"></i></span><div><h2>Assignments & Permissions</h2><p>Subjects, classes, and granted permissions.</p></div></div>
+  <div class="result-info-grid">
+    <div><span>Subjects</span><strong>{{ performance.assigned_subjects|join(', ') or '-' }}</strong></div>
+    <div><span>Classes</span><strong>{{ performance.assigned_classes|join(', ') or '-' }}</strong></div>
+    <div class="wide"><span>Permissions</span><strong>{{ permissions|join(', ') or 'No permissions assigned' }}</strong></div>
+  </div>
+</section>
+{% endblock %}

@@ -23,6 +23,7 @@
   <nav class="side-nav">
     {% if can('dashboard') %}<a href="{{ url_for('admin.dashboard') }}"><i class="fa-solid fa-chart-pie"></i><span>{{ _('Dashboard') }}</span></a>{% endif %}
     {% if can('students') %}<a href="{{ url_for('admin.students') }}"><i class="fa-solid fa-user-graduate"></i><span>{{ _('Students') }}</span></a>{% endif %}
+    {% if can('teachers') %}<a href="{{ url_for('admin_teachers.dashboard') }}"><i class="fa-solid fa-chalkboard-user"></i><span>Teacher Department</span></a>{% endif %}
     {% if can('results') %}<a href="{{ url_for('admin.results') }}"><i class="fa-solid fa-square-poll-vertical"></i><span>{{ _('Results') }}</span></a>{% endif %}
     {% if can('advanced_results') or can('results') %}<a href="{{ url_for('admin_advanced_results.dashboard') }}"><i class="fa-solid fa-chart-line"></i><span>Advanced Results</span></a>{% endif %}
     {% if can('attendance') %}<a href="{{ url_for('admin_attendance.dashboard') }}"><i class="fa-solid fa-user-check"></i><span>Attendance</span></a>{% endif %}

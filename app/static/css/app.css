@@ -4867,3 +4867,27 @@ tbody tr:hover td { background: #f8fbff; }
   border-radius: 999px;
   line-height: 1;
 }
+
+.table-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 2px solid rgba(0, 32, 96, .12);
+  display: inline-block;
+}
+.table-avatar.placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef4ff;
+  color: var(--primary);
+}
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 16px 0 4px;
+  flex-wrap: wrap;
+}

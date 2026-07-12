@@ -1,0 +1,57 @@
+{% extends "admin/base.html" %}
+{% block title %}Teacher Performance{% endblock %}
+{% block page_title %}Teacher Performance{% endblock %}
+{% block admin_content %}
+<section class="toolbar glass-card">
+  <form class="search-tools" method="get">
+    <label><i class="fa-solid fa-chalkboard-user"></i>
+      <select name="teacher_id" onchange="this.form.submit()">
+        <option value="">All Active Teachers</option>
+        {% for teacher in teachers %}
+          <option value="{{ teacher.id }}" {% if selected_id == teacher.id %}selected{% endif %}>{{ teacher.full_name }} ({{ teacher.teacher_code }})</option>
+        {% endfor %}
+      </select>
+    </label>
+  </form>
+</section>
+
+{% for item in payloads %}
+<section class="panel">
+  <div class="section-heading"><span><i class="fa-solid fa-chart-line"></i></span><div><h2>{{ item.teacher.full_name }}</h2><p>{{ item.teacher.teacher_code }} • {{ item.teacher.department or 'No department' }}</p></div></div>
+  <section class="stat-grid premium-stats" style="margin-bottom: 16px;">
+    <div class="stat-card success"><i class="fa-solid fa-circle-check"></i><span>Pass Rate</span><strong>{{ item.pass_rate }}%</strong></div>
+    <div class="stat-card warning"><i class="fa-solid fa-circle-xmark"></i><span>Fail Rate</span><strong>{{ item.fail_rate }}%</strong></div>
+    <div class="stat-card"><i class="fa-solid fa-percent"></i><span>Subject Average</span><strong>{{ item.subject_average }}%</strong></div>
+    <div class="stat-card"><i class="fa-solid fa-trophy"></i><span>Best Class</span><strong style="font-size:1rem;">{{ item.best_class or '-' }}</strong></div>
+    <div class="stat-card"><i class="fa-solid fa-arrow-trend-down"></i><span>Lowest Class</span><strong style="font-size:1rem;">{{ item.lowest_class or '-' }}</strong></div>
+    <div class="stat-card"><i class="fa-solid fa-users"></i><span>Students</span><strong>{{ item.student_count }}</strong></div>
+  </section>
+  <div class="dashboard-grid">
+    <div class="panel chart-panel">
+      <div class="section-heading"><span><i class="fa-solid fa-book"></i></span><div><h3>Subject Averages</h3></div></div>
+      <div class="bar-chart">
+        {% for name, value in item.subject_averages.items() %}
+          <div><span>{{ name }}</span><strong style="width: {{ [value, 100]|min }}%"></strong><b>{{ value }}%</b></div>
+        {% else %}
+          <div><span>No subject data</span><strong style="width: 4%"></strong><b>0</b></div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="panel chart-panel">
+      <div class="section-heading"><span><i class="fa-solid fa-people-roof"></i></span><div><h3>Class Averages</h3></div></div>
+      <div class="bar-chart">
+        {% for name, value in item.class_averages.items() %}
+          <div><span>{{ name }}</span><strong style="width: {{ [value, 100]|min }}%"></strong><b>{{ value }}%</b></div>
+        {% else %}
+          <div><span>No class data</span><strong style="width: 4%"></strong><b>0</b></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <p><strong>Assigned Subjects:</strong> {{ item.assigned_subjects|join(', ') or '-' }}</p>
+  <p><strong>Assigned Classes:</strong> {{ item.assigned_classes|join(', ') or '-' }}</p>
+</section>
+{% else %}
+<section class="panel"><p>No performance data available yet.</p></section>
+{% endfor %}
+{% endblock %}

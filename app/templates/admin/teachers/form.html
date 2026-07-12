@@ -1,0 +1,52 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ "Edit" if teacher.id else "Add" }} Teacher{% endblock %}
+{% block page_title %}{{ "Edit" if teacher.id else "Add" }} Teacher{% endblock %}
+{% block admin_content %}
+<form method="post" enctype="multipart/form-data" class="panel form-grid premium-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <div class="section-heading wide"><span><i class="fa-solid fa-user"></i></span><div><h2>Personal Information</h2><p>Core identity and contact details. Teacher ID must be entered manually.</p></div></div>
+  <label><i class="fa-solid fa-image"></i> Teacher Photo<input type="file" name="photo" accept="image/*">{% if teacher.photo_path %}<small>Current: <a href="{{ asset_url(teacher.photo_path) }}" target="_blank">View photo</a></small>{% endif %}</label>
+  <label><i class="fa-solid fa-id-card"></i> Teacher ID<input name="teacher_id" value="{{ teacher.teacher_id or '' }}" required placeholder="Enter manually — never auto-generated"></label>
+  <label><i class="fa-solid fa-barcode"></i> Teacher Code<input name="teacher_code" value="{{ teacher.teacher_code or '' }}" placeholder="{{ 'Auto-generated on save' if settings.teacher_code_auto_generate == 'on' and not teacher.id else 'Internal system code' }}"></label>
+  <label class="span-2"><i class="fa-solid fa-user-tie"></i> Full Name<input name="full_name" value="{{ teacher.full_name or '' }}" required></label>
+  <label><i class="fa-solid fa-venus-mars"></i> Gender<select name="gender"><option value="">Select</option><option {% if teacher.gender == 'Male' %}selected{% endif %}>Male</option><option {% if teacher.gender == 'Female' %}selected{% endif %}>Female</option><option {% if teacher.gender == 'Other' %}selected{% endif %}>Other</option></select></label>
+  <label><i class="fa-solid fa-phone"></i> Phone Number<input name="phone" value="{{ teacher.phone or '' }}"></label>
+  <label><i class="fa-solid fa-envelope"></i> Email<input name="email" type="email" value="{{ teacher.email or '' }}"></label>
+  <label class="span-2"><i class="fa-solid fa-location-dot"></i> Address<textarea name="address">{{ teacher.address or '' }}</textarea></label>
+  <label class="span-2"><i class="fa-solid fa-kit-medical"></i> Emergency Contact<input name="emergency_contact" value="{{ teacher.emergency_contact or '' }}"></label>
+
+  <div class="section-heading wide"><span><i class="fa-solid fa-briefcase"></i></span><div><h2>Employment Information</h2><p>Professional background and employment status.</p></div></div>
+  <label><i class="fa-solid fa-calendar-day"></i> Employment Date<input type="date" name="employment_date" value="{{ teacher.employment_date.isoformat() if teacher.employment_date else '' }}"></label>
+  <label><i class="fa-solid fa-clock"></i> Employment Type<select name="employment_type">{% for item in employment_types %}<option {% if teacher.employment_type == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></label>
+  <label class="span-2"><i class="fa-solid fa-graduation-cap"></i> Qualification<input name="qualification" value="{{ teacher.qualification or '' }}"></label>
+  <label><i class="fa-solid fa-hourglass-half"></i> Years of Experience<input type="number" min="0" name="years_experience" value="{{ teacher.years_experience or 0 }}"></label>
+  <label><i class="fa-solid fa-building"></i> Department<input name="department" value="{{ teacher.department or '' }}"></label>
+  <label><i class="fa-solid fa-toggle-on"></i> Employment Status<select name="employment_status"><option {% if teacher.employment_status == 'Active' or not teacher.id %}selected{% endif %}>Active</option><option {% if teacher.employment_status == 'Inactive' %}selected{% endif %}>Inactive</option></select></label>
+
+  <div class="section-heading wide"><span><i class="fa-solid fa-school"></i></span><div><h2>Academic Assignment</h2><p>Assign one or multiple subjects and classes.</p></div></div>
+  <label><i class="fa-solid fa-layer-group"></i> School Level<select name="school_level"><option value="">Select level</option>{% for level in school_levels %}<option value="{{ level }}" {% if teacher.school_level == level %}selected{% endif %}>{{ level }}</option>{% endfor %}</select></label>
+  <div class="wide permission-grid">
+    <strong><i class="fa-solid fa-book"></i> Assigned Subjects</strong>
+    {% for subject in subjects %}
+      <label class="check"><input type="checkbox" name="subject_ids" value="{{ subject.id }}" {% if subject in teacher.subjects %}checked{% endif %}> {{ subject.name }}</label>
+    {% endfor %}
+  </div>
+  <div class="wide permission-grid">
+    <strong><i class="fa-solid fa-people-roof"></i> Assigned Classes</strong>
+    {% for school_class in classes %}
+      <label class="check"><input type="checkbox" name="class_ids" value="{{ school_class.id }}" {% if school_class in teacher.classes %}checked{% endif %}> {{ school_class.name }}</label>
+    {% endfor %}
+  </div>
+
+  <div class="section-heading wide"><span><i class="fa-solid fa-key"></i></span><div><h2>Login Account</h2><p>Optional credentials for future teacher portal access.</p></div></div>
+  <label class="check wide"><input type="checkbox" name="create_account" {% if teacher.user_id or not teacher.id %}checked{% endif %}> <i class="fa-solid fa-user-lock"></i> Create / Update Login Account</label>
+  <label><i class="fa-solid fa-user"></i> Username<input name="username" value="{{ teacher.user.username if teacher.user else default_username }}" placeholder="{{ settings.teacher_default_username_format }}"></label>
+  <label><i class="fa-solid fa-lock"></i> Password<input type="password" name="password" placeholder="{{ 'Leave blank to keep current' if teacher.user_id else 'Required for new account' }}"></label>
+  <label><i class="fa-solid fa-lock"></i> Confirm Password<input type="password" name="confirm_password"></label>
+  <label class="check"><input type="checkbox" name="force_password_change" {% if teacher.force_password_change %}checked{% endif %}> <i class="fa-solid fa-rotate"></i> Force Password Change on First Login</label>
+  <label class="check"><input type="checkbox" name="account_active" {% if not teacher.user or teacher.user.is_active %}checked{% endif %}> <i class="fa-solid fa-circle-check"></i> Account Active</label>
+
+  <button class="premium wide"><i class="fa-solid fa-floppy-disk"></i> Save Teacher</button>
+</form>
+{% endblock %}

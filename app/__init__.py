@@ -67,6 +67,7 @@ def create_app(config_class=Config):
     from .routes_auth import auth_bp
     from .routes_id_cards import id_cards_bp
     from .routes_public import public_bp
+    from .routes_teachers import teachers_bp
 
     app.register_blueprint(public_bp)
     app.register_blueprint(auth_bp)
@@ -74,6 +75,7 @@ def create_app(config_class=Config):
     app.register_blueprint(attendance_bp, url_prefix="/admin/attendance")
     app.register_blueprint(id_cards_bp, url_prefix="/admin/id-cards")
     app.register_blueprint(advanced_results_bp, url_prefix="/admin/advanced-results")
+    app.register_blueprint(teachers_bp, url_prefix="/admin/teachers")
 
     register_cli(app)
 
@@ -92,6 +94,9 @@ def create_app(config_class=Config):
                 if not db.session.get(Setting, key):
                     db.session.add(Setting(key=key, value=value))
             seed_grade_scales()
+            from .teacher_services import seed_teacher_settings
+
+            seed_teacher_settings()
             db.session.commit()
 
         # 🔥 AUTO ADMIN FIX (IMPORTANT)
@@ -130,6 +135,9 @@ def register_cli(app):
                 db.session.add(Setting(key=key, value=value))
 
         seed_grade_scales()
+        from .teacher_services import seed_teacher_settings
+
+        seed_teacher_settings()
 
         if not AcademicYear.query.first():
             db.session.add(AcademicYear(name="2024-2025", is_current=True))

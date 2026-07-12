@@ -24,6 +24,7 @@ PERMISSIONS = [
     ("attendance", "Attendance"),
     ("id_cards", "ID Cards"),
     ("advanced_results", "Advanced Results"),
+    ("teachers", "Teacher Department"),
     ("qr_verification", "QR Verification"),
     ("system_settings", "System Settings"),
     ("backup", "Backup"),
@@ -79,6 +80,17 @@ ENDPOINT_PERMISSIONS = {
     "admin_advanced_results.dashboard": ("advanced_results", "results"),
     "admin_advanced_results.bulk": "results",
     "admin_advanced_results.export_excel": ("advanced_results", "export"),
+    "admin_teachers.dashboard": "teachers",
+    "admin_teachers.teacher_list": "teachers",
+    "admin_teachers.teacher_form": "teachers",
+    "admin_teachers.teacher_view": "teachers",
+    "admin_teachers.delete_teacher": "teachers",
+    "admin_teachers.teacher_permissions": "teachers",
+    "admin_teachers.performance": "teachers",
+    "admin_teachers.activity": "teachers",
+    "admin_teachers.teacher_settings": "teachers",
+    "admin_teachers.export_teachers": ("teachers", "export"),
+    "admin_teachers.print_teachers": ("teachers", "print"),
 }
 
 
