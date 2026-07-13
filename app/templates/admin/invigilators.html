@@ -1,0 +1,306 @@
+{% extends "admin/base.html" %}
+{% block title %}Exam Invigilators{% endblock %}
+{% block content %}
+<div class="admin-header">
+  <h1><i class="fa-solid fa-user-shield"></i> Exam Invigilators</h1>
+  <p>Manage examination staff and their access</p>
+</div>
+
+<!-- Filters -->
+<div class="filter-bar">
+  <form method="GET" action="{{ url_for('admin.invigilators') }}" class="filter-form">
+    <div class="filter-group">
+      <input type="text" name="q" placeholder="Search invigilators..." value="{{ q }}">
+    </div>
+    <div class="filter-group">
+      <select name="status">
+        <option value="">All Statuses</option>
+        <option value="Active" {% if status_filter == 'Active' %}selected{% endif %}>Active</option>
+        <option value="Inactive" {% if status_filter == 'Inactive' %}selected{% endif %}>Inactive</option>
+        <option value="Locked" {% if status_filter == 'Locked' %}selected{% endif %}>Locked</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <select name="role">
+        <option value="">All Roles</option>
+        <option value="Invigilator" {% if role_filter == 'Invigilator' %}selected{% endif %}>Invigilator</option>
+        <option value="Supervisor" {% if role_filter == 'Supervisor' %}selected{% endif %}>Supervisor</option>
+        <option value="Chief Invigilator" {% if role_filter == 'Chief Invigilator' %}selected{% endif %}>Chief Invigilator</option>
+        <option value="Administrator" {% if role_filter == 'Administrator' %}selected{% endif %}>Administrator</option>
+      </select>
+    </div>
+    <button type="submit" class="btn-filter">
+      <i class="fa-solid fa-filter"></i> Filter
+    </button>
+    <a href="{{ url_for('admin.invigilators') }}" class="btn-clear">
+      <i class="fa-solid fa-xmark"></i> Clear
+    </a>
+    <a href="{{ url_for('admin.invigilator_add') }}" class="btn-add">
+      <i class="fa-solid fa-plus"></i> Add Invigilator
+    </a>
+  </form>
+</div>
+
+<!-- Invigilators Table -->
+<div class="table-container">
+  <table class="premium-table">
+    <thead>
+      <tr>
+        <th>Photo</th>
+        <th>Invigilator ID</th>
+        <th>Name</th>
+        <th>Username</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th>Valid Period</th>
+        <th>Last Login</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for invigilator in invigilators %}
+      <tr>
+        <td>
+          {% if invigilator.photo_path %}
+          <img src="{{ invigilator.photo_path }}" alt="{{ invigilator.full_name }}" class="mini-photo">
+          {% else %}
+          <div class="mini-photo-placeholder">
+            <i class="fa-solid fa-user"></i>
+          </div>
+          {% endif %}
+        </td>
+        <td><strong>{{ invigilator.invigilator_id }}</strong></td>
+        <td>{{ invigilator.full_name }}</td>
+        <td>{{ invigilator.username }}</td>
+        <td>
+          <span class="role-badge role-{{ invigilator.role.lower().replace(' ', '-') }}">
+            {{ invigilator.role }}
+          </span>
+        </td>
+        <td>
+          <span class="status-badge status-{{ invigilator.status.lower() }}">
+            {{ invigilator.status }}
+          </span>
+        </td>
+        <td>
+          <small>
+            {% if invigilator.active_from %}{{ invigilator.active_from.strftime('%b %d, %Y') }}{% else %}--{% endif %}
+            to
+            {% if invigilator.active_until %}{{ invigilator.active_until.strftime('%b %d, %Y') }}{% else %}--{% endif %}
+          </small>
+        </td>
+        <td>
+          <small>
+            {% if invigilator.last_login_at %}
+            {{ invigilator.last_login_at.strftime('%b %d, %Y %H:%M') }}
+            {% else %}
+            Never
+            {% endif %}
+          </small>
+        </td>
+        <td>
+          <div class="action-buttons">
+            <a href="{{ url_for('admin.invigilator_edit', invigilator_id=invigilator.id) }}" class="btn-edit" title="Edit">
+              <i class="fa-solid fa-pen"></i>
+            </a>
+            <a href="{{ url_for('admin.invigilator_history', invigilator_id=invigilator.id) }}" class="btn-view" title="Login History">
+              <i class="fa-solid fa-history"></i>
+            </a>
+            <form method="POST" action="{{ url_for('admin.invigilator_toggle_status', invigilator_id=invigilator.id) }}" style="display: inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn-toggle" title="{{ 'Deactivate' if invigilator.is_active else 'Activate' }}">
+                <i class="fa-solid fa-{{ 'toggle-on' if invigilator.is_active else 'toggle-off' }}"></i>
+              </button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.invigilator_reset_password', invigilator_id=invigilator.id) }}" style="display: inline;" onsubmit="return confirm('Reset password for {{ invigilator.full_name }}?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn-reset" title="Reset Password">
+                <i class="fa-solid fa-key"></i>
+              </button>
+            </form>
+            <form method="POST" action="{{ url_for('admin.invigilator_delete', invigilator_id=invigilator.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete {{ invigilator.full_name }}?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn-delete" title="Delete">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="9" class="no-data">No invigilators found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<style>
+.filter-bar {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+}
+
+.filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.filter-group {
+  flex: 1;
+  min-width: 150px;
+}
+
+.filter-group input,
+.filter-group select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.btn-filter,
+.btn-clear,
+.btn-add {
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-filter {
+  background: #2563eb;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-clear {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 2px solid #e5e7eb;
+}
+
+.btn-add {
+  background: #22c55e;
+  color: white;
+  border: none;
+}
+
+.table-container {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+}
+
+.mini-photo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e5e7eb;
+}
+
+.mini-photo-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  border: 2px solid #e5e7eb;
+}
+
+.role-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.role-invigilator { background: #dbeafe; color: #1e40af; }
+.role-supervisor { background: #fef3c7; color: #92400e; }
+.role-chief-invigilator { background: #fce7f3; color: #9d174d; }
+.role-administrator { background: #d1fae5; color: #065f46; }
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-active { background: #d1fae5; color: #065f46; }
+.status-inactive { background: #f1f5f9; color: #64748b; }
+.status-locked { background: #fee2e2; color: #991b1b; }
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.action-buttons a,
+.action-buttons button {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-view { background: #dbeafe; color: #1e40af; }
+.btn-view:hover { background: #bfdbfe; }
+
+.btn-edit { background: #fef3c7; color: #92400e; }
+.btn-edit:hover { background: #fde68a; }
+
+.btn-toggle { background: #e0e7ff; color: #4338ca; }
+.btn-toggle:hover { background: #c7d2fe; }
+
+.btn-reset { background: #fce7f3; color: #9d174d; }
+.btn-reset:hover { background: #fbcfe8; }
+
+.btn-delete { background: #fee2e2; color: #991b1b; }
+.btn-delete:hover { background: #fecaca; }
+
+.no-data {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+  font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  .filter-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-group {
+    min-width: 100%;
+  }
+}
+</style>
+{% endblock %}

@@ -9,7 +9,7 @@ from . import db
 from .audit import audit
 from .cloudinary_service import upload_image
 from .import_wizard import preview_results, preview_students, result_template, student_template
-from .models import AcademicLevel, AcademicClass, AcademicSection, AcademicYear, AuditLog, Exam, GradeScale, IncidentAction, IncidentAttachment, IncidentCategory, IncidentReport, Result, SchoolClass, SeverityLevel, Setting, Student, Subject, User
+from .models import AcademicLevel, AcademicClass, AcademicSection, AcademicYear, AuditLog, Exam, GradeScale, IncidentAction, IncidentAttachment, IncidentCategory, IncidentReport, Result, SchoolClass, SeverityLevel, Setting, Student, Subject, User, ExamInvigilator, InvigilatorLoginHistory, IncidentReportSettings
 from .permissions import PERMISSIONS, can, enforce_endpoint_permission, permission_required
 from .security import ALLOWED_PHOTOS, ALLOWED_SHEETS, allowed_file
 from .services import get_settings, grade_for, result_payload
@@ -1069,3 +1069,230 @@ def abort_404():
     from flask import abort
 
     abort(404)
+
+
+# =========================
+# INVIGILATOR MANAGEMENT
+# =========================
+
+@admin_bp.route("/invigilators")
+def invigilators():
+    """Manage Exam Invigilators"""
+    q = request.args.get("q", "").strip()
+    status_filter = request.args.get("status", "")
+    role_filter = request.args.get("role", "")
+    
+    query = ExamInvigilator.query
+    
+    if q:
+        query = query.filter(
+            or_(
+                ExamInvigilator.full_name.like(f"%{q}%"),
+                ExamInvigilator.username.like(f"%{q}%"),
+                ExamInvigilator.invigilator_id.like(f"%{q}%"),
+                ExamInvigilator.mobile_number.like(f"%{q}%")
+            )
+        )
+    
+    if status_filter:
+        query = query.filter(ExamInvigilator.status == status_filter)
+    
+    if role_filter:
+        query = query.filter(ExamInvigilator.role == role_filter)
+    
+    invigilators = query.order_by(ExamInvigilator.created_at.desc()).all()
+    
+    return render_template(
+        "admin/invigilators.html",
+        invigilators=invigilators,
+        q=q,
+        status_filter=status_filter,
+        role_filter=role_filter
+    )
+
+
+@admin_bp.route("/invigilators/add", methods=["GET", "POST"])
+def invigilator_add():
+    """Add new invigilator"""
+    if request.method == "POST":
+        invigilator_id = request.form.get("invigilator_id", "").strip()
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        full_name = request.form.get("full_name", "").strip()
+        mobile_number = request.form.get("mobile_number", "").strip()
+        role = request.form.get("role", "Invigilator")
+        school = request.form.get("school", "").strip()
+        notes = request.form.get("notes", "").strip()
+        active_from = request.form.get("active_from", "")
+        active_until = request.form.get("active_until", "")
+        
+        # Validate required fields
+        if not all([invigilator_id, username, password, full_name]):
+            flash("Invigilator ID, username, password, and full name are required.", "danger")
+            return render_template("admin/invigilator_form.html", invigilator=None)
+        
+        # Check if invigilator_id or username already exists
+        if ExamInvigilator.query.filter_by(invigilator_id=invigilator_id).first():
+            flash("Invigilator ID already exists.", "danger")
+            return render_template("admin/invigilator_form.html", invigilator=None)
+        
+        if ExamInvigilator.query.filter_by(username=username).first():
+            flash("Username already exists.", "danger")
+            return render_template("admin/invigilator_form.html", invigilator=None)
+        
+        # Create invigilator
+        invigilator = ExamInvigilator(
+            invigilator_id=invigilator_id,
+            username=username,
+            full_name=full_name,
+            mobile_number=mobile_number,
+            role=role,
+            school=school,
+            notes=notes,
+            active_from=datetime.strptime(active_from, "%Y-%m-%d").date() if active_from else None,
+            active_until=datetime.strptime(active_until, "%Y-%m-%d").date() if active_until else None
+        )
+        invigilator.set_password(password)
+        
+        db.session.add(invigilator)
+        db.session.commit()
+        
+        audit("Invigilator Created", f"Created invigilator {invigilator.full_name} ({invigilator.invigilator_id})")
+        flash(f"Invigilator {full_name} added successfully!", "success")
+        return redirect(url_for("admin.invigilators"))
+    
+    return render_template("admin/invigilator_form.html", invigilator=None)
+
+
+@admin_bp.route("/invigilators/<int:invigilator_id>/edit", methods=["GET", "POST"])
+def invigilator_edit(invigilator_id):
+    """Edit invigilator"""
+    invigilator = ExamInvigilator.query.get_or_404(invigilator_id)
+    
+    if request.method == "POST":
+        invigilator.invigilator_id = request.form.get("invigilator_id", "").strip()
+        invigilator.username = request.form.get("username", "").strip()
+        invigilator.full_name = request.form.get("full_name", "").strip()
+        invigilator.mobile_number = request.form.get("mobile_number", "").strip()
+        invigilator.role = request.form.get("role", "Invigilator")
+        invigilator.school = request.form.get("school", "").strip()
+        invigilator.notes = request.form.get("notes", "").strip()
+        invigilator.status = request.form.get("status", "Active")
+        invigilator.active_from = datetime.strptime(request.form.get("active_from", ""), "%Y-%m-%d").date() if request.form.get("active_from") else None
+        invigilator.active_until = datetime.strptime(request.form.get("active_until", ""), "%Y-%m-%d").date() if request.form.get("active_until") else None
+        
+        # Update password if provided
+        new_password = request.form.get("new_password", "")
+        if new_password:
+            invigilator.set_password(new_password)
+        
+        # Handle photo upload
+        if request.files.get("photo") and request.files["photo"].filename:
+            photo = request.files["photo"]
+            if allowed_file(photo.filename, ALLOWED_PHOTOS):
+                photo_url = upload_image(photo, "invigilators")
+                invigilator.photo_path = photo_url
+        
+        db.session.commit()
+        
+        audit("Invigilator Updated", f"Updated invigilator {invigilator.full_name} ({invigilator.invigilator_id})")
+        flash(f"Invigilator {invigilator.full_name} updated successfully!", "success")
+        return redirect(url_for("admin.invigilators"))
+    
+    return render_template("admin/invigilator_form.html", invigilator=invigilator)
+
+
+@admin_bp.route("/invigilators/<int:invigilator_id>/delete", methods=["POST"])
+def invigilator_delete(invigilator_id):
+    """Delete invigilator"""
+    invigilator = ExamInvigilator.query.get_or_404(invigilator_id)
+    
+    full_name = invigilator.full_name
+    invigilator_id_str = invigilator.invigilator_id
+    
+    db.session.delete(invigilator)
+    db.session.commit()
+    
+    audit("Invigilator Deleted", f"Deleted invigilator {full_name} ({invigilator_id_str})")
+    flash(f"Invigilator {full_name} deleted successfully!", "success")
+    return redirect(url_for("admin.invigilators"))
+
+
+@admin_bp.route("/invigilators/<int:invigilator_id>/toggle-status", methods=["POST"])
+def invigilator_toggle_status(invigilator_id):
+    """Toggle invigilator active status"""
+    invigilator = ExamInvigilator.query.get_or_404(invigilator_id)
+    
+    invigilator.is_active = not invigilator.is_active
+    if not invigilator.is_active:
+        invigilator.status = "Inactive"
+    else:
+        invigilator.status = "Active"
+    
+    db.session.commit()
+    
+    status_text = "activated" if invigilator.is_active else "deactivated"
+    audit("Invigilator Status Changed", f"{status_text.capitalize()} invigilator {invigilator.full_name}")
+    flash(f"Invigilator {invigilator.full_name} {status_text} successfully!", "success")
+    return redirect(url_for("admin.invigilators"))
+
+
+@admin_bp.route("/invigilators/<int:invigilator_id>/reset-password", methods=["POST"])
+def invigilator_reset_password(invigilator_id):
+    """Reset invigilator password and force change"""
+    invigilator = ExamInvigilator.query.get_or_404(invigilator_id)
+    
+    # Generate temporary password
+    import secrets
+    temp_password = secrets.token_urlsafe(12)
+    invigilator.set_password(temp_password)
+    invigilator.force_password_change = True
+    db.session.commit()
+    
+    audit("Invigilator Password Reset", f"Reset password for {invigilator.full_name}")
+    flash(f"Temporary password for {invigilator.full_name}: {temp_password}", "info")
+    return redirect(url_for("admin.invigilators"))
+
+
+@admin_bp.route("/invigilators/<int:invigilator_id>/history")
+def invigilator_history(invigilator_id):
+    """View invigilator login history"""
+    invigilator = ExamInvigilator.query.get_or_404(invigilator_id)
+    history = InvigilatorLoginHistory.query.filter_by(invigilator_id=invigilator_id).order_by(InvigilatorLoginHistory.login_time.desc()).limit(50).all()
+    
+    return render_template("admin/invigilator_history.html", invigilator=invigilator, history=history)
+
+
+# =========================
+# INCIDENT REPORT SETTINGS
+# =========================
+
+@admin_bp.route("/incident-settings")
+def incident_settings():
+    """Manage Incident Report Settings"""
+    settings = IncidentReportSettings.query.order_by(IncidentReportSettings.category, IncidentReportSettings.setting_key).all()
+    
+    # Group settings by category
+    grouped_settings = {}
+    for setting in settings:
+        if setting.category not in grouped_settings:
+            grouped_settings[setting.category] = []
+        grouped_settings[setting.category].append(setting)
+    
+    return render_template("admin/incident_settings.html", grouped_settings=grouped_settings)
+
+
+@admin_bp.route("/incident-settings/update", methods=["POST"])
+def incident_settings_update():
+    """Update incident report settings"""
+    for key, value in request.form.items():
+        if key.startswith("setting_"):
+            setting_key = key.replace("setting_", "")
+            setting = IncidentReportSettings.query.filter_by(setting_key=setting_key).first()
+            if setting:
+                setting.setting_value = value
+                db.session.commit()
+    
+    audit("Incident Settings Updated", "Updated incident report form settings")
+    flash("Incident report settings updated successfully!", "success")
+    return redirect(url_for("admin.incident_settings"))

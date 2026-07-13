@@ -194,9 +194,10 @@ def qr_landing(token):
 
 
 @public_bp.route("/incident-report/<token>", methods=["GET", "POST"])
-@login_required
 def incident_report_form(token):
-    """Incident Report Form - Requires authentication"""
+    """Incident Report Form - Requires invigilator authentication"""
+    from .routes_invigilator import current_invigilator, invigilator_login_required
+    
     settings = get_settings()
     issue = IdCardIssue.query.filter_by(token=token).first()
     
@@ -205,9 +206,13 @@ def incident_report_form(token):
     
     student = issue.student
     
-    # Check if user has permission (admin or staff)
-    if not current_user.is_authenticated or current_user.role not in ["super_admin", "admin", "staff"]:
-        return render_template("qr_landing.html", settings=settings, token=token, student=student, error="Unauthorized"), 403
+    # Check if invigilator is logged in
+    invigilator = current_invigilator()
+    if not invigilator:
+        flash("Please log in as an invigilator to submit an incident report.", "warning")
+        from flask import session
+        session["invigilator_next"] = request.url
+        return redirect(url_for("invigilator.login"))
     
     if request.method == "POST":
         # Generate report number
@@ -225,8 +230,9 @@ def incident_report_form(token):
         report = IncidentReport(
             report_number=report_num,
             student_id=student.id,
-            user_id=current_user.id,
-            teacher_id=current_user.teacher_profile.id if current_user.teacher_profile else None,
+            invigilator_id=invigilator.id,
+            teacher_id=None,
+            user_id=None,
             category_id=int(request.form.get("category_id")),
             severity_id=int(request.form.get("severity_id")),
             exam_id=int(request.form.get("exam_id")) if request.form.get("exam_id") else None,
@@ -277,6 +283,12 @@ def incident_report_form(token):
     exams = Exam.query.filter_by(is_published=True).order_by(Exam.id.desc()).all()
     subjects = Subject.query.order_by(Subject.name).all()
     
+    # Fetch incident report settings
+    from .models import IncidentReportSettings
+    settings_dict = {}
+    for setting in IncidentReportSettings.query.all():
+        settings_dict[setting.setting_key] = setting.setting_value
+    
     # Pre-compute current date/time for form defaults
     current_date = datetime.now().strftime('%Y-%m-%d')
     current_time = datetime.now().strftime('%H:%M')
@@ -289,6 +301,7 @@ def incident_report_form(token):
     return render_template(
         "incident_form.html",
         settings=settings,
+        incident_settings=settings_dict,
         token=token,
         student=student,
         categories=categories,

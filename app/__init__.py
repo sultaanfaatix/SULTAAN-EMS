@@ -70,6 +70,7 @@ def create_app(config_class=Config):
     from .routes_teacher_portal import teacher_portal_bp
     from .routes_teachers import teachers_bp
     from .routes_academic_structure import academic_bp
+    from .routes_invigilator import invigilator_bp
 
     app.register_blueprint(public_bp)
     app.register_blueprint(auth_bp)
@@ -80,6 +81,7 @@ def create_app(config_class=Config):
     app.register_blueprint(teachers_bp, url_prefix="/admin/teachers")
     app.register_blueprint(teacher_portal_bp, url_prefix="/teacher")
     app.register_blueprint(academic_bp, url_prefix="/admin/academic-structure")
+    app.register_blueprint(invigilator_bp, url_prefix="/invigilator")
 
     register_cli(app)
 
@@ -160,6 +162,63 @@ def create_app(config_class=Config):
             ]
             for a in actions:
                 db.session.add(IncidentAction(**a))
+
+        # 🔥 AUTO INCIDENT REPORT SETTINGS SEEDING
+        from .models import IncidentReportSettings
+
+        default_settings = [
+            # Field visibility settings
+            {"setting_key": "show_student_photo", "setting_value": "true", "setting_type": "boolean", "category": "fields", "description": "Show student photo in incident form"},
+            {"setting_key": "show_student_info", "setting_value": "true", "setting_type": "boolean", "category": "fields", "description": "Show student information section"},
+            {"setting_key": "show_exam_room", "setting_value": "true", "setting_type": "boolean", "category": "fields", "description": "Show exam room field"},
+            {"setting_key": "show_exam", "setting_value": "true", "setting_type": "boolean", "category": "fields", "description": "Show exam selection"},
+            {"setting_key": "show_subject", "setting_value": "true", "setting_type": "boolean", "category": "fields", "description": "Show subject selection"},
+            {"setting_key": "show_teacher_info", "setting_value": "true", "setting_type": "boolean", "category": "fields", "description": "Show teacher information fields"},
+            {"setting_key": "show_evidence_upload", "setting_value": "true", "setting_type": "boolean", "category": "fields", "description": "Show evidence upload section"},
+            
+            # Field requirement settings
+            {"setting_key": "require_exam_room", "setting_value": "false", "setting_type": "boolean", "category": "requirements", "description": "Require exam room field"},
+            {"setting_key": "require_exam", "setting_value": "false", "setting_type": "boolean", "category": "requirements", "description": "Require exam selection"},
+            {"setting_key": "require_subject", "setting_value": "false", "setting_type": "boolean", "category": "requirements", "description": "Require subject selection"},
+            {"setting_key": "require_teacher_name", "setting_value": "false", "setting_type": "boolean", "category": "requirements", "description": "Require teacher name"},
+            {"setting_key": "require_teacher_id", "setting_value": "false", "setting_type": "boolean", "category": "requirements", "description": "Require teacher ID"},
+            {"setting_key": "require_evidence", "setting_value": "false", "setting_type": "boolean", "category": "requirements", "description": "Require evidence upload"},
+            
+            # Custom labels
+            {"setting_key": "label_exam_room", "setting_value": "Exam Room", "setting_type": "string", "category": "labels", "description": "Label for exam room field"},
+            {"setting_key": "label_teacher_name", "setting_value": "Invigilator Name", "setting_type": "string", "category": "labels", "description": "Label for teacher name field"},
+            {"setting_key": "label_teacher_id", "setting_value": "Invigilator ID", "setting_type": "string", "category": "labels", "description": "Label for teacher ID field"},
+            {"setting_key": "label_description", "setting_value": "Incident Description", "setting_type": "string", "category": "labels", "description": "Label for description field"},
+            {"setting_key": "label_actions_taken", "setting_value": "Actions Taken", "setting_type": "string", "category": "labels", "description": "Label for actions taken field"},
+            
+            # Styling settings
+            {"setting_key": "template", "setting_value": "premium", "setting_type": "string", "category": "styling", "description": "Form template (classic, premium, modern, government, university)"},
+            {"setting_key": "primary_color", "setting_value": "#3b82f6", "setting_type": "string", "category": "styling", "description": "Primary color"},
+            {"setting_key": "secondary_color", "setting_value": "#1e40af", "setting_type": "string", "category": "styling", "description": "Secondary color"},
+            {"setting_key": "background_color", "setting_value": "#f8fafc", "setting_type": "string", "category": "styling", "description": "Background color"},
+            {"setting_key": "card_background", "setting_value": "#ffffff", "setting_type": "string", "category": "styling", "description": "Card background color"},
+            {"setting_key": "font_family", "setting_value": "Segoe UI", "setting_type": "string", "category": "styling", "description": "Font family"},
+            {"setting_key": "font_size", "setting_value": "16", "setting_type": "integer", "category": "styling", "description": "Base font size in pixels"},
+            
+            # Header settings
+            {"setting_key": "show_header", "setting_value": "true", "setting_type": "boolean", "category": "header", "description": "Show form header"},
+            {"setting_key": "header_title", "setting_value": "Incident Report", "setting_type": "string", "category": "header", "description": "Header title"},
+            {"setting_key": "header_subtitle", "setting_value": "Submit examination incident report", "setting_type": "string", "category": "header", "description": "Header subtitle"},
+            
+            # Footer settings
+            {"setting_key": "show_footer", "setting_value": "true", "setting_type": "boolean", "category": "footer", "description": "Show form footer"},
+            {"setting_key": "footer_text", "setting_value": "© 2024 Examination System", "setting_type": "string", "category": "footer", "description": "Footer text"},
+        ]
+        
+        for setting in default_settings:
+            if not IncidentReportSettings.query.filter_by(setting_key=setting["setting_key"]).first():
+                db.session.add(IncidentReportSettings(
+                    setting_key=setting["setting_key"],
+                    setting_value=setting["setting_value"],
+                    setting_type=setting["setting_type"],
+                    category=setting["category"],
+                    description=setting["description"]
+                ))
 
         db.session.commit()
 

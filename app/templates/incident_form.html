@@ -12,12 +12,16 @@
         <i class="fa-solid fa-arrow-left"></i> Back
       </a>
     </div>
-    <h1>Submit Incident Report</h1>
-    <p>Report an examination incident involving this student</p>
+    {% if incident_settings.get('show_header') == 'true' %}
+    <h1>{{ incident_settings.get('header_title', 'Submit Incident Report') }}</h1>
+    <p>{{ incident_settings.get('header_subtitle', 'Report an examination incident involving this student') }}</p>
+    {% endif %}
   </div>
 
   <!-- Student Identity Card -->
+  {% if incident_settings.get('show_student_photo') == 'true' or incident_settings.get('show_student_info') == 'true' %}
   <div class="student-identity-card glass-card">
+    {% if incident_settings.get('show_student_photo') == 'true' %}
     <div class="student-photo-large">
       {% if student.photo_path %}
       <img src="{{ student.photo_path }}" alt="{{ student.full_name }}">
@@ -27,6 +31,8 @@
       </div>
       {% endif %}
     </div>
+    {% endif %}
+    {% if incident_settings.get('show_student_info') == 'true' %}
     <div class="student-identity-details">
       <h2>{{ student.full_name }}</h2>
       <div class="identity-grid">
@@ -74,26 +80,30 @@
         </div>
       </div>
     </div>
+    {% endif %}
   </div>
+  {% endif %}
 
   <!-- Incident Form -->
   <form method="POST" action="{{ url_for('public.incident_report_form', token=token) }}" enctype="multipart/form-data" class="incident-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     
     <!-- Teacher Information -->
+    {% if incident_settings.get('show_teacher_info') == 'true' %}
     <div class="form-section glass-card">
       <h3><i class="fa-solid fa-chalkboard-teacher"></i> Teacher Information</h3>
       <div class="form-row">
         <div class="form-group">
-          <label for="invigilator_name">Invigilator Name</label>
-          <input type="text" id="invigilator_name" name="invigilator_name" value="{{ current_user.full_name if current_user else '' }}" placeholder="Enter invigilator name">
+          <label for="invigilator_name">{{ incident_settings.get('label_teacher_name', 'Invigilator Name') }}{% if incident_settings.get('require_teacher_name') == 'true' %} *{% endif %}</label>
+          <input type="text" id="invigilator_name" name="invigilator_name" value="{{ session.get('invigilator_full_name', '') }}" placeholder="Enter invigilator name" {% if incident_settings.get('require_teacher_name') == 'true' %}required{% endif %}>
         </div>
         <div class="form-group">
-          <label for="invigilator_id">Invigilator ID (Optional)</label>
-          <input type="text" id="invigilator_id" name="invigilator_id" placeholder="Enter invigilator ID">
+          <label for="invigilator_id">{{ incident_settings.get('label_teacher_id', 'Invigilator ID') }}{% if incident_settings.get('require_teacher_id') == 'true' %} *{% endif %}</label>
+          <input type="text" id="invigilator_id" name="invigilator_id" value="{{ session.get('invigilator_username', '') }}" placeholder="Enter invigilator ID" {% if incident_settings.get('require_teacher_id') == 'true' %}required{% endif %}>
         </div>
       </div>
     </div>
+    {% endif %}
 
     <!-- Incident Details -->
     <div class="form-section glass-card">
@@ -124,33 +134,41 @@
       </div>
 
       <div class="form-row">
+        {% if incident_settings.get('show_exam') == 'true' %}
         <div class="form-group">
-          <label for="exam_id">Exam</label>
-          <select id="exam_id" name="exam_id">
+          <label for="exam_id">Exam{% if incident_settings.get('require_exam') == 'true' %} *{% endif %}</label>
+          <select id="exam_id" name="exam_id" {% if incident_settings.get('require_exam') == 'true' %}required{% endif %}>
             <option value="">Select exam (optional)</option>
             {% for exam in exams %}
             <option value="{{ exam.id }}">{{ exam.name }} - {{ exam.academic_year.name }}</option>
             {% endfor %}
           </select>
         </div>
+        {% endif %}
         
+        {% if incident_settings.get('show_subject') == 'true' %}
         <div class="form-group">
-          <label for="subject_id">Subject</label>
-          <select id="subject_id" name="subject_id">
+          <label for="subject_id">Subject{% if incident_settings.get('require_subject') == 'true' %} *{% endif %}</label>
+          <select id="subject_id" name="subject_id" {% if incident_settings.get('require_subject') == 'true' %}required{% endif %}>
             <option value="">Select subject (optional)</option>
             {% for subject in subjects %}
             <option value="{{ subject.id }}">{{ subject.name }}</option>
             {% endfor %}
           </select>
         </div>
+        {% endif %}
       </div>
 
+      {% if incident_settings.get('show_exam_room') == 'true' %}
       <div class="form-row">
         <div class="form-group">
-          <label for="exam_room">Exam Room</label>
-          <input type="text" id="exam_room" name="exam_room" placeholder="e.g., Room 101">
+          <label for="exam_room">{{ incident_settings.get('label_exam_room', 'Exam Room') }}{% if incident_settings.get('require_exam_room') == 'true' %} *{% endif %}</label>
+          <input type="text" id="exam_room" name="exam_room" placeholder="e.g., Room 101" {% if incident_settings.get('require_exam_room') == 'true' %}required{% endif %}>
         </div>
-        
+      </div>
+      {% endif %}
+      
+      <div class="form-row">
         <div class="form-group">
           <label for="incident_date">Incident Date *</label>
           <input type="date" id="incident_date" name="incident_date" required value="{{ current_date }}">
@@ -165,7 +183,7 @@
 
     <!-- Description -->
     <div class="form-section glass-card">
-      <h3><i class="fa-solid fa-align-left"></i> Incident Description *</h3>
+      <h3><i class="fa-solid fa-align-left"></i> {{ incident_settings.get('label_description', 'Incident Description') }} *</h3>
       <div class="form-group full-width">
         <textarea id="description" name="description" rows="8" required placeholder="Please provide a detailed description of what happened during the incident..."></textarea>
       </div>
@@ -173,7 +191,7 @@
 
     <!-- Actions Taken -->
     <div class="form-section glass-card">
-      <h3><i class="fa-solid fa-list-check"></i> Actions Taken</h3>
+      <h3><i class="fa-solid fa-list-check"></i> {{ incident_settings.get('label_actions_taken', 'Actions Taken') }}</h3>
       <div class="actions-checkboxes">
         {% for action in actions %}
         <label class="action-checkbox">
@@ -185,14 +203,16 @@
     </div>
 
     <!-- Evidence Upload -->
+    {% if incident_settings.get('show_evidence_upload') == 'true' %}
     <div class="form-section glass-card">
-      <h3><i class="fa-solid fa-paperclip"></i> Evidence Upload</h3>
+      <h3><i class="fa-solid fa-paperclip"></i> Evidence Upload{% if incident_settings.get('require_evidence') == 'true' %} *{% endif %}</h3>
       <div class="form-group full-width">
         <label for="evidence">Upload Evidence (Images, Videos, Documents)</label>
-        <input type="file" id="evidence" name="evidence" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx">
+        <input type="file" id="evidence" name="evidence" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx" {% if incident_settings.get('require_evidence') == 'true' %}required{% endif %}>
         <p class="help-text">Supported formats: JPG, PNG, MP4, MP3, PDF, DOC, DOCX</p>
       </div>
     </div>
+    {% endif %}
 
     <!-- Report Preview -->
     <div class="form-section glass-card preview-section">
@@ -222,5 +242,11 @@
       </a>
     </div>
   </form>
+  
+  {% if incident_settings.get('show_footer') == 'true' %}
+  <div class="form-footer">
+    <p>{{ incident_settings.get('footer_text', '© 2024 Examination System') }}</p>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

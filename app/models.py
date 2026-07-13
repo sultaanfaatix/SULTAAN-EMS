@@ -452,6 +452,7 @@ class IncidentReport(TimestampMixin, db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
     teacher_id = db.Column(db.Integer, db.ForeignKey("teachers.id", ondelete="SET NULL"), nullable=True, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    invigilator_id = db.Column(db.Integer, db.ForeignKey("exam_invigilators.id", ondelete="SET NULL"), nullable=True, index=True)
     
     exam_id = db.Column(db.Integer, db.ForeignKey("exams.id", ondelete="SET NULL"), nullable=True)
     subject_id = db.Column(db.Integer, db.ForeignKey("subjects.id", ondelete="SET NULL"), nullable=True)
@@ -480,6 +481,7 @@ class IncidentReport(TimestampMixin, db.Model):
     student = db.relationship("Student", backref=db.backref("incident_reports", lazy="dynamic"))
     teacher = db.relationship("Teacher", backref=db.backref("incident_reports", lazy="dynamic"))
     user = db.relationship("User", foreign_keys=[user_id], backref=db.backref("submitted_reports", lazy="dynamic"))
+    invigilator = db.relationship("ExamInvigilator", backref=db.backref("submitted_reports", lazy="dynamic"))
     reviewed_by = db.relationship("User", foreign_keys=[reviewed_by_id], backref=db.backref("reviewed_reports", lazy="dynamic"))
     exam = db.relationship("Exam")
     subject = db.relationship("Subject")
@@ -498,5 +500,85 @@ class IncidentAttachment(TimestampMixin, db.Model):
     file_size = db.Column(db.Integer, nullable=False)
     uploaded_by_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
 
-    report = db.relationship("IncidentReport", backref=db.backref("attachments", cascade="all, delete-orphan"))
-    uploaded_by = db.relationship("User")
+
+class ExamInvigilator(TimestampMixin, db.Model):
+    __tablename__ = "exam_invigilators"
+
+    id = db.Column(db.Integer, primary_key=True)
+    invigilator_id = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    username = db.Column(db.String(80), unique=True, nullable=False, index=True)
+    password_hash = db.Column(db.String(255), nullable=False)
+    full_name = db.Column(db.String(180), nullable=False)
+    photo_path = db.Column(db.String(255))
+    mobile_number = db.Column(db.String(40))
+    role = db.Column(
+        db.Enum("Invigilator", "Supervisor", "Chief Invigilator", "Administrator"),
+        default="Invigilator",
+        nullable=False
+    )
+    school = db.Column(db.String(180))
+    notes = db.Column(db.Text)
+    status = db.Column(
+        db.Enum("Active", "Inactive", "Locked"),
+        default="Active",
+        nullable=False,
+        index=True
+    )
+    active_from = db.Column(db.Date)
+    active_until = db.Column(db.Date)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    last_login_at = db.Column(db.DateTime)
+    last_logout_at = db.Column(db.DateTime)
+    force_password_change = db.Column(db.Boolean, default=False, nullable=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def is_valid(self):
+        """Check if invigilator account is currently valid based on status and date range"""
+        from datetime import date
+        if self.status != "Active" or not self.is_active:
+            return False
+        today = date.today()
+        if self.active_from and today < self.active_from:
+            return False
+        if self.active_until and today > self.active_until:
+            return False
+        return True
+
+
+class InvigilatorLoginHistory(TimestampMixin, db.Model):
+    __tablename__ = "invigilator_login_history"
+
+    id = db.Column(db.Integer, primary_key=True)
+    invigilator_id = db.Column(db.Integer, db.ForeignKey("exam_invigilators.id", ondelete="CASCADE"), nullable=False, index=True)
+    login_time = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    logout_time = db.Column(db.DateTime)
+    ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.String(255))
+    login_status = db.Column(
+        db.Enum("Success", "Failed", "Locked", "Expired"),
+       default="Success",
+        nullable=False
+    )
+    failure_reason = db.Column(db.String(255))
+
+    invigilator = db.relationship("ExamInvigilator", backref=db.backref("login_history", cascade="all, delete-orphan"))
+
+
+class IncidentReportSettings(TimestampMixin, db.Model):
+    __tablename__ = "incident_report_settings"
+
+    id = db.Column(db.Integer, primary_key=True)
+    setting_key = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    setting_value = db.Column(db.Text)
+    setting_type = db.Column(
+        db.Enum("boolean", "string", "integer", "json"),
+        default="string",
+        nullable=False
+    )
+    category = db.Column(db.String(50), default="general")
+    description = db.Column(db.String(255))
