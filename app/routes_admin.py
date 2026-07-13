@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required
@@ -76,8 +76,8 @@ def incidents():
     
     # Statistics
     today = date.today()
-    week_ago = today - datetime.timedelta(days=7)
-    month_ago = today - datetime.timedelta(days=30)
+    week_ago = today - timedelta(days=7)
+    month_ago = today - timedelta(days=30)
     
     stats = {
         "total": IncidentReport.query.count(),

@@ -133,7 +133,7 @@
             {{ report.severity.name if report.severity else 'N/A' }}
           </span>
         </td>
-        <td>{{ report.incident_date.strftime('%b %d, %Y') }}</td>
+        <td>{{ report.incident_date.strftime('%b %d, %Y') if report.incident_date else 'N/A' }}</td>
         <td>
           <span class="status-badge status-{{ report.status.lower().replace(' ', '-') }}">
             {{ report.status }}
