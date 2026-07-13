@@ -242,23 +242,31 @@ def incident_report_form(token):
         db.session.add(report)
         db.session.commit()
         
-        # Handle file uploads if any
+        # Handle file uploads if any (optional - report saves even if upload fails)
         if request.files.getlist("evidence"):
-            from .cloudinary_service import upload_image
-            for file in request.files.getlist("evidence"):
-                if file and file.filename:
-                    file_path = upload_image(file, "incident/evidence")
-                    from .models import IncidentAttachment
-                    attachment = IncidentAttachment(
-                        report_id=report.id,
-                        file_path=file_path,
-                        file_name=file.filename,
-                        file_type=file.content_type or "application/octet-stream",
-                        file_size=len(file.read()),
-                        uploaded_by_id=current_user.id
-                    )
-                    db.session.add(attachment)
-            db.session.commit()
+            try:
+                from .cloudinary_service import upload_image
+                for file in request.files.getlist("evidence"):
+                    if file and file.filename:
+                        try:
+                            file_path = upload_image(file, "incident/evidence")
+                            from .models import IncidentAttachment
+                            attachment = IncidentAttachment(
+                                report_id=report.id,
+                                file_path=file_path,
+                                file_name=file.filename,
+                                file_type=file.content_type or "application/octet-stream",
+                                file_size=len(file.read()),
+                                uploaded_by_id=current_user.id
+                            )
+                            db.session.add(attachment)
+                        except Exception as upload_error:
+                            # Log error but continue - report saves even if upload fails
+                            current_app.logger.error(f"Failed to upload evidence file {file.filename}: {str(upload_error)}")
+                db.session.commit()
+            except Exception as e:
+                # Log error but don't fail the entire report submission
+                current_app.logger.error(f"File upload processing failed: {str(e)}")
         
         return render_template("incident_success.html", settings=settings, report=report, student=student)
     
