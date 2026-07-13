@@ -456,8 +456,8 @@ class IncidentReport(TimestampMixin, db.Model):
     exam_id = db.Column(db.Integer, db.ForeignKey("exams.id", ondelete="SET NULL"), nullable=True)
     subject_id = db.Column(db.Integer, db.ForeignKey("subjects.id", ondelete="SET NULL"), nullable=True)
     
-    category_id = db.Column(db.Integer, db.ForeignKey("incident_categories.id", ondelete="SET NULL"), nullable=False)
-    severity_id = db.Column(db.Integer, db.ForeignKey("severity_levels.id", ondelete="SET NULL"), nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey("incident_categories.id", ondelete="RESTRICT"), nullable=False)
+    severity_id = db.Column(db.Integer, db.ForeignKey("severity_levels.id", ondelete="RESTRICT"), nullable=False)
     
     exam_room = db.Column(db.String(120))
     incident_date = db.Column(db.Date, nullable=False, index=True)
