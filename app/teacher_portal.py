@@ -1,4 +1,5 @@
 from functools import wraps
+from urllib.parse import urlparse, urlunparse
 
 from flask import abort, flash, redirect, request, url_for
 from flask_login import current_user
@@ -43,11 +44,25 @@ def teacher_can(permission):
 
 
 def safe_teacher_next_url(next_url):
-    from flask import url_has_allowed_host_and_scheme
-
-    if next_url and url_has_allowed_host_and_scheme(next_url, request.host):
-        return next_url
-    return url_for("teacher_portal.dashboard")
+    """Validate that the next URL is safe to redirect to (prevents open redirect attacks)"""
+    if not next_url:
+        return url_for("teacher_portal.dashboard")
+    
+    # Parse the next URL
+    parsed_next = urlparse(next_url)
+    
+    # Get the current host from the request
+    request_host = request.host.split(':')[0]  # Remove port if present
+    
+    # If the next URL has a netloc (host), verify it matches the current host
+    if parsed_next.netloc:
+        next_host = parsed_next.netloc.split(':')[0]  # Remove port if present
+        if next_host != request_host:
+            # Host mismatch, redirect to dashboard instead
+            return url_for("teacher_portal.dashboard")
+    
+    # If the URL is relative or has a matching host, it's safe
+    return next_url
 
 
 def teacher_requires_password_change():
@@ -146,7 +161,6 @@ def teacher_nav_items():
         ("teacher_portal.my_students", "Students", "fa-user-graduate", "view_students"),
         ("teacher_portal.exam_analysis", "Exam Analytics", "fa-chart-line", "view_examinations"),
         ("teacher_portal.reports", "Reports", "fa-file-export", "generate_reports"),
-        ("teacher_portal.messages", "Messages", "fa-envelope", None),
         ("teacher_portal.profile", "Profile", "fa-user", None),
         ("teacher_portal.settings", "Settings", "fa-sliders", None),
         ("teacher_portal.logout", "Logout", "fa-right-from-bracket", None),
