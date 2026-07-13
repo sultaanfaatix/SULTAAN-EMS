@@ -1290,7 +1290,11 @@ def incident_settings_update():
             setting_key = key.replace("setting_", "")
             setting = IncidentReportSettings.query.filter_by(setting_key=setting_key).first()
             if setting:
-                setting.setting_value = value
+                # Convert checkbox values to 'true'/'false' strings
+                if setting.setting_type == 'boolean':
+                    setting.setting_value = 'true' if value == 'on' else 'false'
+                else:
+                    setting.setting_value = value
                 db.session.commit()
     
     audit("Incident Settings Updated", "Updated incident report form settings")

@@ -84,6 +84,52 @@
   </div>
   {% endif %}
 
+  <!-- Invigilator Information Card -->
+  <div class="invigilator-identity-card glass-card">
+    <div class="invigilator-photo">
+      {% if session.get('invigilator_photo_path') %}
+      <img src="{{ session.get('invigilator_photo_path') }}" alt="{{ session.get('invigilator_full_name') }}">
+      {% else %}
+      <div class="photo-placeholder">
+        <i class="fa-solid fa-user-shield"></i>
+      </div>
+      {% endif %}
+    </div>
+    <div class="invigilator-identity-details">
+      <h3><i class="fa-solid fa-user-shield"></i> Invigilator Information</h3>
+      <div class="identity-grid">
+        <div class="identity-item">
+          <span class="icon"><i class="fa-solid fa-user"></i></span>
+          <div class="content">
+            <span class="label">Full Name</span>
+            <span class="value">{{ session.get('invigilator_full_name', 'N/A') }}</span>
+          </div>
+        </div>
+        <div class="identity-item">
+          <span class="icon"><i class="fa-solid fa-id-badge"></i></span>
+          <div class="content">
+            <span class="label">Invigilator ID</span>
+            <span class="value">{{ session.get('invigilator_username', 'N/A') }}</span>
+          </div>
+        </div>
+        <div class="identity-item">
+          <span class="icon"><i class="fa-solid fa-at"></i></span>
+          <div class="content">
+            <span class="label">Username</span>
+            <span class="value">{{ session.get('invigilator_username', 'N/A') }}</span>
+          </div>
+        </div>
+        <div class="identity-item">
+          <span class="icon"><i class="fa-solid fa-crown"></i></span>
+          <div class="content">
+            <span class="label">Role</span>
+            <span class="value">{{ session.get('invigilator_role', 'Invigilator') }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Incident Form -->
   <form method="POST" action="{{ url_for('public.incident_report_form', token=token) }}" enctype="multipart/form-data" class="incident-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -210,6 +256,7 @@
         <label for="evidence">Upload Evidence (Images, Videos, Documents)</label>
         <input type="file" id="evidence" name="evidence" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx" {% if incident_settings.get('require_evidence') == 'true' %}required{% endif %}>
         <p class="help-text">Supported formats: JPG, PNG, MP4, MP3, PDF, DOC, DOCX</p>
+        <div id="upload-preview" class="upload-preview"></div>
       </div>
     </div>
     {% endif %}
@@ -249,4 +296,84 @@
   </div>
   {% endif %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const fileInput = document.getElementById('evidence');
+  const uploadPreview = document.getElementById('upload-preview');
+  
+  if (fileInput && uploadPreview) {
+    fileInput.addEventListener('change', function(e) {
+      const files = e.target.files;
+      uploadPreview.innerHTML = '';
+      
+      if (files.length > 0) {
+        const successMessage = document.createElement('div');
+        successMessage.className = 'upload-success';
+        successMessage.innerHTML = '<i class="fa-solid fa-check-circle"></i> ' + files.length + ' file(s) selected';
+        uploadPreview.appendChild(successMessage);
+        
+        Array.from(files).forEach(function(file, index) {
+          const fileCard = document.createElement('div');
+          fileCard.className = 'file-preview-card';
+          
+          const reader = new FileReader();
+          
+          reader.onload = function(e) {
+            if (file.type.startsWith('image/')) {
+              const img = document.createElement('img');
+              img.src = e.target.result;
+              img.className = 'preview-image';
+              fileCard.appendChild(img);
+            } else if (file.type.startsWith('video/')) {
+              const video = document.createElement('video');
+              video.src = e.target.result;
+              video.className = 'preview-video';
+              video.controls = true;
+              fileCard.appendChild(video);
+            } else {
+              const icon = document.createElement('div');
+              icon.className = 'preview-icon';
+              icon.innerHTML = '<i class="fa-solid fa-file"></i>';
+              fileCard.appendChild(icon);
+            }
+          };
+          
+          reader.readAsDataURL(file);
+          
+          const fileInfo = document.createElement('div');
+          fileInfo.className = 'file-info';
+          fileInfo.innerHTML = `
+            <div class="file-name">${file.name}</div>
+            <div class="file-meta">
+              <span class="file-type">${file.type || 'Unknown'}</span>
+              <span class="file-size">${(file.size / 1024).toFixed(1)} KB</span>
+            </div>
+            <button type="button" class="remove-file" data-index="${index}">
+              <i class="fa-solid fa-times"></i> Remove
+            </button>
+          `;
+          
+          fileCard.appendChild(fileInfo);
+          uploadPreview.appendChild(fileCard);
+        });
+      }
+    });
+    
+    uploadPreview.addEventListener('click', function(e) {
+      if (e.target.closest('.remove-file')) {
+        const button = e.target.closest('.remove-file');
+        const fileCard = button.closest('.file-preview-card');
+        fileCard.remove();
+        
+        const remainingCards = uploadPreview.querySelectorAll('.file-preview-card');
+        const successMessage = uploadPreview.querySelector('.upload-success');
+        if (successMessage) {
+          successMessage.innerHTML = '<i class="fa-solid fa-check-circle"></i> ' + remainingCards.length + ' file(s) selected';
+        }
+      }
+    });
+  }
+});
+</script>
 {% endblock %}

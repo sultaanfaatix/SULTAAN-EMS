@@ -15,6 +15,7 @@ def login_invigilator(invigilator):
     session["invigilator_username"] = invigilator.username
     session["invigilator_full_name"] = invigilator.full_name
     session["invigilator_role"] = invigilator.role
+    session["invigilator_photo_path"] = invigilator.photo_path
     session["invigilator_logged_in"] = True
     
     # Update last login time

@@ -500,6 +500,8 @@ class IncidentAttachment(TimestampMixin, db.Model):
     file_size = db.Column(db.Integer, nullable=False)
     uploaded_by_id = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"))
 
+    report = db.relationship("IncidentReport", backref=db.backref("attachments", lazy="dynamic", cascade="all, delete-orphan"))
+
 
 class ExamInvigilator(TimestampMixin, db.Model):
     __tablename__ = "exam_invigilators"
