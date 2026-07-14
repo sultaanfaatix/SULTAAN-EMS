@@ -9,16 +9,12 @@
   <div class="form-header security-header">
     <div class="header-content">
       <div class="header-icon">
-        <i class="fa-solid fa-shield-halved"></i>
+        <i class="fa-solid fa-file-shield"></i>
       </div>
       <div class="header-text">
         <div class="header-badge">
           <i class="fa-solid fa-triangle-exclamation"></i> EXAMINATION INCIDENT REPORT
         </div>
-        {% if incident_settings.get('show_header') == 'true' %}
-        <h1>{{ incident_settings.get('header_title', 'Submit Incident Report') }}</h1>
-        <p>{{ incident_settings.get('header_subtitle', 'Report an examination incident involving this student') }}</p>
-        {% endif %}
       </div>
     </div>
     <div class="back-link">
@@ -78,7 +74,7 @@
           <span class="icon"><i class="fa-solid fa-file-alt"></i></span>
           <div class="content">
             <span class="label">Exam Type</span>
-            <span class="value">{{ student.level or 'Regular' }}</span>
+            <span class="value">{{ issue.exam.name if issue and issue.exam else 'N/A' }}</span>
           </div>
         </div>
         <div class="identity-item">

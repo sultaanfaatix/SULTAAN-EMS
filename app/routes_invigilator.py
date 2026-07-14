@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 import functools
@@ -7,6 +7,9 @@ from . import db
 from .models import ExamInvigilator, InvigilatorLoginHistory
 
 invigilator_bp = Blueprint("invigilator", __name__)
+
+# Session timeout in minutes
+INVIGILATOR_SESSION_TIMEOUT = 30
 
 
 def login_invigilator(invigilator):
@@ -18,6 +21,7 @@ def login_invigilator(invigilator):
     session["invigilator_role"] = invigilator.role
     session["invigilator_photo_path"] = invigilator.photo_path
     session["invigilator_logged_in"] = True
+    session["invigilator_login_time"] = datetime.utcnow().isoformat()
     
     # Update last login time
     invigilator.last_login_at = datetime.utcnow()
@@ -34,10 +38,13 @@ def logout_invigilator():
             db.session.commit()
     
     session.pop("invigilator_id", None)
+    session.pop("invigilator_invigilator_id", None)
     session.pop("invigilator_username", None)
     session.pop("invigilator_full_name", None)
     session.pop("invigilator_role", None)
+    session.pop("invigilator_photo_path", None)
     session.pop("invigilator_logged_in", None)
+    session.pop("invigilator_login_time", None)
 
 
 def current_invigilator():
@@ -48,14 +55,37 @@ def current_invigilator():
     return None
 
 
+def check_invigilator_session():
+    """Check if invigilator session is valid and not expired"""
+    if not session.get("invigilator_logged_in"):
+        return False
+    
+    login_time_str = session.get("invigilator_login_time")
+    if not login_time_str:
+        return False
+    
+    try:
+        login_time = datetime.fromisoformat(login_time_str)
+        session_age = datetime.utcnow() - login_time
+        
+        if session_age > timedelta(minutes=INVIGILATOR_SESSION_TIMEOUT):
+            return False
+    except (ValueError, TypeError):
+        return False
+    
+    return True
+
+
 def invigilator_login_required(f):
     """Decorator to require invigilator login"""
     @functools.wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session.get("invigilator_logged_in"):
+        # Check if session is valid and not expired
+        if not check_invigilator_session():
+            logout_invigilator()
             # Store the intended URL for redirect after login
             session["invigilator_next"] = request.url
-            flash("Please log in as an invigilator to continue.", "warning")
+            flash("Your session has expired. Please sign in again to continue.", "warning")
             return redirect(url_for("invigilator.login"))
         
         # Check if invigilator account is still valid
