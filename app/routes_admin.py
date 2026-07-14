@@ -1285,17 +1285,24 @@ def incident_settings():
 @admin_bp.route("/incident-settings/update", methods=["POST"])
 def incident_settings_update():
     """Update incident report settings"""
-    for key, value in request.form.items():
-        if key.startswith("setting_"):
-            setting_key = key.replace("setting_", "")
-            setting = IncidentReportSettings.query.filter_by(setting_key=setting_key).first()
-            if setting:
-                # Convert checkbox values to 'true'/'false' strings
-                if setting.setting_type == 'boolean':
-                    setting.setting_value = 'true' if value == 'on' else 'false'
-                else:
-                    setting.setting_value = value
-                db.session.commit()
+    # Get all settings first to handle unchecked checkboxes
+    all_settings = IncidentReportSettings.query.all()
+    
+    for setting in all_settings:
+        form_key = f"setting_{setting.setting_key}"
+        
+        if setting.setting_type == 'boolean':
+            # Checkboxes only send 'on' when checked, so we need to handle unchecked case
+            if form_key in request.form:
+                setting.setting_value = 'true'
+            else:
+                setting.setting_value = 'false'
+        else:
+            # For non-boolean settings, use the form value if present
+            if form_key in request.form:
+                setting.setting_value = request.form[form_key]
+    
+    db.session.commit()
     
     audit("Incident Settings Updated", "Updated incident report form settings")
     flash("Incident report settings updated successfully!", "success")

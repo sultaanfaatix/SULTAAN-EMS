@@ -12,6 +12,7 @@ invigilator_bp = Blueprint("invigilator", __name__)
 def login_invigilator(invigilator):
     """Log in an invigilator and create session"""
     session["invigilator_id"] = invigilator.id
+    session["invigilator_invigilator_id"] = invigilator.invigilator_id
     session["invigilator_username"] = invigilator.username
     session["invigilator_full_name"] = invigilator.full_name
     session["invigilator_role"] = invigilator.role
