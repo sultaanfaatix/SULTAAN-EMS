@@ -46,6 +46,9 @@ def incidents():
     status_filter = request.args.get("status", "")
     severity_filter = request.args.get("severity", "")
     category_filter = request.args.get("category", "")
+    room_filter = request.args.get("room", "").strip()
+    subject_filter = request.args.get("subject", "").strip()
+    session_filter = request.args.get("exam_session", "")
     date_from = request.args.get("date_from", "")
     date_to = request.args.get("date_to", "")
     
@@ -68,31 +71,42 @@ def incidents():
     if category_filter:
         query = query.filter(IncidentReport.category_id == int(category_filter))
     
+    if room_filter:
+        query = query.filter(IncidentReport.exam_room.like(f"%{room_filter}%"))
+    
+    if subject_filter:
+        query = query.filter(IncidentReport.subject.like(f"%{subject_filter}%"))
+    
     if date_from:
         query = query.filter(IncidentReport.incident_date >= datetime.strptime(date_from, "%Y-%m-%d").date())
     
     if date_to:
         query = query.filter(IncidentReport.incident_date <= datetime.strptime(date_to, "%Y-%m-%d").date())
     
-    # Statistics
-    today = date.today()
-    week_ago = today - timedelta(days=7)
-    month_ago = today - timedelta(days=30)
-    
+    # Statistics - Updated to match new UI
+    all_reports = IncidentReport.query.all()
     stats = {
-        "total": IncidentReport.query.count(),
-        "today": IncidentReport.query.filter(IncidentReport.incident_date == today).count(),
-        "week": IncidentReport.query.filter(IncidentReport.incident_date >= week_ago).count(),
-        "month": IncidentReport.query.filter(IncidentReport.incident_date >= month_ago).count(),
-        "pending": IncidentReport.query.filter_by(status="Pending Review").count(),
-        "investigating": IncidentReport.query.filter_by(status="Under Investigation").count(),
+        "total": len(all_reports),
+        "critical": sum(1 for r in all_reports if r.severity and r.severity.name.lower() == "critical"),
+        "serious": sum(1 for r in all_reports if r.severity and r.severity.name.lower() == "serious"),
+        "moderate": sum(1 for r in all_reports if r.severity and r.severity.name.lower() == "moderate"),
+        "minor": sum(1 for r in all_reports if r.severity and r.severity.name.lower() == "minor"),
         "resolved": IncidentReport.query.filter_by(status="Resolved").count(),
-        "rejected": IncidentReport.query.filter_by(status="Rejected").count(),
     }
     
     reports = query.order_by(IncidentReport.created_at.desc()).all()
     categories = IncidentCategory.query.filter_by(is_active=True).order_by(IncidentCategory.sort_order).all()
     severities = SeverityLevel.query.filter_by(is_active=True).order_by(SeverityLevel.sort_order).all()
+    
+    # Mock exam sessions - TODO: Replace with actual ExamSession model when implemented
+    exam_sessions = [
+        {"id": 1, "name": "1st Monthly Exam"},
+        {"id": 2, "name": "2nd Monthly Exam"},
+        {"id": 3, "name": "Mid-Term Exam"},
+        {"id": 4, "name": "3rd Monthly Exam"},
+        {"id": 5, "name": "4th Monthly Exam"},
+        {"id": 6, "name": "Final Exam"},
+    ]
     
     return render_template(
         "admin/incidents.html",
@@ -100,6 +114,10 @@ def incidents():
         stats=stats,
         categories=categories,
         severities=severities,
+        exam_sessions=exam_sessions,
+        session_filter=session_filter,
+        room_filter=room_filter,
+        subject_filter=subject_filter,
         q=q,
         status_filter=status_filter,
         severity_filter=severity_filter,
@@ -1081,6 +1099,8 @@ def invigilators():
     q = request.args.get("q", "").strip()
     status_filter = request.args.get("status", "")
     role_filter = request.args.get("role", "")
+    school_filter = request.args.get("school", "")
+    validity_filter = request.args.get("validity", "")
     
     query = ExamInvigilator.query
     
@@ -1100,14 +1120,44 @@ def invigilators():
     if role_filter:
         query = query.filter(ExamInvigilator.role == role_filter)
     
+    if school_filter:
+        query = query.filter(ExamInvigilator.school.like(f"%{school_filter}%"))
+    
+    if validity_filter:
+        today = date.today()
+        if validity_filter == "active":
+            query = query.filter(ExamInvigilator.active_from <= today, ExamInvigilator.active_until >= today)
+        elif validity_filter == "expiring_soon":
+            query = query.filter(ExamInvigilator.active_until.between(today, today + timedelta(days=7)))
+        elif validity_filter == "expired":
+            query = query.filter(ExamInvigilator.active_until < today)
+    
     invigilators = query.order_by(ExamInvigilator.created_at.desc()).all()
+    
+    # Statistics
+    today = date.today()
+    week_from_now = today + timedelta(days=7)
+    
+    stats = {
+        "total": ExamInvigilator.query.count(),
+        "active": ExamInvigilator.query.filter_by(status="Active").count(),
+        "inactive": ExamInvigilator.query.filter_by(status="Inactive").count(),
+        "expiring_soon": ExamInvigilator.query.filter(
+            ExamInvigilator.active_until.between(today, week_from_now)
+        ).count(),
+        "supervisors": ExamInvigilator.query.filter(ExamInvigilator.role.in_(["Supervisor", "Chief Invigilator"])).count(),
+        "administrators": ExamInvigilator.query.filter_by(role="Administrator").count(),
+    }
     
     return render_template(
         "admin/invigilators.html",
         invigilators=invigilators,
+        stats=stats,
         q=q,
         status_filter=status_filter,
-        role_filter=role_filter
+        role_filter=role_filter,
+        school_filter=school_filter,
+        validity_filter=validity_filter
     )
 
 

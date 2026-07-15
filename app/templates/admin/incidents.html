@@ -1,310 +1,1257 @@
 {% extends "admin/base.html" %}
-{% block title %}Incident Reports{% endblock %}
-{% block content %}
-<div class="admin-header">
-  <h1><i class="fa-solid fa-triangle-exclamation"></i> Exam Incident Reports</h1>
-  <p>Manage and review examination incident reports</p>
-</div>
+{% block title %}Exam Incident Reports{% endblock %}
+{% block admin_content %}
+<div class="incidents-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="breadcrumb">
+        <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+        <i class="fa-solid fa-chevron-right"></i>
+        <span>Incident Reports</span>
+      </div>
+      <div class="title-section">
+        <div class="page-icon">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div class="title-text">
+          <h1>Exam Incident Reports</h1>
+          <p>Review and manage examination incident reports submitted by invigilators</p>
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="{{ url_for('admin.incident_settings') }}" class="btn-settings">
+        <i class="fa-solid fa-gear"></i> Settings
+      </a>
+    </div>
+  </div>
 
-<!-- Statistics Cards -->
-<div class="stats-grid">
-  <div class="stat-card total">
-    <div class="stat-icon"><i class="fa-solid fa-file-lines"></i></div>
-    <div class="stat-info">
-      <span class="stat-value">{{ stats.total }}</span>
-      <span class="stat-label">Total Reports</span>
-    </div>
-  </div>
-  <div class="stat-card today">
-    <div class="stat-icon"><i class="fa-solid fa-calendar-day"></i></div>
-    <div class="stat-info">
-      <span class="stat-value">{{ stats.today }}</span>
-      <span class="stat-label">Today</span>
-    </div>
-  </div>
-  <div class="stat-card week">
-    <div class="stat-icon"><i class="fa-solid fa-calendar-week"></i></div>
-    <div class="stat-info">
-      <span class="stat-value">{{ stats.week }}</span>
-      <span class="stat-label">This Week</span>
-    </div>
-  </div>
-  <div class="stat-card month">
-    <div class="stat-icon"><i class="fa-solid fa-calendar"></i></div>
-    <div class="stat-info">
-      <span class="stat-value">{{ stats.month }}</span>
-      <span class="stat-label">This Month</span>
-    </div>
-  </div>
-  <div class="stat-card pending">
-    <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
-    <div class="stat-info">
-      <span class="stat-value">{{ stats.pending }}</span>
-      <span class="stat-label">Pending</span>
-    </div>
-  </div>
-  <div class="stat-card resolved">
-    <div class="stat-icon"><i class="fa-solid fa-check-circle"></i></div>
-    <div class="stat-info">
-      <span class="stat-value">{{ stats.resolved }}</span>
-      <span class="stat-label">Resolved</span>
-    </div>
-  </div>
-</div>
-
-<!-- Filters -->
-<div class="filter-bar">
-  <form method="GET" action="{{ url_for('admin.incidents') }}" class="filter-form">
-    <div class="filter-group">
-      <input type="text" name="q" placeholder="Search student..." value="{{ q }}">
-    </div>
-    <div class="filter-group">
-      <select name="status">
-        <option value="">All Statuses</option>
-        <option value="Pending Review" {% if status_filter == 'Pending Review' %}selected{% endif %}>Pending Review</option>
-        <option value="Under Investigation" {% if status_filter == 'Under Investigation' %}selected{% endif %}>Under Investigation</option>
-        <option value="Resolved" {% if status_filter == 'Resolved' %}selected{% endif %}>Resolved</option>
-        <option value="Rejected" {% if status_filter == 'Rejected' %}selected{% endif %}>Rejected</option>
-      </select>
-    </div>
-    <div class="filter-group">
-      <select name="severity">
-        <option value="">All Severities</option>
-        {% for severity in severities %}
-        <option value="{{ severity.id }}" {% if severity_filter == severity.id|string %}selected{% endif %}>{{ severity.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="filter-group">
-      <select name="category">
-        <option value="">All Categories</option>
-        {% for category in categories %}
-        <option value="{{ category.id }}" {% if category_filter == category.id|string %}selected{% endif %}>{{ category.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="filter-group">
-      <input type="date" name="date_from" placeholder="From" value="{{ date_from }}">
-    </div>
-    <div class="filter-group">
-      <input type="date" name="date_to" placeholder="To" value="{{ date_to }}">
-    </div>
-    <button type="submit" class="btn-filter">
-      <i class="fa-solid fa-filter"></i> Filter
+  <!-- Exam Session Tabs -->
+  <div class="exam-sessions-tabs">
+    <button class="session-tab active" data-session="all">
+      <i class="fa-solid fa-layer-group"></i>
+      <span>All Exams</span>
     </button>
-    <a href="{{ url_for('admin.incidents') }}" class="btn-clear">
-      <i class="fa-solid fa-xmark"></i> Clear
-    </a>
-  </form>
-</div>
+    {% for session in exam_sessions %}
+    <button class="session-tab {% if session_filter == session.id|string %}active{% endif %}" data-session="{{ session.id }}">
+      <i class="fa-solid fa-graduation-cap"></i>
+      <span>{{ session.name }}</span>
+    </button>
+    {% endfor %}
+  </div>
 
-<!-- Reports Table -->
-<div class="table-container">
-  <table class="premium-table">
-    <thead>
-      <tr>
-        <th>Report #</th>
-        <th>Student</th>
-        <th>Category</th>
-        <th>Severity</th>
-        <th>Date</th>
-        <th>Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for report in reports %}
-      <tr>
-        <td><strong>{{ report.report_number }}</strong></td>
-        <td>
-          <div class="student-cell">
-            {% if report.student.photo_path %}
-            <img src="{{ report.student.photo_path }}" alt="{{ report.student.full_name }}" class="mini-photo">
-            {% endif %}
-            <div>
-              <strong>{{ report.student.full_name }}</strong><br>
-              <small>{{ report.student.student_code }}</small>
+  <!-- Statistics Cards -->
+  <div class="stats-grid">
+    <div class="stat-card total">
+      <div class="stat-icon">
+        <i class="fa-solid fa-file-lines"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.total }}</span>
+        <span class="stat-label">Total Reports</span>
+        <span class="stat-desc">All incident reports</span>
+      </div>
+    </div>
+    <div class="stat-card critical">
+      <div class="stat-icon">
+        <i class="fa-solid fa-radiation"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.critical }}</span>
+        <span class="stat-label">Critical</span>
+        <span class="stat-desc">High priority incidents</span>
+      </div>
+    </div>
+    <div class="stat-card serious">
+      <div class="stat-icon">
+        <i class="fa-solid fa-circle-exclamation"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.serious }}</span>
+        <span class="stat-label">Serious</span>
+        <span class="stat-desc">Requires attention</span>
+      </div>
+    </div>
+    <div class="stat-card moderate">
+      <div class="stat-icon">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.moderate }}</span>
+        <span class="stat-label">Moderate</span>
+        <span class="stat-desc">Monitor closely</span>
+      </div>
+    </div>
+    <div class="stat-card resolved">
+      <div class="stat-icon">
+        <i class="fa-solid fa-check-circle"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ stats.resolved }}</span>
+        <span class="stat-label">Resolved</span>
+        <span class="stat-desc">Completed cases</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Horizontal Filter Toolbar -->
+  <div class="filter-toolbar-container">
+    <div class="filter-toolbar-header">
+      <button type="button" class="btn-toggle-filters" id="toggleFiltersBtn" onclick="toggleFilterToolbar()">
+        <i class="fa-solid fa-filter" id="toggleFiltersIcon"></i>
+        <span id="toggleFiltersText">Hide Filters</span>
+      </button>
+    </div>
+    <div class="filter-toolbar" id="filterToolbar">
+      <form method="GET" action="{{ url_for('admin.incidents') }}" class="filter-toolbar-form">
+        <div class="filter-grid">
+          <div class="filter-item">
+            <div class="input-wrapper">
+              <i class="fa-solid fa-search input-icon"></i>
+              <input type="text" name="q" placeholder="Search reports..." value="{{ q }}">
             </div>
           </div>
-        </td>
-        <td>{{ report.category.name if report.category else 'N/A' }}</td>
-        <td>
-          <span class="severity-badge" style="background: {{ report.severity.color if report.severity else '#64748b' }}; color: white;">
-            {{ report.severity.name if report.severity else 'N/A' }}
-          </span>
-        </td>
-        <td>{{ report.incident_date.strftime('%b %d, %Y') if report.incident_date else 'N/A' }}</td>
-        <td>
-          <span class="status-badge status-{{ report.status.lower().replace(' ', '-') }}">
-            {{ report.status }}
-          </span>
-        </td>
-        <td>
-          <div class="action-buttons">
-            <a href="{{ url_for('admin.incident_view', report_id=report.id) }}" class="btn-view" title="View Details">
-              <i class="fa-solid fa-eye"></i>
-            </a>
-            <a href="{{ url_for('admin.incident_edit', report_id=report.id) }}" class="btn-edit" title="Edit">
-              <i class="fa-solid fa-pen"></i>
-            </a>
-            <form method="POST" action="{{ url_for('admin.incident_delete', report_id=report.id) }}" onsubmit="return confirm('Are you sure you want to delete this report?');" style="display: inline;">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit" class="btn-delete" title="Delete">
+          <div class="filter-item">
+            <div class="input-wrapper">
+              <i class="fa-solid fa-flag input-icon"></i>
+              <select name="status">
+                <option value="">All Statuses</option>
+                <option value="Pending Review" {% if status_filter == 'Pending Review' %}selected{% endif %}>Pending Review</option>
+                <option value="Under Investigation" {% if status_filter == 'Under Investigation' %}selected{% endif %}>Under Investigation</option>
+                <option value="Resolved" {% if status_filter == 'Resolved' %}selected{% endif %}>Resolved</option>
+                <option value="Rejected" {% if status_filter == 'Rejected' %}selected{% endif %}>Rejected</option>
+              </select>
+            </div>
+          </div>
+          <div class="filter-item">
+            <div class="input-wrapper">
+              <i class="fa-solid fa-layer-group input-icon"></i>
+              <select name="severity">
+                <option value="">All Severities</option>
+                {% for severity in severities %}
+                <option value="{{ severity.id }}" {% if severity_filter == severity.id|string %}selected{% endif %}>{{ severity.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="filter-item">
+            <div class="input-wrapper">
+              <i class="fa-solid fa-tags input-icon"></i>
+              <select name="category">
+                <option value="">All Categories</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if category_filter == category.id|string %}selected{% endif %}>{{ category.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="filter-item">
+            <div class="input-wrapper">
+              <i class="fa-solid fa-door-open input-icon"></i>
+              <input type="text" name="room" placeholder="Exam Room" value="{{ room_filter }}">
+            </div>
+          </div>
+          <div class="filter-item">
+            <div class="input-wrapper">
+              <i class="fa-solid fa-book input-icon"></i>
+              <input type="text" name="subject" placeholder="Subject" value="{{ subject_filter }}">
+            </div>
+          </div>
+          <div class="filter-item">
+            <div class="input-wrapper">
+              <i class="fa-solid fa-graduation-cap input-icon"></i>
+              <select name="exam_session">
+                <option value="">All Sessions</option>
+                {% for session in exam_sessions %}
+                <option value="{{ session.id }}" {% if session_filter == session.id|string %}selected{% endif %}>{{ session.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button type="button" class="btn-reset" onclick="resetFilters()">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+          </button>
+          <button type="submit" class="btn-apply">
+            <i class="fa-solid fa-check"></i> Apply Filters
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Table Section -->
+  <div class="table-section">
+      <div class="table-header">
+        <div class="table-title">
+          <h3>Incident Reports</h3>
+          <span>{{ reports|length }} reports found</span>
+        </div>
+        <div class="table-actions">
+          <button type="button" class="btn-export">
+            <i class="fa-solid fa-download"></i> Export
+          </button>
+          <button type="button" class="btn-refresh" onclick="location.reload()">
+            <i class="fa-solid fa-rotate"></i> Refresh
+          </button>
+        </div>
+      </div>
+      <div class="table-container">
+        <table class="premium-table">
+          <thead>
+            <tr>
+              <th>Report #</th>
+              <th>Student</th>
+              <th>Category</th>
+              <th>Severity</th>
+              <th>Reported On</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for report in reports %}
+            <tr>
+              <td>
+                <span class="report-number">{{ report.report_number }}</span>
+              </td>
+              <td>
+                <div class="student-cell">
+                  {% if report.student.photo_path %}
+                  <img src="{{ report.student.photo_path }}" alt="{{ report.student.full_name }}" class="student-avatar">
+                  {% else %}
+                  <div class="student-avatar-placeholder">
+                    <i class="fa-solid fa-user"></i>
+                  </div>
+                  {% endif %}
+                  <div class="student-info">
+                    <span class="student-name">{{ report.student.full_name }}</span>
+                    <span class="student-id">{{ report.student.student_code }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="category-cell">
+                  <i class="fa-solid fa-tag category-icon"></i>
+                  <span>{{ report.category.name if report.category else 'N/A' }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="severity-badge severity-{{ report.severity.name.lower() if report.severity else 'unknown' }}" style="background: {{ report.severity.color if report.severity else '#64748b' }};">
+                  {{ report.severity.name if report.severity else 'N/A' }}
+                </span>
+              </td>
+              <td>
+                <div class="date-cell">
+                  <span class="date">{{ report.incident_date.strftime('%d %b %Y') if report.incident_date else 'N/A' }}</span>
+                  <span class="time">{{ report.incident_date.strftime('%I:%M %p') if report.incident_date else 'N/A' }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="status-pill status-{{ report.status.lower().replace(' ', '-') }}">
+                  {{ report.status }}
+                </span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <a href="{{ url_for('admin.incident_view', report_id=report.id) }}" class="action-btn btn-view" data-tooltip="View Details">
+                    <i class="fa-solid fa-eye"></i>
+                  </a>
+                  <a href="{{ url_for('admin.incident_edit', report_id=report.id) }}" class="action-btn btn-edit" data-tooltip="Edit">
+                    <i class="fa-solid fa-pen"></i>
+                  </a>
+                  <form method="POST" action="{{ url_for('admin.incident_delete', report_id=report.id) }}" onsubmit="return confirm('Are you sure you want to delete this report?');" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="action-btn btn-delete" data-tooltip="Delete">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="no-data">
+                <div class="no-data-content">
+                  <i class="fa-solid fa-folder-open"></i>
+                  <p>No incident reports found</p>
+                  <span>Try adjusting your filters or check back later</span>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Incident Report Settings Section -->
+  <div class="settings-section">
+    <div class="settings-header">
+      <div class="settings-title">
+        <i class="fa-solid fa-gear"></i>
+        <h2>Incident Report Settings</h2>
+        <p>Configure and manage all incident report settings</p>
+      </div>
+      <button type="button" class="btn-toggle-settings" id="toggleSettingsBtn" onclick="toggleSettingsSection()">
+        <i class="fa-solid fa-chevron-down" id="toggleSettingsIcon"></i>
+        <span id="toggleSettingsText">Expand</span>
+      </button>
+    </div>
+
+    <div class="settings-content-wrapper" id="settingsContentWrapper">
+    <div class="settings-tabs">
+      <button class="settings-tab active" data-tab="exam-sessions">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>Exam Sessions</span>
+      </button>
+      <button class="settings-tab" data-tab="categories">
+        <i class="fa-solid fa-tags"></i>
+        <span>Categories</span>
+      </button>
+      <button class="settings-tab" data-tab="severities">
+        <i class="fa-solid fa-layer-group"></i>
+        <span>Severity Levels</span>
+      </button>
+      <button class="settings-tab" data-tab="statuses">
+        <i class="fa-solid fa-flag"></i>
+        <span>Statuses</span>
+      </button>
+      <button class="settings-tab" data-tab="notifications">
+        <i class="fa-solid fa-bell"></i>
+        <span>Notifications</span>
+      </button>
+      <button class="settings-tab" data-tab="workflow">
+        <i class="fa-solid fa-diagram-project"></i>
+        <span>Workflow</span>
+      </button>
+      <button class="settings-tab" data-tab="other">
+        <i class="fa-solid fa-sliders"></i>
+        <span>Other Settings</span>
+      </button>
+    </div>
+
+    <div class="settings-content">
+      <!-- Exam Sessions Tab -->
+      <div class="settings-panel active" id="panel-exam-sessions">
+        <div class="panel-header">
+          <h3>Exam Sessions</h3>
+          <button class="btn-add" onclick="openExamSessionModal()">
+            <i class="fa-solid fa-plus"></i> Add Session
+          </button>
+        </div>
+        <div class="panel-description">
+          <p>Manage exam sessions for the academic year. These sessions appear as filter tabs in the dashboard.</p>
+        </div>
+        <div class="sessions-list">
+          {% for session in exam_sessions %}
+          <div class="session-item" data-id="{{ session.id }}">
+            <div class="session-info">
+              <div class="session-icon">
+                <i class="fa-solid fa-graduation-cap"></i>
+              </div>
+              <div class="session-details">
+                <span class="session-name">{{ session.name }}</span>
+                <span class="session-meta">Order: {{ loop.index }}</span>
+              </div>
+            </div>
+            <div class="session-actions">
+              <button class="action-icon" title="Edit" onclick="editExamSession({{ session.id }})">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button class="action-icon" title="Move Up" onclick="moveSession({{ session.id }}, -1)">
+                <i class="fa-solid fa-arrow-up"></i>
+              </button>
+              <button class="action-icon" title="Move Down" onclick="moveSession({{ session.id }}, 1)">
+                <i class="fa-solid fa-arrow-down"></i>
+              </button>
+              <button class="action-icon danger" title="Delete" onclick="deleteExamSession({{ session.id }})">
                 <i class="fa-solid fa-trash"></i>
               </button>
-            </form>
+            </div>
           </div>
-        </td>
-      </tr>
-      {% else %}
-      <tr>
-        <td colspan="7" class="no-data">No incident reports found.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Categories Tab -->
+      <div class="settings-panel" id="panel-categories">
+        <div class="panel-header">
+          <h3>Incident Categories</h3>
+          <button class="btn-add" onclick="openCategoryModal()">
+            <i class="fa-solid fa-plus"></i> Add Category
+          </button>
+        </div>
+        <div class="panel-description">
+          <p>Manage incident categories for classifying reports.</p>
+        </div>
+        <div class="categories-list">
+          {% for category in categories %}
+          <div class="category-item">
+            <div class="category-info">
+              <div class="category-icon">
+                <i class="fa-solid fa-tag"></i>
+              </div>
+              <div class="category-details">
+                <span class="category-name">{{ category.name }}</span>
+                <span class="category-meta">Order: {{ category.sort_order }}</span>
+              </div>
+            </div>
+            <div class="category-actions">
+              <button class="action-icon" title="Edit">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button class="action-icon danger" title="Delete">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Severities Tab -->
+      <div class="settings-panel" id="panel-severities">
+        <div class="panel-header">
+          <h3>Severity Levels</h3>
+          <button class="btn-add" onclick="openSeverityModal()">
+            <i class="fa-solid fa-plus"></i> Add Severity
+          </button>
+        </div>
+        <div class="panel-description">
+          <p>Manage severity levels for incident classification.</p>
+        </div>
+        <div class="severities-list">
+          {% for severity in severities %}
+          <div class="severity-item">
+            <div class="severity-info">
+              <div class="severity-badge-preview" style="background: {{ severity.color }};">
+                {{ severity.name }}
+              </div>
+              <div class="severity-details">
+                <span class="severity-name">{{ severity.name }}</span>
+                <span class="severity-meta">Order: {{ severity.sort_order }}</span>
+              </div>
+            </div>
+            <div class="severity-actions">
+              <button class="action-icon" title="Edit">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button class="action-icon danger" title="Delete">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Statuses Tab -->
+      <div class="settings-panel" id="panel-statuses">
+        <div class="panel-header">
+          <h3>Status Types</h3>
+          <button class="btn-add">
+            <i class="fa-solid fa-plus"></i> Add Status
+          </button>
+        </div>
+        <div class="panel-description">
+          <p>Manage status types for incident reports.</p>
+        </div>
+        <div class="statuses-list">
+          <div class="status-item">
+            <div class="status-info">
+              <span class="status-pill status-pending-review">Pending Review</span>
+              <span class="status-meta">Default status</span>
+            </div>
+            <div class="status-actions">
+              <button class="action-icon" title="Edit">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+            </div>
+          </div>
+          <div class="status-item">
+            <div class="status-info">
+              <span class="status-pill status-under-investigation">Under Investigation</span>
+              <span class="status-meta">Active status</span>
+            </div>
+            <div class="status-actions">
+              <button class="action-icon" title="Edit">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+            </div>
+          </div>
+          <div class="status-item">
+            <div class="status-info">
+              <span class="status-pill status-resolved">Resolved</span>
+              <span class="status-meta">Final status</span>
+            </div>
+            <div class="status-actions">
+              <button class="action-icon" title="Edit">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+            </div>
+          </div>
+          <div class="status-item">
+            <div class="status-info">
+              <span class="status-pill status-rejected">Rejected</span>
+              <span class="status-meta">Final status</span>
+            </div>
+            <div class="status-actions">
+              <button class="action-icon" title="Edit">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications Tab -->
+      <div class="settings-panel" id="panel-notifications">
+        <div class="panel-header">
+          <h3>Notification Settings</h3>
+        </div>
+        <div class="panel-description">
+          <p>Configure notification preferences for incident reports.</p>
+        </div>
+        <div class="notification-settings">
+          <div class="setting-row">
+            <div class="setting-left">
+              <div class="setting-icon">
+                <i class="fa-solid fa-envelope"></i>
+              </div>
+              <div class="setting-info">
+                <label class="setting-title">Email Notifications</label>
+                <span class="setting-desc">Send email alerts for new incidents</span>
+              </div>
+            </div>
+            <div class="setting-right">
+              <label class="modern-toggle">
+                <input type="checkbox" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-left">
+              <div class="setting-icon">
+                <i class="fa-solid fa-bell"></i>
+              </div>
+              <div class="setting-info">
+                <label class="setting-title">Browser Notifications</label>
+                <span class="setting-desc">Show in-app notification badges</span>
+              </div>
+            </div>
+            <div class="setting-right">
+              <label class="modern-toggle">
+                <input type="checkbox" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-left">
+              <div class="setting-icon">
+                <i class="fa-solid fa-radiation"></i>
+              </div>
+              <div class="setting-info">
+                <label class="setting-title">Critical Alerts</label>
+                <span class="setting-desc">Immediate alerts for critical incidents</span>
+              </div>
+            </div>
+            <div class="setting-right">
+              <label class="modern-toggle">
+                <input type="checkbox" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workflow Tab -->
+      <div class="settings-panel" id="panel-workflow">
+        <div class="panel-header">
+          <h3>Report Workflow</h3>
+        </div>
+        <div class="panel-description">
+          <p>Configure the incident report workflow and approval process.</p>
+        </div>
+        <div class="workflow-settings">
+          <div class="setting-row">
+            <div class="setting-left">
+              <div class="setting-icon">
+                <i class="fa-solid fa-user-shield"></i>
+              </div>
+              <div class="setting-info">
+                <label class="setting-title">Require Approval</label>
+                <span class="setting-desc">Reports require admin approval before resolution</span>
+              </div>
+            </div>
+            <div class="setting-right">
+              <label class="modern-toggle">
+                <input type="checkbox">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-left">
+              <div class="setting-icon">
+                <i class="fa-solid fa-clock"></i>
+              </div>
+              <div class="setting-info">
+                <label class="setting-title">Auto-escalate</label>
+                <span class="setting-desc">Auto-escalate unresolved reports after 24 hours</span>
+              </div>
+            </div>
+            <div class="setting-right">
+              <label class="modern-toggle">
+                <input type="checkbox">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Other Settings Tab -->
+      <div class="settings-panel" id="panel-other">
+        <div class="panel-header">
+          <h3>Other Settings</h3>
+        </div>
+        <div class="panel-description">
+          <p>Additional configuration options for incident reports.</p>
+        </div>
+        <div class="other-settings">
+          <div class="setting-group">
+            <label>Items Per Page</label>
+            <select class="setting-select">
+              <option>10</option>
+              <option selected>25</option>
+              <option>50</option>
+              <option>100</option>
+            </select>
+          </div>
+          <div class="setting-group">
+            <label>Default Sort Order</label>
+            <select class="setting-select">
+              <option selected>Newest First</option>
+              <option>Oldest First</option>
+              <option>Severity (High to Low)</option>
+              <option>Severity (Low to High)</option>
+            </select>
+          </div>
+          <div class="setting-group">
+            <label>Date Format</label>
+            <select class="setting-select">
+              <option selected>DD MMM YYYY</option>
+              <option>MM/DD/YYYY</option>
+              <option>YYYY-MM-DD</option>
+            </select>
+          </div>
+          <div class="setting-group">
+            <label>Time Format</label>
+            <select class="setting-select">
+              <option selected>12-hour (AM/PM)</option>
+              <option>24-hour</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
 </div>
 
 <style>
+/* Page Wrapper */
+.incidents-page {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 2rem 2rem;
+}
+
+/* Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem 0;
+}
+
+.header-left {
+  flex: 1;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 1rem;
+}
+
+.breadcrumb a {
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.breadcrumb a:hover {
+  color: #3b82f6;
+}
+
+.breadcrumb i {
+  font-size: 0.625rem;
+}
+
+.breadcrumb span {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.title-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page-icon {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.title-text h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.title-text p {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin: 0.25rem 0 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-settings {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: white;
+  color: #64748b;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.btn-settings:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+/* Exam Session Tabs */
+.exam-sessions-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f5f9;
+  overflow-x: auto;
+}
+
+.session-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.session-tab i {
+  font-size: 1rem;
+}
+
+.session-tab:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.session-tab.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* Statistics Grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.25rem;
   margin-bottom: 2rem;
 }
 
 .stat-card {
   background: white;
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 1.5rem;
   display: flex;
   align-items: center;
   gap: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f1f5f9;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
+  border-color: #e2e8f0;
 }
 
 .stat-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
   color: white;
+  flex-shrink: 0;
 }
 
-.stat-card.total .stat-icon { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
-.stat-card.today .stat-icon { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-.stat-card.week .stat-icon { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
-.stat-card.month .stat-icon { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
-.stat-card.pending .stat-icon { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-.stat-card.resolved .stat-icon { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); }
+.stat-card.total .stat-icon { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.stat-card.critical .stat-icon { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.stat-card.serious .stat-icon { background: linear-gradient(135deg, #f97316, #ea580c); }
+.stat-card.moderate .stat-icon { background: linear-gradient(135deg, #eab308, #ca8a04); }
+.stat-card.minor .stat-icon { background: linear-gradient(135deg, #22c55e, #16a34a); }
+.stat-card.resolved .stat-icon { background: linear-gradient(135deg, #10b981, #059669); }
 
 .stat-info {
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
 .stat-value {
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: 700;
   color: #1e293b;
+  line-height: 1;
+  margin-bottom: 0.25rem;
 }
 
 .stat-label {
-  font-size: 0.85rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.filter-bar {
-  background: white;
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e5e7eb;
-}
-
-.filter-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: center;
-}
-
-.filter-group {
-  flex: 1;
-  min-width: 150px;
-}
-
-.filter-group input,
-.filter-group select {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 10px;
-  font-size: 0.9rem;
-}
-
-.btn-filter,
-.btn-clear {
-  padding: 0.75rem 1.5rem;
-  border-radius: 10px;
   font-size: 0.9rem;
   font-weight: 600;
-  text-decoration: none;
+  color: #475569;
+  margin-bottom: 0.125rem;
+}
+
+.stat-desc {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* Content Layout */
+.content-layout {
+  display: block;
+}
+
+/* Horizontal Filter Toolbar */
+.filter-toolbar-container {
+  margin-bottom: 1.5rem;
+}
+
+.filter-toolbar-header {
+  margin-bottom: 0.75rem;
+}
+
+.btn-toggle-filters {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: white;
+  color: #64748b;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.btn-filter {
-  background: #2563eb;
-  color: white;
-  border: none;
+.btn-toggle-filters:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+.btn-toggle-filters i {
+  font-size: 0.875rem;
+}
+
+.filter-toolbar {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f1f5f9;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-toolbar.collapsed {
+  display: none;
+}
+
+.filter-toolbar-form {
+  padding: 1.25rem 1.5rem;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.input-icon {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 0.875rem;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.input-wrapper input,
+.input-wrapper select {
+  width: 100%;
+  padding: 0.625rem 1rem 0.625rem 2.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background: white;
+  transition: all 0.3s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 40px;
+}
+
+.input-wrapper select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.625rem center;
+  background-size: 0.875rem;
+  padding-right: 2rem;
   cursor: pointer;
 }
 
-.btn-clear {
-  background: #f1f5f9;
+.input-wrapper input:focus,
+.input-wrapper select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input-wrapper input::placeholder {
+  color: #94a3b8;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.btn-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: white;
   color: #64748b;
   border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-reset:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+.btn-apply {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-apply:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+/* Table Section */
+.table-section {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f1f5f9;
+  overflow: hidden;
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(to bottom, #f8fafc, white);
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.table-title h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.table-title span {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-left: 0.5rem;
+}
+
+.table-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-export,
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  color: #64748b;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-export:hover,
+.btn-refresh:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #475569;
 }
 
 .table-container {
-  background: white;
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e5e7eb;
+  overflow-x: auto;
+}
+
+.premium-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.premium-table thead {
+  background: #f8fafc;
+}
+
+.premium-table th {
+  padding: 1.25rem 1.75rem;
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.premium-table tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-table tbody tr:hover {
+  background: linear-gradient(to right, #f8fafc, #f1f5f9);
+  transform: scale(1.005);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.premium-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.premium-table td {
+  padding: 1.5rem 1.75rem;
+  vertical-align: middle;
+}
+
+.report-number {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #3b82f6;
 }
 
 .student-cell {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
-.mini-photo {
-  width: 40px;
-  height: 40px;
+.student-avatar {
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid #e5e7eb;
 }
 
+.student-avatar-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 1.25rem;
+}
+
+.student-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.student-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.3;
+}
+
+.student-id {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 0.125rem;
+}
+
+.category-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.category-icon {
+  color: #3b82f6;
+  font-size: 0.875rem;
+}
+
 .severity-badge {
-  padding: 0.25rem 0.75rem;
+  display: inline-block;
+  padding: 0.375rem 0.875rem;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
+  color: white;
 }
 
-.status-badge {
-  padding: 0.25rem 0.75rem;
+.date-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.date-cell .date {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.date-cell .time {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 0.375rem 0.875rem;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
@@ -320,52 +1267,799 @@
   gap: 0.5rem;
 }
 
-.action-buttons a {
+.action-btn {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: 50%;
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
   transition: all 0.3s ease;
+  position: relative;
+}
+
+.action-btn::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.375rem 0.75rem;
+  background: #1e293b;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 8px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  margin-bottom: 0.5rem;
+  pointer-events: none;
+}
+
+.action-btn:hover::after {
+  opacity: 1;
+  visibility: visible;
 }
 
 .btn-view { background: #dbeafe; color: #1e40af; }
-.btn-view:hover { background: #bfdbfe; }
+.btn-view:hover { background: #bfdbfe; transform: scale(1.1); }
 
 .btn-edit { background: #fef3c7; color: #92400e; }
-.btn-edit:hover { background: #fde68a; }
+.btn-edit:hover { background: #fde68a; transform: scale(1.1); }
 
 .btn-delete { background: #fee2e2; color: #991b1b; }
-.btn-delete:hover { background: #fecaca; }
+.btn-delete:hover { background: #fecaca; transform: scale(1.1); }
 
 .no-data {
+  padding: 0;
+}
+
+.no-data-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
   text-align: center;
-  padding: 3rem;
+}
+
+.no-data-content i {
+  font-size: 3rem;
+  color: #cbd5e1;
+  margin-bottom: 1rem;
+}
+
+.no-data-content p {
+  font-size: 1.1rem;
+  font-weight: 600;
   color: #64748b;
-  font-size: 1rem;
+  margin: 0 0 0.5rem;
+}
+
+.no-data-content span {
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .filter-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
 }
 
 @media (max-width: 768px) {
+  .incidents-page {
+    padding: 0 1rem 1rem;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .header-actions {
+    width: 100%;
+  }
+  
+  .btn-settings {
+    flex: 1;
+    justify-content: center;
+  }
+  
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
   
-  .filter-form {
-    flex-direction: column;
-    align-items: stretch;
+  .exam-sessions-tabs {
+    overflow-x: auto;
+    padding-bottom: 0.75rem;
   }
   
-  .filter-group {
-    min-width: 100%;
+  .filter-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .filter-actions {
+    flex-direction: column;
+  }
+  
+  .btn-reset,
+  .btn-apply {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .table-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .table-actions {
+    width: 100%;
+  }
+  
+  .btn-export,
+  .btn-refresh {
+    flex: 1;
+    justify-content: center;
   }
 }
 
 @media (max-width: 480px) {
+  .title-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .page-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 1.25rem;
+  }
+  
+  .title-text h1 {
+    font-size: 1.5rem;
+  }
+  
   .stats-grid {
     grid-template-columns: 1fr;
   }
+  
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .filter-toolbar-form {
+    padding: 1rem;
+  }
+}
+
+/* Settings Section */
+.settings-section {
+  margin-top: 2rem;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  border: 1px solid #f1f5f9;
+  overflow: hidden;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(to bottom, #f8fafc, white);
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.settings-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-toggle-settings {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: white;
+  color: #64748b;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-toggle-settings:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+.btn-toggle-settings i {
+  transition: transform 0.3s ease;
+}
+
+.settings-section.collapsed .btn-toggle-settings i {
+  transform: rotate(-90deg);
+}
+
+.settings-content-wrapper {
+  transition: all 0.3s ease;
+  max-height: 2000px;
+  opacity: 1;
+  overflow: hidden;
+}
+
+.settings-section.collapsed .settings-content-wrapper {
+  max-height: 0;
+  opacity: 0;
+}
+
+.settings-title i {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.settings-title h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.settings-title p {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0.25rem 0 0;
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 2rem 0;
+  background: white;
+  border-bottom: 2px solid #f1f5f9;
+  overflow-x: auto;
+}
+
+.settings-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.25rem;
+  background: transparent;
+  border: none;
+  border-radius: 12px 12px 0 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+}
+
+.settings-tab i {
+  font-size: 1rem;
+}
+
+.settings-tab:hover {
+  background: #f8fafc;
+  color: #1e293b;
+}
+
+.settings-tab.active {
+  background: white;
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+}
+
+.settings-content {
+  padding: 2rem;
+}
+
+.settings-panel {
+  display: none;
+}
+
+.settings-panel.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.panel-header h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.panel-description {
+  margin-bottom: 1.5rem;
+}
+
+.panel-description p {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.sessions-list,
+.categories-list,
+.severities-list,
+.statuses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.session-item,
+.category-item,
+.severity-item,
+.status-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.session-item:hover,
+.category-item:hover,
+.severity-item:hover,
+.status-item:hover {
+  background: white;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+}
+
+.session-info,
+.category-info,
+.severity-info,
+.status-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.session-icon,
+.category-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1rem;
+}
+
+.session-details,
+.category-details,
+.severity-details,
+.status-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.session-name,
+.category-name,
+.severity-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.session-meta,
+.category-meta,
+.severity-meta,
+.status-meta {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 0.125rem;
+}
+
+.severity-badge-preview {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+}
+
+.session-actions,
+.category-actions,
+.severity-actions,
+.status-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: white;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-icon:hover {
+  background: #f1f5f9;
+  color: #3b82f6;
+  transform: scale(1.1);
+}
+
+.action-icon.danger:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.notification-settings,
+.workflow-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+
+.setting-row:hover {
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
+}
+
+.setting-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.setting-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1rem;
+}
+
+.setting-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.setting-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.setting-desc {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 0.125rem;
+}
+
+.setting-right {
+  display: flex;
+  align-items: center;
+}
+
+.modern-toggle {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 28px;
+}
+
+.modern-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: 0.3s;
+  border-radius: 28px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+input:checked + .toggle-slider {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+.other-settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.setting-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.setting-select {
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  color: #1e293b;
+  background: white;
+  transition: all 0.3s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+.setting-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
 </style>
+
+<script>
+// Exam Session Tab Navigation
+document.querySelectorAll('.session-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    const sessionId = this.getAttribute('data-session');
+    const url = new URL(window.location.href);
+    
+    if (sessionId === 'all') {
+      url.searchParams.delete('exam_session');
+    } else {
+      url.searchParams.set('exam_session', sessionId);
+    }
+    
+    window.location.href = url.toString();
+  });
+});
+
+// Reset Filters
+function resetFilters() {
+  window.location.href = '{{ url_for("admin.incidents") }}';
+}
+
+// Collapsible Horizontal Filter Toolbar
+let isFilterToolbarCollapsed = false;
+
+function toggleFilterToolbar() {
+  const filterToolbar = document.getElementById('filterToolbar');
+  const toggleFiltersText = document.getElementById('toggleFiltersText');
+  const toggleFiltersIcon = document.getElementById('toggleFiltersIcon');
+  
+  isFilterToolbarCollapsed = !isFilterToolbarCollapsed;
+  
+  if (isFilterToolbarCollapsed) {
+    filterToolbar.classList.add('collapsed');
+    toggleFiltersText.textContent = 'Show Filters';
+    toggleFiltersIcon.classList.remove('fa-filter');
+    toggleFiltersIcon.classList.add('fa-filter-circle-xmark');
+  } else {
+    filterToolbar.classList.remove('collapsed');
+    toggleFiltersText.textContent = 'Hide Filters';
+    toggleFiltersIcon.classList.remove('fa-filter-circle-xmark');
+    toggleFiltersIcon.classList.add('fa-filter');
+  }
+}
+
+// Collapsible Settings Section
+let isSettingsCollapsed = true;
+
+function toggleSettingsSection() {
+  const settingsSection = document.querySelector('.settings-section');
+  const toggleSettingsText = document.getElementById('toggleSettingsText');
+  const toggleSettingsIcon = document.getElementById('toggleSettingsIcon');
+  
+  isSettingsCollapsed = !isSettingsCollapsed;
+  
+  if (isSettingsCollapsed) {
+    settingsSection.classList.add('collapsed');
+    toggleSettingsText.textContent = 'Expand';
+    toggleSettingsIcon.classList.remove('fa-chevron-up');
+    toggleSettingsIcon.classList.add('fa-chevron-down');
+  } else {
+    settingsSection.classList.remove('collapsed');
+    toggleSettingsText.textContent = 'Collapse';
+    toggleSettingsIcon.classList.remove('fa-chevron-down');
+    toggleSettingsIcon.classList.add('fa-chevron-up');
+  }
+}
+
+// Initialize Settings section as collapsed on page load
+document.addEventListener('DOMContentLoaded', function() {
+  const settingsSection = document.querySelector('.settings-section');
+  const toggleSettingsText = document.getElementById('toggleSettingsText');
+  const toggleSettingsIcon = document.getElementById('toggleSettingsIcon');
+  
+  if (settingsSection) {
+    settingsSection.classList.add('collapsed');
+    toggleSettingsText.textContent = 'Expand';
+    toggleSettingsIcon.classList.remove('fa-chevron-up');
+    toggleSettingsIcon.classList.add('fa-chevron-down');
+  }
+});
+
+// Settings Tabs Navigation
+document.querySelectorAll('.settings-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    const tabId = this.getAttribute('data-tab');
+    
+    // Remove active class from all tabs
+    document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+    
+    // Add active class to clicked tab
+    this.classList.add('active');
+    
+    // Hide all panels
+    document.querySelectorAll('.settings-panel').forEach(panel => {
+      panel.classList.remove('active');
+    });
+    
+    // Show selected panel
+    const targetPanel = document.getElementById('panel-' + tabId);
+    if (targetPanel) {
+      targetPanel.classList.add('active');
+    }
+  });
+});
+
+// Exam Session Management Functions (placeholder functions)
+function openExamSessionModal() {
+  alert('Exam Session Modal - To be implemented with backend API');
+}
+
+function editExamSession(sessionId) {
+  alert('Edit Exam Session ' + sessionId + ' - To be implemented with backend API');
+}
+
+function deleteExamSession(sessionId) {
+  if (confirm('Are you sure you want to delete this exam session?')) {
+    alert('Delete Exam Session ' + sessionId + ' - To be implemented with backend API');
+  }
+}
+
+function moveSession(sessionId, direction) {
+  alert('Move Session ' + sessionId + ' ' + (direction > 0 ? 'Down' : 'Up') + ' - To be implemented with backend API');
+}
+
+function openCategoryModal() {
+  alert('Category Modal - To be implemented with backend API');
+}
+
+function openSeverityModal() {
+  alert('Severity Modal - To be implemented with backend API');
+}
+
+// Auto-refresh functionality (optional)
+let autoRefreshInterval;
+function startAutoRefresh(interval) {
+  if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+  autoRefreshInterval = setInterval(() => {
+    location.reload();
+  }, interval * 1000);
+}
+</script>
 {% endblock %}
