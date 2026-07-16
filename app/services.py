@@ -1,6 +1,7 @@
 from decimal import Decimal
+from flask import current_app, g
 
-from .models import GradeScale, Result, Setting
+from .models import GradeScale, Result, Setting, LabelTranslation
 
 
 DEFAULT_SETTINGS = {
@@ -429,10 +430,28 @@ def slug(value):
     return "".join(ch.lower() if ch.isalnum() else "_" for ch in str(value or "")).strip("_")
 
 
-def grade_for(score):
+def grade_for(score, exam_id=None):
+    """Get grade for a given score, optionally scoped to a specific exam"""
+    # First try to find exam-specific grade scale
+    if exam_id:
+        scale = (
+            GradeScale.query.filter(
+                GradeScale.is_active.is_(True),
+                GradeScale.exam_id == exam_id,
+                GradeScale.min_score <= score,
+                GradeScale.max_score >= score,
+            )
+            .order_by(GradeScale.sort_order.asc(), GradeScale.min_score.desc())
+            .first()
+        )
+        if scale:
+            return grade_scale_payload(scale)
+    
+    # Fall back to global grade scale (exam_id IS NULL)
     scale = (
         GradeScale.query.filter(
             GradeScale.is_active.is_(True),
+            GradeScale.exam_id.is_(None),
             GradeScale.min_score <= score,
             GradeScale.max_score >= score,
         )
@@ -441,9 +460,12 @@ def grade_for(score):
     )
     if scale:
         return grade_scale_payload(scale)
+    
+    # Final fallback to any active grade scale
     fallback = GradeScale.query.filter_by(is_active=True).order_by(GradeScale.sort_order.asc(), GradeScale.min_score.asc()).first()
     if fallback:
         return grade_scale_payload(fallback)
+    
     return {"grade": "-", "comment": "", "grade_point": 0.0, "is_pass": False, "badge_color": "#64748b", "text_color": "#ffffff", "background_color": "#f1f5f9", "border_color": "#cbd5e1"}
 
 
@@ -564,3 +586,53 @@ def result_payload(student, exam=None, public_only=True):
 
 def automatic_comment(average):
     return grade_for(average).get("comment") or ""
+
+
+def get_label(label_key, language_code=None, default=None):
+    """
+    Get translated label text for a given label_key and language_code.
+    Falls back to Somali (so) if the requested language is not available,
+    then to the default value if provided.
+    """
+    if not language_code:
+        # Try to get from settings, default to Somali
+        settings = get_settings()
+        language_code = settings.get("default_language", "so")
+    
+    # Try requested language first
+    label = LabelTranslation.query.filter_by(
+        label_key=label_key,
+        language_code=language_code
+    ).first()
+    
+    if label:
+        return label.text_value
+    
+    # Fall back to Somali if requested language not found
+    if language_code != "so":
+        label = LabelTranslation.query.filter_by(
+            label_key=label_key,
+            language_code="so"
+        ).first()
+        if label:
+            return label.text_value
+    
+    # Fall back to default if provided
+    if default is not None:
+        return default
+    
+    # Final fallback: return the label_key itself
+    return label_key
+
+
+def get_all_labels(language_code=None):
+    """
+    Get all labels for a given language as a dictionary.
+    Useful for bulk loading labels for a template.
+    """
+    if not language_code:
+        settings = get_settings()
+        language_code = settings.get("default_language", "so")
+    
+    labels = LabelTranslation.query.filter_by(language_code=language_code).all()
+    return {label.label_key: label.text_value for label in labels}

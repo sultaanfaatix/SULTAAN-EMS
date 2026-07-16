@@ -325,11 +325,8 @@ def export_students():
 
 @admin_bp.route("/results")
 def results():
-    students = Student.query.order_by(Student.full_name).all()
-    exams = Exam.query.order_by(Exam.id.desc()).all()
-    subjects = Subject.query.order_by(Subject.sort_order, Subject.name).all()
-    rows = Result.query.join(Result.student).order_by(Result.updated_at.desc()).limit(200).all()
-    return render_template("admin/results.html", students=students, exams=exams, subjects=subjects, rows=rows)
+    """Redirect to new Results dashboard - old view retired"""
+    return redirect(url_for("admin_advanced_results.new_dashboard"))
 
 
 @admin_bp.route("/results/save", methods=["POST"])
@@ -350,7 +347,7 @@ def save_results():
     audit("Result Publishing", f"Saved results for student {student.student_code} exam {exam.name}")
     db.session.commit()
     flash("Results saved.", "success")
-    return redirect(url_for("admin.results"))
+    return redirect(url_for("admin_advanced_results.new_dashboard"))
 
 
 @admin_bp.route("/results/<int:result_id>/delete", methods=["POST"])
@@ -360,7 +357,7 @@ def delete_result(result_id):
     audit("Result Publishing", f"Deleted result row {result_id}")
     db.session.commit()
     flash("Result row deleted.", "success")
-    return redirect(url_for("admin.results"))
+    return redirect(url_for("admin_advanced_results.new_dashboard"))
 
 
 @admin_bp.route("/results/<int:student_id>/<int:exam_id>/edit", methods=["GET", "POST"])
@@ -417,7 +414,7 @@ def import_results():
     exam_id = request.form.get("exam_id")
     if not file or not allowed_file(file.filename, ALLOWED_SHEETS) or not exam_id:
         flash("Choose an exam and upload an .xlsx file.", "danger")
-        return redirect(url_for("admin.results"))
+        return redirect(url_for("admin_advanced_results.new_dashboard"))
     rows, errors = preview_results(file, int(exam_id))
     if not errors:
         session["result_import_rows"] = rows
@@ -431,7 +428,7 @@ def confirm_result_import():
     rows = session.pop("result_import_rows", [])
     if not rows:
         flash("No validated result import is waiting for confirmation.", "warning")
-        return redirect(url_for("admin.results"))
+        return redirect(url_for("admin_advanced_results.new_dashboard"))
     try:
         for data in rows:
             student = Student.query.filter_by(student_code=data["student_id"]).one()
@@ -446,9 +443,9 @@ def confirm_result_import():
     except Exception:
         db.session.rollback()
         flash("Import failed. No records were saved.", "danger")
-        return redirect(url_for("admin.results"))
+        return redirect(url_for("admin_advanced_results.new_dashboard"))
     flash(f"Imported {len(rows)} result rows.", "success")
-    return redirect(url_for("admin.results"))
+    return redirect(url_for("admin_advanced_results.new_dashboard"))
 
 
 @admin_bp.route("/results/import/template")
@@ -482,12 +479,29 @@ def admin_print_report(student_id, exam_id):
 
 @admin_bp.route("/classes", methods=["GET", "POST"])
 def classes():
-    return simple_crud(SchoolClass, "classes", ["name", "description"])
+    if request.method == "POST":
+        cls = db.session.get(SchoolClass, int(request.form.get("id") or 0)) or SchoolClass()
+        cls.name = request.form["name"].strip()
+        cls.description = request.form.get("description", "").strip()
+        db.session.add(cls)
+        db.session.commit()
+        flash("Class saved.", "success")
+        return redirect(url_for("admin_advanced_results.new_dashboard"))
+    return redirect(url_for("admin_advanced_results.new_dashboard"))
 
 
 @admin_bp.route("/subjects", methods=["GET", "POST"])
 def subjects():
-    return simple_crud(Subject, "subjects", ["name", "max_score", "sort_order"])
+    if request.method == "POST":
+        subject = db.session.get(Subject, int(request.form.get("id") or 0)) or Subject()
+        subject.name = request.form["name"].strip()
+        subject.max_score = float(request.form.get("max_score", 100))
+        subject.sort_order = int(request.form.get("sort_order", 0))
+        db.session.add(subject)
+        db.session.commit()
+        flash("Subject saved.", "success")
+        return redirect(url_for("admin_advanced_results.new_dashboard"))
+    return redirect(url_for("admin_advanced_results.new_dashboard"))
 
 
 @admin_bp.route("/exams", methods=["GET", "POST"])
@@ -500,13 +514,13 @@ def exams():
         db.session.add(exam)
         db.session.commit()
         flash("Exam saved.", "success")
-        return redirect(url_for("admin.exams"))
-    return render_template("admin/exams.html", rows=Exam.query.order_by(Exam.id.desc()).all(), years=AcademicYear.query.order_by(AcademicYear.name.desc()).all())
+        return redirect(url_for("admin_advanced_results.new_dashboard"))
+    return redirect(url_for("admin_advanced_results.new_dashboard"))
 
 
 @admin_bp.route("/exams/<int:row_id>/delete", methods=["POST"])
 def delete_exam(row_id):
-    return delete_row(Exam, row_id, "admin.exams")
+    return delete_row(Exam, row_id, "admin_advanced_results.new_dashboard")
 
 
 @admin_bp.route("/exams/<int:row_id>/toggle", methods=["POST"])
@@ -516,7 +530,7 @@ def toggle_exam(row_id):
     Result.query.filter_by(exam_id=exam.id).update({"is_published": exam.is_published})
     db.session.commit()
     flash("Publish status updated.", "success")
-    return redirect(url_for("admin.exams"))
+    return redirect(url_for("admin_advanced_results.new_dashboard"))
 
 
 @admin_bp.route("/academic-years", methods=["GET", "POST"])
@@ -527,8 +541,8 @@ def academic_years():
         db.session.add(year)
         db.session.commit()
         flash("Academic year saved.", "success")
-        return redirect(url_for("admin.academic_years"))
-    return render_template("admin/academic_years.html", rows=AcademicYear.query.order_by(AcademicYear.name.desc()).all())
+        return redirect(url_for("admin_advanced_results.new_dashboard"))
+    return redirect(url_for("admin_advanced_results.new_dashboard"))
 
 
 @admin_bp.route("/academic-years/<int:row_id>/current", methods=["POST"])
@@ -538,7 +552,7 @@ def switch_year(row_id):
     year.is_current = True
     db.session.commit()
     flash("Current academic year switched.", "success")
-    return redirect(url_for("admin.academic_years"))
+    return redirect(url_for("admin_advanced_results.new_dashboard"))
 
 
 @admin_bp.route("/users", methods=["GET", "POST"])
@@ -1024,17 +1038,17 @@ def audit_logs():
 
 @admin_bp.route("/classes/<int:row_id>/delete", methods=["POST"])
 def delete_class(row_id):
-    return delete_row(SchoolClass, row_id, "admin.classes")
+    return delete_row(SchoolClass, row_id, "admin_advanced_results.new_dashboard")
 
 
 @admin_bp.route("/subjects/<int:row_id>/delete", methods=["POST"])
 def delete_subject(row_id):
-    return delete_row(Subject, row_id, "admin.subjects")
+    return delete_row(Subject, row_id, "admin_advanced_results.new_dashboard")
 
 
 @admin_bp.route("/academic-years/<int:row_id>/delete", methods=["POST"])
 def delete_academic_year(row_id):
-    return delete_row(AcademicYear, row_id, "admin.academic_years")
+    return delete_row(AcademicYear, row_id, "admin_advanced_results.new_dashboard")
 
 
 def simple_crud(model, template, fields):

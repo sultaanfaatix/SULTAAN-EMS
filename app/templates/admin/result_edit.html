@@ -42,7 +42,7 @@
   <div class="toolbar">
     <button class="premium"><i class="fa-solid fa-floppy-disk"></i> Save Result Changes</button>
     <a class="btn ghost" href="{{ url_for('admin.admin_print_report', student_id=student.id, exam_id=exam.id) }}" target="_blank"><i class="fa-solid fa-print"></i> Print Report</a>
-    <a class="btn ghost" href="{{ url_for('admin.results') }}"><i class="fa-solid fa-arrow-left"></i> Back</a>
+    <a class="btn ghost" href="{{ url_for('admin_advanced_results.new_dashboard') }}"><i class="fa-solid fa-arrow-left"></i> Back</a>
   </div>
 </form>
 {% endblock %}

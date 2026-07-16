@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Result - {{ student.student_code }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --navy: #1B2A4A;
+            --navy-deep: #121E38;
+            --gold: #C9A227;
+            --gold-soft: #EFDFA4;
+            --paper: #F7F5EF;
+            --paper-line: #E7E2D4;
+            --ink: #242A35;
+            --slate: #5B6472;
+            --green: #3F7D58;
+            --green-bg: #E7F1EA;
+            --blue: #2E5F8A;
+            --blue-bg: #E4EEF7;
+            --amber: #8a6d1a;
+            --amber-bg: #FBF3DE;
+            --orange: #B15A24;
+            --orange-bg: #FBE9DA;
+            --red: #B23B3B;
+            --red-bg: #F7E9E7;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--ink);
+            background-color: var(--paper);
+            line-height: 1.5;
+            padding: 2rem;
+        }
+        
+        .font-serif {
+            font-family: 'Fraunces', Georgia, serif;
+        }
+        
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border: 1px solid var(--paper-line);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            background-color: var(--navy);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 3px solid var(--gold);
+            margin-bottom: 2rem;
+        }
+        
+        .school-name {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .school-motto {
+            color: var(--gold-soft);
+            font-size: 0.875rem;
+        }
+        
+        .title-section {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background-color: var(--paper);
+            border: 1px solid var(--paper-line);
+            border-radius: 8px;
+        }
+        
+        .title-section h1 {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 1.75rem;
+            color: var(--navy);
+            margin-bottom: 0.5rem;
+        }
+        
+        .title-section p {
+            color: var(--slate);
+            font-size: 0.875rem;
+        }
+        
+        .student-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background-color: var(--navy);
+            color: white;
+            border-radius: 12px;
+        }
+        
+        .info-item {
+            margin-bottom: 0.75rem;
+        }
+        
+        .info-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--gold-soft);
+            margin-bottom: 0.25rem;
+        }
+        
+        .info-value {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .info-value.mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .seal {
+            background-color: var(--navy);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .seal-grade {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--gold);
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+        
+        .seal-caption {
+            font-size: 0.875rem;
+            color: var(--gold-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background-color: var(--paper);
+            border: 1px solid var(--paper-line);
+            border-radius: 8px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--navy);
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--slate);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+        
+        thead {
+            background-color: var(--navy);
+        }
+        
+        th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--paper-line);
+        }
+        
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--paper-line);
+            font-size: 0.875rem;
+        }
+        
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .grade-pill {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 0.875rem;
+            text-align: center;
+            min-width: 40px;
+        }
+        
+        .grade-a {
+            background-color: var(--green-bg);
+            color: var(--green);
+            border: 1px solid var(--green);
+        }
+        
+        .grade-b {
+            background-color: var(--blue-bg);
+            color: var(--blue);
+            border: 1px solid var(--blue);
+        }
+        
+        .grade-c {
+            background-color: var(--amber-bg);
+            color: var(--amber);
+            border: 1px solid var(--amber);
+        }
+        
+        .grade-d {
+            background-color: var(--orange-bg);
+            color: var(--orange);
+            border: 1px solid var(--orange);
+        }
+        
+        .grade-f {
+            background-color: var(--red-bg);
+            color: var(--red);
+            border: 1px solid var(--red);
+        }
+        
+        .footer {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px dashed var(--paper-line);
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--slate);
+        }
+        
+        @media print {
+            body {
+                padding: 0;
+                background: white;
+            }
+            
+            .container {
+                box-shadow: none;
+                border: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="school-name">{{ settings.school_name }}</div>
+            <div class="school-motto">{{ settings.school_motto }}</div>
+        </div>
+        
+        <!-- Title Section -->
+        <div class="title-section">
+            <h1>Student Result Report</h1>
+            <p>{{ selected_year.name }} - {{ selected_exam.name }}</p>
+            <p class="mono">Generated: {{ date.strftime('%B %d, %Y') }}</p>
+        </div>
+        
+        <!-- Student Info -->
+        <div class="student-info">
+            <div class="info-item">
+                <div class="info-label">Student ID</div>
+                <div class="info-value mono">{{ student.student_code }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Student Name</div>
+                <div class="info-value">{{ student.full_name }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Mother's Name</div>
+                <div class="info-value">{{ student.mother_name or '-' }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Class</div>
+                <div class="info-value">
+                    {% if student.academic_class %}
+                        {{ student.academic_class.name }}
+                        {% if student.academic_section %}
+                            - {{ student.academic_section.name }}
+                        {% endif %}
+                    {% else %}
+                        {{ student.level or '-' }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seal -->
+        <div class="seal">
+            <div class="seal-grade">{{ grade.grade }}</div>
+            <div class="seal-caption">Overall Grade</div>
+        </div>
+        
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="stat-value">{{ total_score }}</div>
+                <div class="stat-label">Total Score</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ percentage }}%</div>
+                <div class="stat-label">Percentage</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ gp }}</div>
+                <div class="stat-label">Grade Point</div>
+            </div>
+        </div>
+        
+        <!-- Subject Results Table -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th class="mono">Score</th>
+                    <th class="mono">Max Score</th>
+                    <th class="mono">%</th>
+                    <th>Grade</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for subject_data in subject_data %}
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600;">{{ subject_data.subject.name }}</div>
+                        </td>
+                        <td class="mono">{{ subject_data.score }}</td>
+                        <td class="mono">{{ subject_data.max_score }}</td>
+                        <td class="mono">{{ subject_data.percentage }}%</td>
+                        <td>
+                            <span class="grade-pill grade-{{ subject_data.grade.grade|lower }}">
+                                {{ subject_data.grade.grade }}
+                            </span>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>{{ settings.school_footer }}</p>
+            <p class="mono">Page 1 of 1</p>
+        </div>
+    </div>
+</body>
+</html>

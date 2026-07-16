@@ -237,6 +237,7 @@ class GradeScale(TimestampMixin, db.Model):
     border_color = db.Column(db.String(20), default="#10b981", nullable=False)
     sort_order = db.Column(db.Integer, default=0, nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    exam_id = db.Column(db.Integer, db.ForeignKey("exams.id", ondelete="SET NULL"), nullable=True)
 
 
 class ReportVerification(TimestampMixin, db.Model):
@@ -584,3 +585,18 @@ class IncidentReportSettings(TimestampMixin, db.Model):
     )
     category = db.Column(db.String(50), default="general")
     description = db.Column(db.String(255))
+
+
+class LabelTranslation(TimestampMixin, db.Model):
+    """Model for storing UI label translations across languages"""
+    __tablename__ = "label_translations"
+
+    id = db.Column(db.Integer, primary_key=True)
+    label_key = db.Column(db.String(100), nullable=False, index=True)
+    language_code = db.Column(db.String(10), nullable=False, index=True)
+    text_value = db.Column(db.Text, nullable=False)
+    context = db.Column(db.String(100))  # Screen/area where label appears (e.g., "Dashboard", "Roster", "PDF")
+    
+    __table_args__ = (
+        db.UniqueConstraint('label_key', 'language_code', name='uq_label_language'),
+    )

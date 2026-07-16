@@ -1,0 +1,128 @@
+{% extends "admin/base.html" %}
+{% set active_tab = "entry" %}
+{% block page_title %}{{ rh_label("entry.title", default="Whole-Class Result Entry") }}{% endblock %}
+{% block admin_content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/results_module.css') }}">
+
+<div class="results-hub">
+  {% include "admin/_results_hub_header.html" %}
+
+  <main class="rh-screen">
+    <div class="rh-eyebrow">{{ scope_info.class.name if scope_info.class else rh_label("entry.eyebrow", default="Form 4") }} · {{ selected_exam.name }} · {{ selected_year.name }}</div>
+    <div class="rh-toolbar">
+      <div>
+        <h1 class="rh-title">{{ rh_label("entry.title", default="Whole-Class Result Entry") }}</h1>
+        <p class="rh-desc">{{ rh_label("entry.subtitle", default="Geli dhibcaha ardayda oo dhan hal mar — validation-ka max_score ayaa toos u socda.") }}</p>
+      </div>
+      <div class="rh-toggle-row">
+        <span>{{ rh_label("entry.draft", default="Draft") }}</span>
+        <span class="rh-toggle" aria-hidden="true"></span>
+        <span>{{ rh_label("entry.published", default="Published") }}</span>
+        <button class="rh-btn" type="button" onclick="saveAll()">💾 {{ rh_label("entry.save_all", default="Save All") }}</button>
+      </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('admin_advanced_results.save_result_entry') }}" id="entryForm">
+      <input type="hidden" name="year_id" value="{{ selected_year.id }}">
+      <input type="hidden" name="exam_id" value="{{ selected_exam.id }}">
+      <input type="hidden" name="level_id" value="{{ scope_info.level.id if scope_info.level else '' }}">
+      <input type="hidden" name="class_id" value="{{ scope_info.class.id if scope_info.class else '' }}">
+      <input type="hidden" name="section_id" value="{{ scope_info.section.id if scope_info.section else '' }}">
+
+      <div class="rh-warning-pill" id="unsavedIndicator" style="display:none; margin-bottom: 18px;">⚠ 0 {{ rh_label("entry.unsaved", default="isbedel oo aan la kaydin") }}</div>
+
+      <div class="rh-table-card">
+        <table class="rh-table">
+          <thead>
+            <tr>
+              <th style="width:110px;">{{ rh_label("entry.id", default="ID") }}</th>
+              <th>{{ rh_label("entry.name", default="Magaca") }}</th>
+              {% for subject in subjects %}
+                <th class="mono">{{ subject.code or subject.name[:3]|upper }}{{ selected_year.name[-2:] if selected_year else "" }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in entry_grid %}
+              <tr>
+                <td class="rh-mono">{{ row.student.student_code }}</td>
+                <td>
+                  <span class="student-name">{{ row.student.full_name }}</span>
+                  {% if row.student.mother_name %}<span class="mother-name">({{ row.student.mother_name }})</span>{% endif %}
+                </td>
+                {% for subject in subjects %}
+                  {% set cell_data = row.results[subject.id] %}
+                  <td>
+                    <input
+                      class="rh-input rh-score"
+                      type="number"
+                      name="score_{{ row.student.id }}_{{ subject.id }}"
+                      value="{{ cell_data.score if cell_data.score is not none else '' }}"
+                      min="0"
+                      max="{{ subject.max_score }}"
+                      step="0.5"
+                      data-max="{{ subject.max_score }}"
+                      onchange="validateScore(this)"
+                    >
+                    <input type="hidden" name="override_{{ row.student.id }}_{{ subject.id }}" value="{{ cell_data.grade_override if cell_data.grade_override else '' }}">
+                    <input type="hidden" name="published_{{ row.student.id }}_{{ subject.id }}" value="on">
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="rh-toolbar" style="margin-top: 22px;">
+        <div style="color: var(--red);" id="validationMessage"></div>
+        <div style="display:flex; gap: 12px;">
+          <button type="button" class="rh-btn outline" onclick="resetForm()">{{ rh_label("entry.reset", default="Reset") }}</button>
+          <button type="submit" class="rh-btn">💾 {{ rh_label("entry.save_all", default="Save All") }}</button>
+        </div>
+      </div>
+    </form>
+  </main>
+</div>
+
+<script>
+let changedCount = 0;
+
+function validateScore(input) {
+  const maxScore = Number(input.dataset.max);
+  const value = Number(input.value);
+  const message = document.getElementById('validationMessage');
+  if (input.value !== '' && (Number.isNaN(value) || value < 0 || value > maxScore)) {
+    input.classList.add('warn');
+    message.textContent = `⚠ ${input.name}: dhibco (${input.value}) way ka badan tahay max_score (${maxScore}) — fadlan sax.`;
+  } else {
+    input.classList.remove('warn');
+    if (!document.querySelector('.rh-score.warn')) message.textContent = '';
+  }
+  markUnsaved();
+}
+
+function markUnsaved() {
+  changedCount += 1;
+  const el = document.getElementById('unsavedIndicator');
+  el.style.display = 'inline-flex';
+  el.textContent = `⚠ ${changedCount} {{ rh_label("entry.unsaved", default="isbedel oo aan la kaydin") }}`;
+}
+
+function resetForm() {
+  document.getElementById('entryForm').reset();
+  changedCount = 0;
+  document.getElementById('unsavedIndicator').style.display = 'none';
+  document.getElementById('validationMessage').textContent = '';
+  document.querySelectorAll('.rh-score').forEach(input => input.classList.remove('warn'));
+}
+
+function saveAll() {
+  if (document.querySelector('.rh-score.warn')) {
+    alert('Please fix invalid scores before saving.');
+    return;
+  }
+  document.getElementById('entryForm').submit();
+}
+</script>
+{% endblock %}

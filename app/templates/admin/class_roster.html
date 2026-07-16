@@ -1,0 +1,100 @@
+{% extends "admin/base.html" %}
+{% set active_tab = "roster" %}
+{% block title %}{{ rh_label("roster.title", default="Liiska Natiijada Fasalka") }}{% endblock %}
+{% block page_title %}{{ rh_label("roster.title", default="Liiska Natiijada Fasalka") }}{% endblock %}
+{% block admin_content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/results_module.css') }}">
+
+<div class="results-hub">
+  {% include "admin/_results_hub_header.html" %}
+
+  <main class="rh-screen">
+    <div class="rh-toolbar">
+      <div>
+        <div class="rh-eyebrow">{{ scope_info.class.name if scope_info.class else rh_label("roster.eyebrow", default="Form 4") }} · {{ selected_exam.name }} · {{ selected_year.name }}</div>
+        <h1 class="rh-title">{{ rh_label("roster.title", default="Liiska Natiijada Fasalka") }}</h1>
+        <p class="rh-desc">{{ students|length }} {{ rh_label("roster.students", default="arday") }}</p>
+      </div>
+      <div style="display:flex; gap: 12px; align-items:center;">
+        <button class="rh-btn outline" onclick="exportExcel()">{{ rh_label("roster.export_excel", default="Export Excel") }}</button>
+        <button class="rh-btn outline" onclick="exportPDF()">{{ rh_label("roster.export_pdf", default="Export PDF") }}</button>
+      </div>
+    </div>
+
+    <div class="results-search-box" style="margin-bottom: 22px;">
+      <span class="results-search-icon">🔍</span>
+      <input class="results-search-input" type="text" placeholder="{{ rh_label('roster.search', default='Raadi arday ID ama magac...') }}" value="{{ search_query }}" onkeyup="handleSearch(event)">
+    </div>
+
+    <div class="rh-table-card">
+      <table class="rh-table">
+        <thead>
+          <tr>
+            <th style="width:110px;">ID</th>
+            <th>{{ rh_label("roster.student_name", default="Magaca") }}</th>
+            {% for subject in subjects %}
+              <th class="mono">{{ subject.code or subject.name[:3]|upper }}{{ selected_year.name[-2:] if selected_year else "" }}</th>
+            {% endfor %}
+            <th>{{ rh_label("roster.total", default="Total") }}</th>
+            <th>%</th>
+            <th>{{ rh_label("roster.grade", default="Grade") }}</th>
+            <th class="mono">GP</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student_data in students %}
+            <tr onclick="viewStudent({{ student_data.student.id }})" style="cursor:pointer;">
+              <td class="rh-mono">{{ student_data.student.student_code }}</td>
+              <td>
+                <span class="student-name">{{ student_data.student.full_name }}</span>
+                {% if student_data.student.mother_name %}<span class="mother-name">({{ student_data.student.mother_name }})</span>{% endif %}
+              </td>
+              {% for subject_data in student_data.subject_data %}
+                <td class="rh-mono">{{ subject_data.score|round(1) }}</td>
+              {% endfor %}
+              <td class="rh-mono"><strong>{{ student_data.total_score|round(1) }}/{{ student_data.total_max|round(0) }}</strong></td>
+              <td class="rh-mono">{{ student_data.percentage|round(1) }}%</td>
+              <td>
+                <span class="rh-grade-preview" style="background: {{ student_data.grade.background_color }}; color: {{ student_data.grade.text_color }}; border: 1px solid {{ student_data.grade.border_color }};">
+                  {{ student_data.grade.grade }}
+                </span>
+              </td>
+              <td class="rh-mono">{{ student_data.gp }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script>
+function handleSearch(event) {
+  if (event.key === 'Enter') {
+    const url = new URL(window.location.href);
+    url.searchParams.set('q', event.target.value);
+    window.location.href = url.toString();
+  }
+}
+
+function viewStudent(studentId) {
+  window.location.href = `{{ url_for('admin_advanced_results.student_view') }}?year_id={{ selected_year.id }}&exam_id={{ selected_exam.id }}&student_id=${studentId}`;
+}
+
+function scopedExportUrl(baseUrl) {
+  const params = new URLSearchParams({year_id: '{{ selected_year.id }}', exam_id: '{{ selected_exam.id }}'});
+  {% if scope_info.level %}params.set('level_id', '{{ scope_info.level.id }}');{% endif %}
+  {% if scope_info.class %}params.set('class_id', '{{ scope_info.class.id }}');{% endif %}
+  {% if scope_info.section %}params.set('section_id', '{{ scope_info.section.id }}');{% endif %}
+  return `${baseUrl}?${params.toString()}`;
+}
+
+function exportExcel() {
+  window.location.href = scopedExportUrl(`{{ url_for('admin_advanced_results.export_class_excel') }}`);
+}
+
+function exportPDF() {
+  window.location.href = scopedExportUrl(`{{ url_for('admin_advanced_results.export_class_pdf') }}`);
+}
+</script>
+{% endblock %}

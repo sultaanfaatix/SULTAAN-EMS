@@ -22,19 +22,28 @@
   </div>
   <nav class="side-nav">
     {% if can('dashboard') %}<a href="{{ url_for('admin.dashboard') }}"><i class="fa-solid fa-chart-pie"></i><span>{{ _('Dashboard') }}</span></a>{% endif %}
+    
+    <!-- Academic & Results Group -->
+    <div class="nav-group">
+      <div class="nav-group-header">Academic & Results</div>
+      {% if can('results') %}<a href="{{ url_for('admin_advanced_results.new_dashboard') }}"><i class="fa-solid fa-square-poll-vertical"></i><span>{{ _('Results') }}</span></a>{% endif %}
+      <a href="{{ url_for('academic_structure.academic_levels') }}"><i class="fa-solid fa-layer-group"></i><span>Academic Structure</span></a>
+    </div>
+    
+    <!-- Student Management -->
     {% if can('students') %}<a href="{{ url_for('admin.students') }}"><i class="fa-solid fa-user-graduate"></i><span>{{ _('Students') }}</span></a>{% endif %}
     {% if can('teachers') %}<a href="{{ url_for('admin_teachers.dashboard') }}"><i class="fa-solid fa-chalkboard-user"></i><span>Teacher Department</span></a>{% endif %}
-    {% if can('results') %}<a href="{{ url_for('admin.results') }}"><i class="fa-solid fa-square-poll-vertical"></i><span>{{ _('Results') }}</span></a>{% endif %}
-    {% if can('advanced_results') or can('results') %}<a href="{{ url_for('admin_advanced_results.dashboard') }}"><i class="fa-solid fa-chart-line"></i><span>Advanced Results</span></a>{% endif %}
+    
+    <!-- Operations -->
     {% if can('attendance') %}<a href="{{ url_for('admin_attendance.dashboard') }}"><i class="fa-solid fa-user-check"></i><span>Attendance</span></a>{% endif %}
     {% if can('id_cards') %}<a href="{{ url_for('admin_id_cards.dashboard') }}"><i class="fa-solid fa-id-card-clip"></i><span>ID Cards</span></a>{% endif %}
+    <a href="{{ url_for('admin.invigilators') }}"><i class="fa-solid fa-user-shield"></i><span>Exam Invigilators</span></a>
+    
+    <!-- Safety & Compliance -->
     <a href="{{ url_for('admin.incidents') }}"><i class="fa-solid fa-triangle-exclamation"></i><span>Incident Reports</span></a>
     <a href="{{ url_for('admin.incident_settings') }}"><i class="fa-solid fa-sliders"></i><span>Incident Settings</span></a>
-    <a href="{{ url_for('admin.invigilators') }}"><i class="fa-solid fa-user-shield"></i><span>Exam Invigilators</span></a>
-    {% if can('classes') %}<a href="{{ url_for('admin.classes') }}"><i class="fa-solid fa-people-roof"></i><span>{{ _('Classes') }}</span></a>{% endif %}
-    {% if can('subjects') %}<a href="{{ url_for('admin.subjects') }}"><i class="fa-solid fa-book-open"></i><span>{{ _('Subjects') }}</span></a>{% endif %}
-    {% if can('exams') %}<a href="{{ url_for('admin.exams') }}"><i class="fa-solid fa-file-circle-check"></i><span>{{ _('Exams') }}</span></a>{% endif %}
-    {% if can('academic_years') %}<a href="{{ url_for('admin.academic_years') }}"><i class="fa-solid fa-calendar-days"></i><span>{{ _('Academic Year') }}</span></a>{% endif %}
+    
+    <!-- System -->
     {% if can('users') %}<a href="{{ url_for('admin.users') }}"><i class="fa-solid fa-users-gear"></i><span>{{ _('Users') }}</span></a>{% endif %}
     {% if can('settings') or can('system_settings') %}<a href="{{ url_for('admin.settings') }}"><i class="fa-solid fa-sliders"></i><span>{{ _('Settings') }}</span></a>{% endif %}
     {% if can('system_settings') %}<a href="{{ url_for('admin.audit_logs') }}"><i class="fa-solid fa-clipboard-list"></i><span>Audit Log</span></a>{% endif %}
@@ -44,6 +53,27 @@
     <button class="logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
   </form>
 </aside>
+<style>
+.nav-group {
+  margin: 16px 0;
+  border-top: 1px solid #E7E2D4;
+  padding-top: 12px;
+}
+
+.nav-group-header {
+  padding: 8px 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #5B6472;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.side-nav .nav-group a {
+  padding-left: 32px;
+}
+</style>
 <main class="admin-main" {% if ui_settings.dashboard_background %}style="background-image: linear-gradient(135deg, #f6f9ffdd, #eef4ffef), url('{{ asset_url(ui_settings.dashboard_background) }}');"{% endif %}>
   <header class="admin-top glass-card">
     <div>

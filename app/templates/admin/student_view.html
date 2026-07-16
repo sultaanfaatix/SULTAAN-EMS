@@ -1,0 +1,70 @@
+{% extends "admin/base.html" %}
+{% set active_tab = "roster" %}
+{% block title %}{{ student.full_name }}{% endblock %}
+{% block page_title %}{{ student.full_name }}{% endblock %}
+{% block admin_content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/results_module.css') }}">
+
+<div class="results-hub">
+  {% include "admin/_results_hub_header.html" %}
+
+  <main class="rh-screen">
+    <div class="rh-eyebrow">{{ selected_exam.name }} · {{ selected_year.name }}</div>
+    <div class="rh-toolbar">
+      <div>
+        <h1 class="rh-title">{{ student.full_name }}</h1>
+        <p class="rh-desc">{{ student.student_code }}{% if student.mother_name %} · {{ student.mother_name }}{% endif %}</p>
+      </div>
+      <button class="rh-btn" onclick="exportStudentPDF()">{{ rh_label("roster.export_pdf", default="Export PDF") }}</button>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 320px 1fr; gap: 28px;">
+      <aside class="rh-class-card" style="min-height:auto;">
+        <h3>{{ grade.grade }}</h3>
+        <p>Overall Grade</p>
+        <div style="margin-top:24px;">
+          <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.18); padding:12px 0;"><span>Total</span><strong>{{ total_score }}</strong></div>
+          <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.18); padding:12px 0;"><span>Percentage</span><strong>{{ percentage }}%</strong></div>
+          <div style="display:flex; justify-content:space-between; padding:12px 0;"><span>GP</span><strong>{{ gp }}</strong></div>
+        </div>
+      </aside>
+
+      <section class="rh-table-card">
+        <table class="rh-table">
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th>Score</th>
+              <th>%</th>
+              <th>Grade</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for subject_data in subject_data %}
+              <tr>
+                <td>
+                  <span class="student-name">{{ subject_data.subject.name }}</span>
+                  <span class="mother-name">Max: {{ subject_data.max_score }}</span>
+                </td>
+                <td class="rh-mono">{{ subject_data.score }}</td>
+                <td class="rh-mono">{{ subject_data.percentage }}%</td>
+                <td>
+                  <span class="rh-grade-preview" style="background: {{ subject_data.grade.background_color }}; color: {{ subject_data.grade.text_color }}; border: 1px solid {{ subject_data.grade.border_color }};">
+                    {{ subject_data.grade.grade }}
+                  </span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+function exportStudentPDF() {
+  window.location.href = `{{ url_for('admin_advanced_results.export_student_pdf') }}?year_id={{ selected_year.id }}&exam_id={{ selected_exam.id }}&student_id={{ student.id }}`;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends "admin/base.html" %}
+{% set active_tab = "analytics" %}
+{% block page_title %}{{ rh_label("analytics.title", default="Analytics — Infographic") }}{% endblock %}
+{% block admin_content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/results_module.css') }}">
+
+<div class="results-hub">
+  {% include "admin/_results_hub_header.html" %}
+
+  <main class="rh-screen">
+    <div class="rh-eyebrow">{{ scope_info.class.name if scope_info.class else rh_label("analytics.eyebrow", default="Form 4") }} · {{ selected_exam.name }} · {{ selected_year.name }}</div>
+    <h1 class="rh-title">{{ rh_label("analytics.title", default="Analytics — Infographic") }}</h1>
+
+    <section class="rh-trio">
+      <div class="rh-trio-card">
+        <strong>{{ analytics.overall_average }}%</strong>
+        <span>{{ rh_label("analytics.average", default="Celceliska Fasalka") }}</span>
+      </div>
+      <div class="rh-trio-card">
+        <strong>
+          {% set avg_gp = (analytics.overall_average / 25)|round(1) if analytics.overall_average else 0 %}
+          {{ avg_gp }}
+        </strong>
+        <span>{{ rh_label("analytics.gpa", default="GPA Fasalka") }}</span>
+      </div>
+      <div class="rh-trio-card">
+        <strong>{{ (analytics.pass_fail_ratio.pass / analytics.pass_fail_ratio.total * 100)|round(0) if analytics.pass_fail_ratio.total else 0 }}%</strong>
+        <span>{{ rh_label("analytics.pass_rate", default="Pass Rate") }}</span>
+      </div>
+    </section>
+
+    <section class="rh-analytics-grid">
+      <article class="rh-analytics-card">
+        <h2>{{ rh_label("analytics.grade_distribution", default="Grade Distribution") }}</h2>
+        <div style="display:flex; align-items:center; gap: 34px;">
+          {% set colors = analytics.grade_distribution.colors %}
+          <div style="width:170px; height:170px; border-radius:50%; background: conic-gradient({% for label in analytics.grade_distribution.labels %}{{ colors[loop.index0] if colors|length > loop.index0 else '#C9A227' }} 0 {{ (100 / (analytics.grade_distribution.labels|length or 1) * loop.index)|round(1) }}%{% if not loop.last %},{% endif %}{% endfor %});"></div>
+          <div>
+            {% for label in analytics.grade_distribution.labels %}
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom: 12px;">
+                <span style="width:12px; height:12px; border-radius:50%; background: {{ colors[loop.index0] if colors|length > loop.index0 else '#C9A227' }};"></span>
+                <span>{{ label }} — {{ analytics.grade_distribution.values[loop.index0] }}</span>
+              </div>
+            {% else %}
+              <span class="text-muted">No data available</span>
+            {% endfor %}
+          </div>
+        </div>
+      </article>
+
+      <article class="rh-analytics-card">
+        <h2>{{ rh_label("analytics.subject_performance", default="Subject-wise Performance") }}</h2>
+        {% for label in analytics.subject_performance.labels[:8] %}
+          {% set pct = analytics.subject_performance.values[loop.index0] %}
+          <div class="rh-bar-row">
+            <span>{{ label }}</span>
+            <div class="rh-bar-track"><div class="rh-bar-fill" style="width: {{ pct }}%"></div></div>
+            <span class="rh-mono">{{ pct }}%</span>
+          </div>
+        {% else %}
+          <span class="text-muted">No data available</span>
+        {% endfor %}
+      </article>
+
+      <article class="rh-analytics-card full">
+        <h2>{{ rh_label("analytics.exam_trend", default="Exam-Type Trend") }} — {{ selected_year.name }}</h2>
+        <svg class="trend-svg" viewBox="0 0 900 150" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points="80,120 220,100 360,78 500,48 640,68 780,38" fill="none" stroke="#C9A227" stroke-width="5" stroke-linecap="round"/>
+          {% for label in analytics.exam_trend.labels[:6] %}
+            {% set x = 80 + (loop.index0 * 140) %}
+            {% set y = 120 - ((analytics.exam_trend.values[loop.index0] if analytics.exam_trend.values|length > loop.index0 else 0) * 0.82) %}
+            <circle cx="{{ x }}" cy="{{ y }}" r="7" fill="#1B2A4A"/>
+            <text x="{{ x }}" y="145" text-anchor="middle" font-size="13" fill="#5B6472">{{ label }}</text>
+          {% endfor %}
+        </svg>
+      </article>
+
+      <article class="rh-analytics-card full">
+        <h2>{{ rh_label("analytics.performers", default="Top & Bottom Performers") }}</h2>
+        <div class="rh-performers">
+          <div>
+            <div class="rh-section-label" style="letter-spacing:.08em;">{{ rh_label("analytics.top", default="Top 5") }}</div>
+            {% for performer in analytics.top_performers %}
+              <div class="rh-performer-row"><span>{{ performer.name }}</span><strong style="color: var(--green);">{{ performer.average }}%</strong></div>
+            {% else %}
+              <span class="text-muted">No data available</span>
+            {% endfor %}
+          </div>
+          <div>
+            <div class="rh-section-label" style="letter-spacing:.08em;">{{ rh_label("analytics.bottom", default="Bottom 5") }}</div>
+            {% for performer in analytics.bottom_performers %}
+              <div class="rh-performer-row"><span>{{ performer.name }}</span><strong style="color: var(--red);">{{ performer.average }}%</strong></div>
+            {% else %}
+              <span class="text-muted">No data available</span>
+            {% endfor %}
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+</div>
+{% endblock %}
