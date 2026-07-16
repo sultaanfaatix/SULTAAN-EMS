@@ -72,8 +72,13 @@ def add_index_if_missing(table, index_name, columns):
     if index_name in names or tuple(columns) in covered:
         return
     cols = ", ".join(columns)
-    db.session.execute(text(f"CREATE INDEX {index_name} ON {table} ({cols})"))
-    db.session.commit()
+    # An index is a performance optimization, not required for correctness.
+    # Never let it brick startup (e.g. storage-engine quirks on legacy DBs).
+    try:
+        db.session.execute(text(f"CREATE INDEX {index_name} ON {table} ({cols})"))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 def add_foreign_key_if_missing(table, constraint_name, columns, ref_table, ref_columns, ondelete=None):
@@ -95,8 +100,14 @@ def add_foreign_key_if_missing(table, constraint_name, columns, ref_table, ref_c
     )
     if ondelete:
         ddl += f" ON DELETE {ondelete}"
-    db.session.execute(text(ddl))
-    db.session.commit()
+    # The referential constraint is a safety net, not required for the column
+    # to be queryable. Never let it brick startup (e.g. MyISAM/engine or
+    # orphaned-data quirks on legacy production DBs).
+    try:
+        db.session.execute(text(ddl))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 
 def column_sql(dialect, name, type_sql):
