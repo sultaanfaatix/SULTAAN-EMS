@@ -1,7 +1,10 @@
--- MySQL Migration Script for Exam Invigilator System
--- Run this script on your production MySQL database to add invigilator support
+-- MySQL Migration Script for Exam Invigilator System and Schema Updates
+-- Run this script on your production MySQL database to add missing columns and tables
 -- Execute: mysql -h <host> -u <user> -p <database> < migrations/mysql_migration.sql
 
+-- ========================================
+-- Grade Scales exam_id column
+-- ========================================
 -- Add exam_id column to grade_scales table
 SET @column_exists = (
     SELECT COUNT(*)
@@ -56,6 +59,453 @@ PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
+-- ========================================
+-- Exam table new columns
+-- ========================================
+-- Add short_code column to exams table
+SET @column_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+    AND table_name = 'exams'
+    AND column_name = 'short_code'
+);
+
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE exams ADD COLUMN short_code VARCHAR(20) NULL AFTER name',
+    'SELECT "Column short_code already exists in exams" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add weight_percentage column to exams table
+SET @column_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+    AND table_name = 'exams'
+    AND column_name = 'weight_percentage'
+);
+
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE exams ADD COLUMN weight_percentage FLOAT DEFAULT 0.0 AFTER short_code',
+    'SELECT "Column weight_percentage already exists in exams" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add sort_order column to exams table
+SET @column_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+    AND table_name = 'exams'
+    AND column_name = 'sort_order'
+);
+
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE exams ADD COLUMN sort_order INT DEFAULT 0 AFTER weight_percentage',
+    'SELECT "Column sort_order already exists in exams" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add is_active column to exams table
+SET @column_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+    AND table_name = 'exams'
+    AND column_name = 'is_active'
+);
+
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE exams ADD COLUMN is_active TINYINT(1) DEFAULT 1 NOT NULL AFTER sort_order',
+    'SELECT "Column is_active already exists in exams" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add academic_level_id column to exams table
+SET @column_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+    AND table_name = 'exams'
+    AND column_name = 'academic_level_id'
+);
+
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE exams ADD COLUMN academic_level_id INT NULL AFTER is_active',
+    'SELECT "Column academic_level_id already exists in exams" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add foreign key for exams.academic_level_id
+SET @fk_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.table_constraints
+    WHERE table_schema = DATABASE()
+    AND table_name = 'exams'
+    AND constraint_name = 'fk_exams_academic_level_id'
+);
+
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE exams ADD CONSTRAINT fk_exams_academic_level_id FOREIGN KEY (academic_level_id) REFERENCES academic_levels(id) ON DELETE SET NULL',
+    'SELECT "Foreign key fk_exams_academic_level_id already exists" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add academic_class_id column to exams table
+SET @column_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+    AND table_name = 'exams'
+    AND column_name = 'academic_class_id'
+);
+
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE exams ADD COLUMN academic_class_id INT NULL AFTER academic_level_id',
+    'SELECT "Column academic_class_id already exists in exams" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add foreign key for exams.academic_class_id
+SET @fk_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.table_constraints
+    WHERE table_schema = DATABASE()
+    AND table_name = 'exams'
+    AND constraint_name = 'fk_exams_academic_class_id'
+);
+
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE exams ADD CONSTRAINT fk_exams_academic_class_id FOREIGN KEY (academic_class_id) REFERENCES academic_classes(id) ON DELETE SET NULL',
+    'SELECT "Foreign key fk_exams_academic_class_id already exists" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add academic_section_id column to exams table
+SET @column_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+    AND table_name = 'exams'
+    AND column_name = 'academic_section_id'
+);
+
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE exams ADD COLUMN academic_section_id INT NULL AFTER academic_class_id',
+    'SELECT "Column academic_section_id already exists in exams" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add foreign key for exams.academic_section_id
+SET @fk_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.table_constraints
+    WHERE table_schema = DATABASE()
+    AND table_name = 'exams'
+    AND constraint_name = 'fk_exams_academic_section_id'
+);
+
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE exams ADD CONSTRAINT fk_exams_academic_section_id FOREIGN KEY (academic_section_id) REFERENCES academic_sections(id) ON DELETE SET NULL',
+    'SELECT "Foreign key fk_exams_academic_section_id already exists" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- ========================================
+-- Student table new hierarchy columns
+-- ========================================
+-- Add academic_level_id column to students table
+SET @column_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+    AND table_name = 'students'
+    AND column_name = 'academic_level_id'
+);
+
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE students ADD COLUMN academic_level_id INT NULL AFTER section',
+    'SELECT "Column academic_level_id already exists in students" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add foreign key for students.academic_level_id
+SET @fk_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.table_constraints
+    WHERE table_schema = DATABASE()
+    AND table_name = 'students'
+    AND constraint_name = 'fk_students_academic_level_id'
+);
+
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE students ADD CONSTRAINT fk_students_academic_level_id FOREIGN KEY (academic_level_id) REFERENCES academic_levels(id) ON DELETE SET NULL',
+    'SELECT "Foreign key fk_students_academic_level_id already exists" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add academic_class_id column to students table
+SET @column_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+    AND table_name = 'students'
+    AND column_name = 'academic_class_id'
+);
+
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE students ADD COLUMN academic_class_id INT NULL AFTER academic_level_id',
+    'SELECT "Column academic_class_id already exists in students" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add foreign key for students.academic_class_id
+SET @fk_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.table_constraints
+    WHERE table_schema = DATABASE()
+    AND table_name = 'students'
+    AND constraint_name = 'fk_students_academic_class_id'
+);
+
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE students ADD CONSTRAINT fk_students_academic_class_id FOREIGN KEY (academic_class_id) REFERENCES academic_classes(id) ON DELETE SET NULL',
+    'SELECT "Foreign key fk_students_academic_class_id already exists" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add academic_section_id column to students table
+SET @column_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+    AND table_name = 'students'
+    AND column_name = 'academic_section_id'
+);
+
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE students ADD COLUMN academic_section_id INT NULL AFTER academic_class_id',
+    'SELECT "Column academic_section_id already exists in students" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add foreign key for students.academic_section_id
+SET @fk_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.table_constraints
+    WHERE table_schema = DATABASE()
+    AND table_name = 'students'
+    AND constraint_name = 'fk_students_academic_section_id'
+);
+
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE students ADD CONSTRAINT fk_students_academic_section_id FOREIGN KEY (academic_section_id) REFERENCES academic_sections(id) ON DELETE SET NULL',
+    'SELECT "Foreign key fk_students_academic_section_id already exists" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- ========================================
+-- Attendance table new hierarchy columns
+-- ========================================
+-- Add academic_level_id column to attendance_records table
+SET @column_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+    AND table_name = 'attendance_records'
+    AND column_name = 'academic_level_id'
+);
+
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE attendance_records ADD COLUMN academic_level_id INT NULL AFTER class_id',
+    'SELECT "Column academic_level_id already exists in attendance_records" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add foreign key for attendance_records.academic_level_id
+SET @fk_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.table_constraints
+    WHERE table_schema = DATABASE()
+    AND table_name = 'attendance_records'
+    AND constraint_name = 'fk_attendance_records_academic_level_id'
+);
+
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE attendance_records ADD CONSTRAINT fk_attendance_records_academic_level_id FOREIGN KEY (academic_level_id) REFERENCES academic_levels(id) ON DELETE SET NULL',
+    'SELECT "Foreign key fk_attendance_records_academic_level_id already exists" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add academic_class_id column to attendance_records table
+SET @column_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+    AND table_name = 'attendance_records'
+    AND column_name = 'academic_class_id'
+);
+
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE attendance_records ADD COLUMN academic_class_id INT NULL AFTER academic_level_id',
+    'SELECT "Column academic_class_id already exists in attendance_records" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add foreign key for attendance_records.academic_class_id
+SET @fk_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.table_constraints
+    WHERE table_schema = DATABASE()
+    AND table_name = 'attendance_records'
+    AND constraint_name = 'fk_attendance_records_academic_class_id'
+);
+
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE attendance_records ADD CONSTRAINT fk_attendance_records_academic_class_id FOREIGN KEY (academic_class_id) REFERENCES academic_classes(id) ON DELETE SET NULL',
+    'SELECT "Foreign key fk_attendance_records_academic_class_id already exists" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add academic_section_id column to attendance_records table
+SET @column_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+    AND table_name = 'attendance_records'
+    AND column_name = 'academic_section_id'
+);
+
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE attendance_records ADD COLUMN academic_section_id INT NULL AFTER academic_class_id',
+    'SELECT "Column academic_section_id already exists in attendance_records" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add foreign key for attendance_records.academic_section_id
+SET @fk_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.table_constraints
+    WHERE table_schema = DATABASE()
+    AND table_name = 'attendance_records'
+    AND constraint_name = 'fk_attendance_records_academic_section_id'
+);
+
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE attendance_records ADD CONSTRAINT fk_attendance_records_academic_section_id FOREIGN KEY (academic_section_id) REFERENCES academic_sections(id) ON DELETE SET NULL',
+    'SELECT "Foreign key fk_attendance_records_academic_section_id already exists" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- ========================================
+-- Subject table academic_level_id column
+-- ========================================
+-- Add academic_level_id column to subjects table
+SET @column_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+    AND table_name = 'subjects'
+    AND column_name = 'academic_level_id'
+);
+
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE subjects ADD COLUMN academic_level_id INT NULL AFTER max_score',
+    'SELECT "Column academic_level_id already exists in subjects" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Add foreign key for subjects.academic_level_id
+SET @fk_exists = (
+    SELECT COUNT(*)
+    FROM information_schema.table_constraints
+    WHERE table_schema = DATABASE()
+    AND table_name = 'subjects'
+    AND constraint_name = 'fk_subjects_academic_level_id'
+);
+
+SET @sql = IF(@fk_exists = 0,
+    'ALTER TABLE subjects ADD CONSTRAINT fk_subjects_academic_level_id FOREIGN KEY (academic_level_id) REFERENCES academic_levels(id) ON DELETE SET NULL',
+    'SELECT "Foreign key fk_subjects_academic_level_id already exists" AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- ========================================
+-- Invigilator System
+-- ========================================
 -- Add invigilator_id column to incident_reports table
 -- Use ALTER TABLE with IF NOT EXISTS pattern for safety
 SET @column_exists = (
