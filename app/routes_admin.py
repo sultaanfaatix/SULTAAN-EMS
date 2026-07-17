@@ -176,11 +176,28 @@ def incident_delete(report_id):
 
 @admin_bp.route("/students")
 def students():
+    # Redirect to Results Hub Students Management (consolidated student operations)
     q = request.args.get("q", "").strip()
-    query = Student.query
+    year_id = request.args.get("year_id")
+    level_id = request.args.get("level_id")
+    class_id = request.args.get("class_id")
+    
+    # Build redirect URL with preserved query parameters
+    redirect_url = url_for("admin_advanced_results.students_management")
+    params = []
     if q:
-        query = query.filter(or_(Student.student_code.like(f"%{q}%"), Student.full_name.like(f"%{q}%"), Student.mother_name.like(f"%{q}%")))
-    return render_template("admin/students.html", students=query.order_by(Student.full_name).all(), q=q)
+        params.append(f"q={q}")
+    if year_id:
+        params.append(f"year_id={year_id}")
+    if level_id:
+        params.append(f"level_id={level_id}")
+    if class_id:
+        params.append(f"class_id={class_id}")
+    
+    if params:
+        redirect_url += "?" + "&".join(params)
+    
+    return redirect(redirect_url)
 
 
 @admin_bp.route("/students/new", methods=["GET", "POST"])
@@ -193,16 +210,11 @@ def student_form(student_id=None):
         student.mother_name = request.form.get("mother_name", "").strip()
         student.phone = request.form.get("phone", "").strip()
         
-        # New academic hierarchy
+        # Academic hierarchy from Setup
+        student.academic_year_id = int(request.form.get("academic_year_id")) if request.form.get("academic_year_id") else None
         student.academic_level_id = int(request.form.get("academic_level_id")) if request.form.get("academic_level_id") else None
         student.academic_class_id = int(request.form.get("academic_class_id")) if request.form.get("academic_class_id") else None
         student.academic_section_id = int(request.form.get("academic_section_id")) if request.form.get("academic_section_id") else None
-        
-        # Legacy fields for backward compatibility
-        student.class_id = int(request.form["class_id"]) if request.form.get("class_id") else None
-        student.academic_year_id = int(request.form["academic_year_id"])
-        student.level = request.form.get("level", "").strip()
-        student.section = request.form.get("section", "").strip()
         
         student.note = request.form.get("note", "").strip()
         student.is_result_locked = bool(request.form.get("is_result_locked"))
@@ -219,6 +231,12 @@ def student_form(student_id=None):
         audit("Student Updates", f"Saved student {student.student_code}")
         db.session.commit()
         flash("Student saved successfully.", "success")
+        
+        # Check if should return to Results Hub
+        return_to = request.args.get("return_to")
+        if return_to == "results_hub":
+            return redirect(url_for("admin_advanced_results.students_management"))
+        
         return redirect(url_for("admin.students"))
     
     academic_levels = AcademicLevel.query.filter_by(is_active=True).order_by(AcademicLevel.sort_order).all()
@@ -229,7 +247,6 @@ def student_form(student_id=None):
     return render_template(
         "admin/student_form.html",
         student=student,
-        classes=SchoolClass.query.order_by(SchoolClass.name).all(),
         years=AcademicYear.query.order_by(AcademicYear.name.desc()).all(),
         academic_levels=academic_levels,
         incident_reports=incident_reports,
@@ -1026,12 +1043,9 @@ def settings():
 @admin_bp.route("/settings/grade-scale/<int:grade_id>/delete", methods=["POST"])
 @permission_required("settings")
 def delete_grade_scale(grade_id):
-    grade = db.session.get(GradeScale, grade_id) or abort_404()
-    db.session.delete(grade)
-    audit("Settings Changes", f"Deleted grade scale {grade.grade}")
-    db.session.commit()
-    flash("Grade deleted.", "success")
-    return redirect(url_for("admin.settings"))
+    # Redirect to Results Hub Grade Management (consolidated grade scale operations)
+    flash("Grade Scale Management has been moved to Results → Grade Management", "info")
+    return redirect(url_for("admin_advanced_results.grade_management"))
 
 
 @admin_bp.route("/audit-logs")

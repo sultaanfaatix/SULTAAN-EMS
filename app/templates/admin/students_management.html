@@ -1,0 +1,218 @@
+{% extends "admin/base.html" %}
+{% set active_tab = "students" %}
+{% block title %}{{ rh_label("students.title", default="Wadarta Ardayda") }}{% endblock %}
+{% block page_title %}{{ rh_label("students.title", default="Wadarta Ardayda") }}{% endblock %}
+{% block admin_content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/results_module.css') }}">
+
+<div class="results-hub">
+  {% include "admin/_results_hub_header.html" %}
+
+  <main class="rh-screen" id="students-screen">
+    <div class="rh-eyebrow">{{ rh_label("students.eyebrow", default="Maamulka Ardayda") }}</div>
+    <h1 class="rh-title">{{ rh_label("students.title", default="Wadarta Ardayda") }}</h1>
+
+    <div class="rh-selector-row">
+      <div class="rh-selector">
+        <label for="year-selector">{{ rh_label("students.year", default="Sanad Dugsiyeedka") }}</label>
+        <select id="year-selector" onchange="changeYear()">
+          {% for year in years %}
+            <option value="{{ year.id }}" {% if selected_year and selected_year.id == year.id %}selected{% endif %}>{{ year.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="rh-selector">
+        <label for="level-selector">{{ rh_label("students.level", default="Level") }}</label>
+        <select id="level-selector" onchange="changeLevel()">
+          <option value="">{{ rh_label("students.all_levels", default="Dhammaan") }}</option>
+          {% for level in levels %}
+            <option value="{{ level.id }}" {% if selected_level_id and selected_level_id == level.id %}selected{% endif %}>{{ level.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="rh-selector">
+        <label for="class-selector">{{ rh_label("students.class", default="Fasalka") }}</label>
+        <select id="class-selector" onchange="changeClass()">
+          <option value="">{{ rh_label("students.all_classes", default="Dhammaan") }}</option>
+          {% for cls in classes %}
+            <option value="{{ cls.id }}" {% if selected_class_id and selected_class_id == cls.id %}selected{% endif %}>{{ cls.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="sm-toolbar">
+      <input type="text" class="sm-search" placeholder="{{ rh_label("students.search_placeholder", default="Raadi arday (magac, ID)...") }}" value="{{ q }}" onkeyup="handleSearch(event)">
+      <select class="sm-filter" onchange="handleFilter()">
+        <option value="">{{ rh_label("students.status_all", default="Dhammaan") }}</option>
+        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>{{ rh_label("students.status_active", default="Active") }}</option>
+        <option value="locked" {% if status_filter == 'locked' %}selected{% endif %}>{{ rh_label("students.status_locked", default="Locked") }}</option>
+      </select>
+      <a href="{{ url_for('admin.student_form') }}?return_to=results_hub" class="btn btn-gold">+ {{ rh_label("students.add_student", default="Cali Arday Cusub") }}</a>
+      <a href="{{ url_for('admin.student_import_template') }}" class="btn btn-outline">{{ rh_label("students.template", default="Template") }}</a>
+      <form method="post" action="{{ url_for('admin.import_students') }}" enctype="multipart/form-data" style="display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="btn btn-outline" style="cursor: pointer;">
+          {{ rh_label("students.import_excel", default="Excel Import") }}
+          <input type="file" name="file" accept=".xlsx" required style="display: none;">
+        </label>
+      </form>
+      <a href="{{ url_for('admin.export_students') }}" class="btn btn-outline">{{ rh_label("students.export_excel", default="Excel Export") }}</a>
+    </div>
+
+    <div class="sm-grid">
+      <div class="sm-list">
+        {% for student in students %}
+          <div class="sm-row" onclick="selectStudent('{{ student.id }}')">
+            <div class="sm-avatar">{{ student.student_code[:2] }}</div>
+            <div class="sm-info">
+              <div class="nm">{{ student.full_name }}</div>
+              <div class="mt">{{ student.mother_name }}</div>
+            </div>
+            <div class="sm-meta">
+              <div>{{ student.student_code }}</div>
+              <span class="status-pill {{ 'locked' if student.is_result_locked else 'active' }}">
+                <i class="fa-solid {{ 'fa-lock' if student.is_result_locked else 'fa-unlock' }}"></i>
+                {{ "Locked" if student.is_result_locked else "Active" }}
+              </span>
+            </div>
+            <div class="sm-actions">
+              <a class="icon-btn small" href="{{ url_for('admin.student_form', student_id=student.id) }}?return_to=results_hub" title="Edit">
+                <i class="fa-solid fa-pen"></i>
+              </a>
+              <form method="post" action="{{ url_for('admin.toggle_student_lock', student_id=student.id) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="icon-btn small" title="Lock or unlock">
+                  <i class="fa-solid {{ 'fa-unlock' if student.is_result_locked else 'fa-lock' }}"></i>
+                </button>
+              </form>
+              <form method="post" action="{{ url_for('admin.delete_student', student_id=student.id) }}" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="icon-btn small danger" title="Delete">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        {% else %}
+          <div class="rh-table-card" style="grid-column: 1 / -1; padding: 42px; text-align:center; color: var(--slate);">
+            {{ rh_label("students.no_students", default="Arday lama helin") }}
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="sm-profile">
+        <div class="profile-card">
+          <div class="profile-head">
+            <div class="avatar-lg">AD</div>
+            <div>
+              <div class="pname">{{ rh_label("students.select_student", default="Dooro arday") }}</div>
+              <div class="pid">{{ rh_label("students.select_hint", default="Guji arday si aad u eegto faahfaahinta") }}</div>
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label>{{ rh_label("students.student_code", default="Student Code") }}</label>
+              <input type="text" placeholder="e.g., 3007">
+            </div>
+            <div class="field">
+              <label>{{ rh_label("students.full_name", default="Full Name") }}</label>
+              <input type="text" placeholder="{{ rh_label("students.name_placeholder", default="Magaca oo dhamaystiran") }}">
+            </div>
+            <div class="field">
+              <label>{{ rh_label("students.mother_name", default="Mother's Name") }}</label>
+              <input type="text" placeholder="{{ rh_label("students.mother_placeholder", default="Magaca hooyada") }}">
+            </div>
+            <div class="field">
+              <label>{{ rh_label("students.phone", default="Phone") }}</label>
+              <input type="text" placeholder="+252...">
+            </div>
+          </div>
+
+          <div class="divider-label">{{ rh_label("students.academic_info", default="Macluumaadka Dugsiyeedka") }}</div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label>{{ rh_label("students.level", default="Level") }}</label>
+              <select>
+                <option>Secondary</option>
+                <option>Upper Primary</option>
+                <option>Lower Primary</option>
+                <option>Kindergarten</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>{{ rh_label("students.class", default="Fasalka") }}</label>
+              <select>
+                <option>Form 1</option>
+                <option>Form 2</option>
+                <option>Form 3</option>
+                <option>Form 4</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="divider-label">{{ rh_label("students.status", default="Xaalada") }}</div>
+
+          <div class="field">
+            <label>{{ rh_label("students.enrollment_status", default="Xaalada Dugsiga") }}</label>
+            <select>
+              <option value="active">{{ rh_label("students.status_active", default="Active") }}</option>
+              <option value="transferred">{{ rh_label("students.status_transferred", default="Transferred") }}</option>
+              <option value="graduated">{{ rh_label("students.status_graduated", default="Graduated") }}</option>
+            </select>
+          </div>
+
+          <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button class="btn btn-gold" style="flex: 1;">{{ rh_label("students.save", default="Kaydi") }}</button>
+            <button class="btn btn-outline">{{ rh_label("students.promote", default="Promote to Next Class") }}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+function changeYear() {
+  const yearId = document.getElementById('year-selector').value;
+  window.location.href = `{{ url_for('admin_advanced_results.students_management') }}?year_id=${yearId}`;
+}
+
+function changeLevel() {
+  const yearId = document.getElementById('year-selector').value;
+  const levelId = document.getElementById('level-selector').value;
+  window.location.href = `{{ url_for('admin_advanced_results.students_management') }}?year_id=${yearId}&level_id=${levelId}`;
+}
+
+function changeClass() {
+  const yearId = document.getElementById('year-selector').value;
+  const levelId = document.getElementById('level-selector').value;
+  const classId = document.getElementById('class-selector').value;
+  window.location.href = `{{ url_for('admin_advanced_results.students_management') }}?year_id=${yearId}&level_id=${levelId}&class_id=${classId}`;
+}
+
+function handleSearch(event) {
+  if (event.key === 'Enter') {
+    const query = event.target.value;
+    const url = new URL(window.location.href);
+    url.searchParams.set('q', query);
+    window.location.href = url.toString();
+  }
+}
+
+function handleFilter() {
+  const statusFilter = document.querySelector('.sm-filter').value;
+  const url = new URL(window.location.href);
+  url.searchParams.set('status_filter', statusFilter);
+  window.location.href = url.toString();
+}
+
+function selectStudent(studentId) {
+  // Load student details into profile panel via AJAX
+  console.log('Selected student:', studentId);
+  // TODO: Implement AJAX call to load student details
+}
+</script>
+{% endblock %}

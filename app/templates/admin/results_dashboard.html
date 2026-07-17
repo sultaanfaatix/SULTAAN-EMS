@@ -13,13 +13,16 @@
     <h1 class="rh-title">{{ rh_label("dashboard.title", default="Results Dashboard") }}</h1>
 
     <div class="rh-selector-row">
-      <div class="rh-selector">
-        <label for="year-selector">{{ rh_label("dashboard.year", default="Sanad Dugsiyeedka") }}</label>
-        <select id="year-selector" onchange="changeYear()">
+      <div class="rh-selector year-selector" id="yearSelector" onclick="toggleYearDropdown(event)">
+        <label>Sanad Dugsiyeedka <span class="auto-pill" id="yearAutoPill">⚡ Auto</span></label>
+        <div class="val" id="yearSelectorVal">{{ selected_year.name if selected_year else '' }}</div>
+        <div class="year-dropdown" id="yearDropdown" style="display:none;">
           {% for year in years %}
-            <option value="{{ year.id }}" {% if selected_year and selected_year.id == year.id %}selected{% endif %}>{{ year.name }}</option>
+            <div class="year-opt" onclick="pickYear(event, {{ year.id }}, {{ 'true' if year.is_current else 'false' }})">
+              {{ year.name }} <span class="pill-status {{ 'on' if year.is_current else 'off' }}">{{ 'Active' if year.is_current else 'Archived' }}</span>
+            </div>
           {% endfor %}
-        </select>
+        </div>
       </div>
       <div class="rh-selector">
         <label for="exam-selector">{{ rh_label("dashboard.exam_type", default="Exam Type") }}</label>
@@ -31,6 +34,10 @@
         </select>
       </div>
     </div>
+    <div class="auto-note" id="autoNote">🔄 Dashboard-ku wuxuu si otomaatig ah u soo bandhigayaa sanadka dugsiyeedka ee <strong>active-ka ah</strong> — waad iska bedeli kartaa si aad u eegto sano hore.</div>
+    {% if not selected_year.is_current and selected_year %}
+      <div class="revert-auto" onclick="revertToActive()">↺ Revert to Active</div>
+    {% endif %}
 
     {% if selected_exam %}
       <section class="rh-stat-row">
@@ -90,6 +97,34 @@ function changeYear() {
   window.location.href = `{{ url_for('admin_advanced_results.new_dashboard') }}?year_id=${yearId}`;
 }
 
+function toggleYearDropdown(event) {
+  event.stopPropagation();
+  const dropdown = document.getElementById('yearDropdown');
+  dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+
+function pickYear(event, yearId, isCurrent) {
+  event.stopPropagation();
+  const dropdown = document.getElementById('yearDropdown');
+  dropdown.style.display = 'none';
+  
+  const autoPill = document.getElementById('yearAutoPill');
+  const yearSelectorVal = document.getElementById('yearSelectorVal');
+  const autoNote = document.getElementById('autoNote');
+  
+  // Update UI
+  autoPill.textContent = isCurrent ? '⚡ Auto' : '✏ Manual';
+  autoPill.className = 'auto-pill' + (isCurrent ? '' : ' manual');
+  
+  // Navigate to selected year
+  window.location.href = `{{ url_for('admin_advanced_results.new_dashboard') }}?year_id=${yearId}`;
+}
+
+function revertToActive() {
+  // Find the current active year and navigate to it
+  window.location.href = `{{ url_for('admin_advanced_results.new_dashboard') }}`;
+}
+
 function changeExam() {
   const yearId = document.getElementById('year-selector').value;
   const examId = document.getElementById('exam-selector').value;
@@ -113,5 +148,14 @@ function openClassRoster(levelId, classId, sectionId) {
   if (sectionId) url += `&section_id=${sectionId}`;
   window.location.href = url;
 }
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+  const yearSelector = document.getElementById('yearSelector');
+  const dropdown = document.getElementById('yearDropdown');
+  if (!yearSelector.contains(event.target)) {
+    dropdown.style.display = 'none';
+  }
+});
 </script>
 {% endblock %}

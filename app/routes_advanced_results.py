@@ -368,20 +368,15 @@ def setup_delete_class(class_id):
 
 @advanced_results_bp.route("/new-dashboard")
 def new_dashboard():
-    """New results dashboard with two-step Level → Class selection"""
-    # Check if setup is complete
-    from .services import is_setup_complete
-    is_complete, missing = is_setup_complete()
-    if not is_complete:
-        flash(f"Setup incomplete. Please configure: {', '.join(missing)}", "warning")
-        return redirect(url_for("admin_advanced_results.new_setup"))
-    
+    """New results dashboard with auto-selection of active academic year"""
     year_id = int_or_none(request.args.get("year_id"))
     exam_id = int_or_none(request.args.get("exam_id"))
     level_id = int_or_none(request.args.get("level_id"))
     
-    # Get selected year and exam
+    # Auto-select active year if no year_id provided
     selected_year = db.session.get(AcademicYear, year_id) if year_id else AcademicYear.query.filter_by(is_current=True).first()
+    
+    # Get selected exam
     selected_exam = db.session.get(Exam, exam_id) if exam_id else None
     selected_level = db.session.get(AcademicLevel, level_id) if level_id else None
     
@@ -392,11 +387,7 @@ def new_dashboard():
     # Get all levels for level selector
     levels = AcademicLevel.query.filter_by(is_active=True).order_by(AcademicLevel.sort_order).all()
     
-    # Get data for Setup tab
-    subjects = Subject.query.order_by(Subject.sort_order).all()
-    classes = AcademicClass.query.order_by(AcademicClass.name).all()
-    
-    # Build dashboard stats
+    # Build dashboard stats - always compute for the active year
     stats = {}
     class_cards = []
     
@@ -404,6 +395,13 @@ def new_dashboard():
         stats = build_dashboard_stats(selected_exam)
         # Build class cards filtered by selected level
         class_cards = build_class_cards(selected_exam, level_filter=selected_level)
+    elif selected_year:
+        # If no exam selected, compute stats for the year (all exams combined)
+        year_exams = Exam.query.filter_by(academic_year_id=selected_year.id).all()
+        if year_exams:
+            # Use the first exam for stats calculation
+            stats = build_dashboard_stats(year_exams[0])
+            class_cards = build_class_cards(year_exams[0], level_filter=selected_level)
     
     return render_template(
         "admin/results_dashboard.html",
@@ -415,8 +413,6 @@ def new_dashboard():
         selected_level=selected_level,
         stats=stats,
         class_cards=class_cards,
-        subjects=subjects,
-        classes=classes,
         settings=get_settings(),
     )
 
@@ -433,15 +429,30 @@ def class_roster():
     search_query = request.args.get("q", "").strip()
     
     # Get selected year and exam
-    selected_year = db.session.get(AcademicYear, year_id)
-    selected_exam = db.session.get(Exam, exam_id)
+    selected_year = db.session.get(AcademicYear, year_id) if year_id else AcademicYear.query.filter_by(is_current=True).first()
+    selected_exam = db.session.get(Exam, exam_id) if exam_id else None
     
-    if not selected_year or not selected_exam:
-        flash("Please select an academic year and exam.", "warning")
+    if not selected_year:
+        flash("Please select an academic year.", "warning")
         return redirect(url_for("admin_advanced_results.new_dashboard"))
     
+    # If no exam selected, show exam selection interface
+    if not selected_exam:
+        years = AcademicYear.query.order_by(AcademicYear.name.desc()).all()
+        exams = Exam.query.filter_by(academic_year_id=selected_year.id).order_by(Exam.id.desc()).all() if selected_year else []
+        return render_template(
+            "admin/class_roster.html",
+            selected_year=selected_year,
+            selected_exam=None,
+            scope_info={},
+            students=[],
+            years=years,
+            exams=exams,
+            settings=get_settings(),
+        )
+    
     # Build student query based on scope
-    student_query = Student.query.filter_by(academic_year_id=year_id)
+    student_query = Student.query.filter_by(academic_year_id=selected_year.id)
     
     if level_id:
         student_query = student_query.filter_by(academic_level_id=level_id)
@@ -1004,9 +1015,21 @@ def result_entry():
         flash("Please select an academic year.", "warning")
         return redirect(url_for("admin_advanced_results.new_dashboard"))
     
+    # If no exam selected, show exam selection interface
     if not selected_exam:
-        flash("Please select an exam.", "warning")
-        return redirect(url_for("admin_advanced_results.new_dashboard"))
+        years = AcademicYear.query.order_by(AcademicYear.name.desc()).all()
+        exams = Exam.query.filter_by(academic_year_id=selected_year.id).order_by(Exam.id.desc()).all() if selected_year else []
+        return render_template(
+            "admin/result_entry.html",
+            selected_year=selected_year,
+            selected_exam=None,
+            scope_info={},
+            subjects=[],
+            entry_grid=[],
+            years=years,
+            exams=exams,
+            settings=get_settings(),
+        )
     
     # Build scope info
     scope_info = {
@@ -1052,6 +1075,9 @@ def result_entry():
             }
         entry_grid.append(row_data)
     
+    years = AcademicYear.query.order_by(AcademicYear.name.desc()).all()
+    exams = Exam.query.filter_by(academic_year_id=selected_year.id).order_by(Exam.id.desc()).all() if selected_year else []
+    
     return render_template(
         "admin/result_entry.html",
         selected_year=selected_year,
@@ -1059,6 +1085,8 @@ def result_entry():
         scope_info=scope_info,
         subjects=subjects,
         entry_grid=entry_grid,
+        years=years,
+        exams=exams,
         settings=get_settings(),
     )
 
@@ -1159,24 +1187,80 @@ def analytics():
     level_id = int_or_none(request.args.get("level_id"))
     class_id = int_or_none(request.args.get("class_id"))
     section_id = int_or_none(request.args.get("section_id"))
+    subject_id = int_or_none(request.args.get("subject_id"))
+    top_limit = int_or_none(request.args.get("top_limit")) or 5
+    bottom_limit = int_or_none(request.args.get("bottom_limit")) or 5
     
-    # Get selected year and exam
+    # Initialize selected variables before any conditional logic
+    selected_year = None
+    selected_exam = None
+    selected_level = None
+    selected_class = None
+    selected_section = None
+    selected_subject = None
+    
+    # Get selected year
     selected_year = db.session.get(AcademicYear, year_id) if year_id else AcademicYear.query.filter_by(is_current=True).first()
-    selected_exam = db.session.get(Exam, exam_id) if exam_id else None
     
     if not selected_year:
         flash("Please select an academic year.", "warning")
         return redirect(url_for("admin_advanced_results.new_dashboard"))
     
+    # Get selected exam from parameter or auto-select most recent
+    selected_exam = db.session.get(Exam, exam_id) if exam_id else None
     if not selected_exam:
-        flash("Please select an exam.", "warning")
-        return redirect(url_for("admin_advanced_results.new_dashboard"))
+        selected_exam = Exam.query.filter_by(academic_year_id=selected_year.id).order_by(Exam.id.desc()).first()
+    
+    # Get filter data for selectors
+    years = AcademicYear.query.order_by(AcademicYear.name.desc()).all()
+    exams = Exam.query.filter_by(academic_year_id=selected_year.id).order_by(Exam.id.desc()).all() if selected_year else []
+    levels = AcademicLevel.query.filter_by(is_active=True).order_by(AcademicLevel.sort_order).all()
+    classes = AcademicClass.query.order_by(AcademicClass.name).all()
+    sections = AcademicSection.query.order_by(AcademicSection.name).all()
+    subjects = Subject.query.order_by(Subject.name).all()
+    
+    # If still no exam available, show empty analytics
+    if not selected_exam:
+        # Provide empty analytics structure to prevent template errors
+        empty_analytics = {
+            "grade_distribution": {"labels": [], "counts": [], "colors": [], "total": 0},
+            "subject_performance": {"labels": [], "scores": []},
+            "exam_trend": {"labels": [], "scores": []},
+            "pass_fail_ratio": {"pass": 0, "fail": 0, "total": 0},
+            "overall_average": 0,
+            "top_performers": [],
+            "bottom_performers": [],
+            "total_students": 0,
+            "highest_score": 0,
+            "lowest_score": 0,
+        }
+        return render_template(
+            "admin/analytics.html",
+            selected_year=selected_year,
+            selected_exam=None,
+            scope_info={},
+            analytics=empty_analytics,
+            years=years,
+            exams=exams,
+            levels=levels,
+            classes=classes,
+            sections=sections,
+            subjects=subjects,
+            selected_level_id=level_id,
+            selected_class_id=class_id,
+            selected_section_id=section_id,
+            selected_subject_id=subject_id,
+            top_limit=top_limit,
+            bottom_limit=bottom_limit,
+            settings=get_settings(),
+        )
     
     # Build scope info
     scope_info = {
         "level": db.session.get(AcademicLevel, level_id) if level_id else None,
         "class": db.session.get(AcademicClass, class_id) if class_id else None,
         "section": db.session.get(AcademicSection, section_id) if section_id else None,
+        "subject": db.session.get(Subject, subject_id) if subject_id else None,
     }
     
     # Get students in scope
@@ -1192,10 +1276,13 @@ def analytics():
     student_ids = [s.id for s in students]
     
     # Get results for this exam
-    results = Result.query.filter(Result.student_id.in_(student_ids), Result.exam_id == selected_exam.id, Result.is_published.is_(True)).all()
+    results_query = Result.query.filter(Result.student_id.in_(student_ids), Result.exam_id == selected_exam.id, Result.is_published.is_(True))
+    if scope_info["subject"]:
+        results_query = results_query.filter_by(subject_id=scope_info["subject"].id)
+    results = results_query.all()
     
-    # Calculate analytics data
-    analytics_data = build_analytics_data(results, students, selected_exam)
+    # Calculate analytics data with ranking limits
+    analytics_data = build_analytics_data(results, students, selected_exam, top_limit, bottom_limit)
     
     return render_template(
         "admin/analytics.html",
@@ -1203,20 +1290,36 @@ def analytics():
         selected_exam=selected_exam,
         scope_info=scope_info,
         analytics=analytics_data,
+        years=years,
+        exams=exams,
+        levels=levels,
+        classes=classes,
+        sections=sections,
+        subjects=subjects,
+        selected_level_id=level_id,
+        selected_class_id=class_id,
+        selected_section_id=section_id,
+        selected_subject_id=subject_id,
+        top_limit=top_limit,
+        bottom_limit=bottom_limit,
         settings=get_settings(),
     )
 
 
-def build_analytics_data(results, students, exam):
+def build_analytics_data(results, students, exam, top_limit=5, bottom_limit=5):
     """Build analytics data for charts using existing grade_for logic"""
     if not results:
         return {
             "grade_distribution": {"labels": [], "values": [], "colors": []},
             "subject_performance": {"labels": [], "values": []},
             "exam_trend": {"labels": [], "values": []},
-            "pass_fail_ratio": {"pass": 0, "fail": 0},
+            "pass_fail_ratio": {"pass": 0, "fail": 0, "total": 0},
+            "overall_average": 0,
             "top_performers": [],
             "bottom_performers": [],
+            "total_students": len(students) if students else 0,
+            "highest_score": 0,
+            "lowest_score": 0,
         }
     
     # Calculate percentages for each result
@@ -1225,6 +1328,13 @@ def build_analytics_data(results, students, exam):
         if result.subject.max_score:
             pct = float(result.score) / float(result.subject.max_score) * 100
             percentages.append(pct)
+    
+    # Calculate overall average
+    overall_average = round(sum(percentages) / len(percentages), 1) if percentages else 0
+    
+    # Calculate highest and lowest scores
+    highest_score = round(max(percentages), 1) if percentages else 0
+    lowest_score = round(min(percentages), 1) if percentages else 0
     
     # Grade distribution using actual grade scales
     grade_counts = {}
@@ -1283,48 +1393,58 @@ def build_analytics_data(results, students, exam):
     top_performers = []
     bottom_performers = []
     
-    for student_id, avg in student_avg_list[:5]:
+    for student_id, avg in student_avg_list[:top_limit]:
         student = next((s for s in students if s.id == student_id), None)
         if student:
             top_performers.append({
                 "name": student.full_name,
+                "mother_name": student.mother_name,
                 "code": student.student_code,
                 "average": avg,
                 "grade": grade_for(avg, exam_id=exam.id)["grade"],
+                "class_name": student.academic_class.name if student.academic_class else None,
+                "section_name": student.academic_section.name if student.academic_section else None,
             })
     
-    for student_id, avg in student_avg_list[-5:]:
+    for student_id, avg in student_avg_list[-bottom_limit:]:
         student = next((s for s in students if s.id == student_id), None)
         if student:
             bottom_performers.append({
                 "name": student.full_name,
+                "mother_name": student.mother_name,
                 "code": student.student_code,
                 "average": avg,
                 "grade": grade_for(avg, exam_id=exam.id)["grade"],
+                "class_name": student.academic_class.name if student.academic_class else None,
+                "section_name": student.academic_section.name if student.academic_section else None,
             })
     
     return {
         "grade_distribution": {
             "labels": grade_labels,
-            "values": grade_values,
+            "counts": grade_values,
             "colors": grade_color_list,
+            "total": sum(grade_values) if grade_values else 0,
         },
         "subject_performance": {
             "labels": subject_labels,
-            "values": subject_values,
+            "scores": subject_values,
         },
         "exam_trend": {
             "labels": exam_trend_labels,
-            "values": exam_trend_values,
+            "scores": exam_trend_values,
         },
         "pass_fail_ratio": {
             "pass": pass_count,
             "fail": fail_count,
             "total": len(percentages),
         },
+        "overall_average": overall_average,
         "top_performers": top_performers,
         "bottom_performers": bottom_performers,
-        "overall_average": round(sum(percentages) / len(percentages), 1) if percentages else 0,
+        "total_students": len(students) if students else 0,
+        "highest_score": highest_score,
+        "lowest_score": lowest_score,
     }
 
 
@@ -1461,6 +1581,67 @@ def results_settings():
         language_codes=language_codes,
         label_matrix=label_matrix,
         settings=settings,
+    )
+
+
+@advanced_results_bp.route("/students-management")
+def students_management():
+    """Students Management page within Results Hub - consolidated student operations"""
+    year_id = int_or_none(request.args.get("year_id"))
+    level_id = int_or_none(request.args.get("level_id"))
+    class_id = int_or_none(request.args.get("class_id"))
+    search_query = request.args.get("q", "").strip()
+    status_filter = request.args.get("status_filter", "")
+    
+    # Get selected year
+    selected_year = db.session.get(AcademicYear, year_id) if year_id else AcademicYear.query.filter_by(is_current=True).first()
+    
+    # Get all years for selector
+    years = AcademicYear.query.order_by(AcademicYear.name.desc()).all()
+    
+    # Get levels and classes for filters
+    levels = AcademicLevel.query.filter_by(is_active=True).order_by(AcademicLevel.sort_order).all()
+    classes = AcademicClass.query.order_by(AcademicClass.name).all() if not level_id else AcademicClass.query.filter_by(academic_level_id=level_id).all()
+    
+    # Get students with filters
+    students_query = Student.query.filter_by(academic_year_id=selected_year.id) if selected_year else Student.query()
+    
+    if level_id:
+        students_query = students_query.filter_by(academic_level_id=level_id)
+    if class_id:
+        students_query = students_query.filter_by(academic_class_id=class_id)
+    
+    # Apply search filter
+    if search_query:
+        search_pattern = f"%{search_query}%"
+        students_query = students_query.filter(
+            db.or_(
+                Student.student_code.like(search_pattern),
+                Student.full_name.like(search_pattern),
+                Student.mother_name.like(search_pattern)
+            )
+        )
+    
+    # Apply status filter
+    if status_filter == "locked":
+        students_query = students_query.filter_by(is_result_locked=True)
+    elif status_filter == "active":
+        students_query = students_query.filter_by(is_result_locked=False)
+    
+    students = students_query.order_by(Student.student_code).all()
+    
+    return render_template(
+        "admin/students_management.html",
+        years=years,
+        selected_year=selected_year,
+        levels=levels,
+        classes=classes,
+        students=students,
+        selected_level_id=level_id,
+        selected_class_id=class_id,
+        q=search_query,
+        status_filter=status_filter,
+        settings=get_settings(),
     )
 
 

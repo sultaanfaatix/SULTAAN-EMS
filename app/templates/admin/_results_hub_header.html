@@ -28,9 +28,6 @@
 </div>
 
 <nav class="rh-tabs">
-  <button class="rh-tab {{ 'active' if active_tab == 'setup' else '' }}" onclick="window.location.href='{{ url_for('admin_advanced_results.new_setup') }}'">
-    <span>00</span>{{ rh_label("hub.tab.setup", default="Setup") }}
-  </button>
   <button class="rh-tab {{ 'active' if active_tab == 'dashboard' else '' }}" onclick="window.location.href='{{ url_for('admin_advanced_results.new_dashboard') }}?{{ rh_query }}'">
     <span>01</span>{{ rh_label("hub.tab.dashboard", default="Dashboard") }}
   </button>
@@ -43,10 +40,16 @@
   <button class="rh-tab {{ 'active' if active_tab == 'analytics' else '' }}" onclick="window.location.href='{{ url_for('admin_advanced_results.analytics') }}?{{ rh_query }}{% if rh_level and scope_info.level %}&level_id={{ scope_info.level.id }}{% endif %}{% if rh_class and scope_info.class %}&class_id={{ scope_info.class.id }}{% endif %}{% if rh_section and scope_info.section %}&section_id={{ scope_info.section.id }}{% endif %}'">
     <span>04</span>{{ rh_label("hub.tab.analytics", default="Analytics") }}
   </button>
+  <button class="rh-tab {{ 'active' if active_tab == 'setup' else '' }}" onclick="window.location.href='{{ url_for('admin_advanced_results.new_setup') }}'">
+    <span>05</span>{{ rh_label("hub.tab.setup", default="Setup") }}
+  </button>
+  <button class="rh-tab {{ 'active' if active_tab == 'students' else '' }}" onclick="window.location.href='{{ url_for('admin_advanced_results.students_management') }}?{{ rh_query }}'">
+    <span>06</span>{{ rh_label("hub.tab.students", default="Students Mgmt") }}
+  </button>
   <button class="rh-tab {{ 'active' if active_tab == 'grades' else '' }}" onclick="window.location.href='{{ url_for('admin_advanced_results.grade_management') }}?{{ rh_query }}'">
-    <span>05</span>{{ rh_label("hub.tab.grades", default="Grade Mgmt") }}
+    <span>07</span>{{ rh_label("hub.tab.grades", default="Grade Mgmt") }}
   </button>
   <button class="rh-tab {{ 'active' if active_tab == 'settings' else '' }}" onclick="window.location.href='{{ url_for('admin_advanced_results.results_settings') }}'">
-    <span>06</span>{{ rh_label("hub.tab.settings", default="Settings") }}
+    <span>08</span>{{ rh_label("hub.tab.settings", default="Settings") }}
   </button>
 </nav>
