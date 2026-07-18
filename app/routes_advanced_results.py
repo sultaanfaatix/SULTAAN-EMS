@@ -172,7 +172,10 @@ def subjects_for_scope(exam, level_id=None, class_id=None):
 
     query = Subject.query
     if effective_level_id:
-        query = query.filter_by(academic_level_id=effective_level_id)
+        scoped_subjects = query.filter_by(academic_level_id=effective_level_id).all()
+        if scoped_subjects:
+            return sorted(scoped_subjects, key=lambda subject: (subject.sort_order, subject.name))
+        query = Subject.query.filter(Subject.academic_level_id.is_(None))
     return sorted(query.all(), key=lambda subject: (subject.sort_order, subject.name))
 
 
