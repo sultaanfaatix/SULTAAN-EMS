@@ -1,70 +1,297 @@
 {% extends "admin/base.html" %}
-{% set active_tab = "roster" %}
-{% block title %}{{ student.full_name }}{% endblock %}
-{% block page_title %}{{ student.full_name }}{% endblock %}
+{% set active_tab = "entry" %}
+{% block title %}Single Student Result Entry{% endblock %}
+{% block page_title %}Single Student Result Entry{% endblock %}
 {% block admin_content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/results_module.css') }}">
 
 <div class="results-hub">
   {% include "admin/_results_hub_header.html" %}
 
-  <main class="rh-screen">
-    <div class="rh-eyebrow">{{ selected_exam.name }} · {{ selected_year.name }}</div>
-    <div class="rh-toolbar">
+  <main class="rh-screen rh-single-entry">
+    <header class="rh-single-header">
       <div>
-        <h1 class="rh-title">{{ student.full_name }}</h1>
-        <p class="rh-desc">{{ student.student_code }}{% if student.mother_name %} · {{ student.mother_name }}{% endif %}</p>
+        <div class="rh-eyebrow">{{ selected_exam.name }} &middot; {{ selected_year.name }}</div>
+        <h1 class="rh-title">Single Student Result Entry</h1>
+        <p class="rh-desc">Enter and manage examination results for an individual student.</p>
       </div>
-      <button class="rh-btn" onclick="exportStudentPDF()">{{ rh_label("roster.export_pdf", default="Export PDF") }}</button>
-    </div>
-
-    <div style="display:grid; grid-template-columns: 320px 1fr; gap: 28px;">
-      <aside class="rh-class-card" style="min-height:auto;">
-        <h3>{{ grade.grade }}</h3>
-        <p>Overall Grade</p>
-        <div style="margin-top:24px;">
-          <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.18); padding:12px 0;"><span>Total</span><strong>{{ total_score }}</strong></div>
-          <div style="display:flex; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,.18); padding:12px 0;"><span>Percentage</span><strong>{{ percentage }}%</strong></div>
-          <div style="display:flex; justify-content:space-between; padding:12px 0;"><span>GP</span><strong>{{ gp }}</strong></div>
+      <div class="rh-single-actions">
+        <a class="rh-btn outline" href="{{ url_for('admin_advanced_results.result_entry', year_id=selected_year.id, exam_id=selected_exam.id, level_id=student.academic_level_id or '', class_id=student.academic_class_id or '', section_id=student.academic_section_id or '') }}">
+          <i class="fa-solid fa-arrow-left"></i> Back to Student List
+        </a>
+        <div class="rh-save-status" id="saveStatus" data-state="idle">
+          <i class="fa-solid fa-circle-check"></i>
+          <span>Saved</span>
         </div>
+      </div>
+    </header>
+
+    <form class="rh-single-context-grid" id="singleContextForm" method="GET" action="{{ url_for('admin_advanced_results.student_view') }}">
+      <input type="hidden" name="student_id" value="{{ student.id }}">
+      <label class="rh-entry-filter-card context-year">
+        <span class="rh-filter-icon"><i class="fa-solid fa-calendar-days"></i></span>
+        <span class="rh-filter-copy">
+          <span class="rh-filter-title">Academic Year</span>
+          <select name="year_id" id="singleYearSelect">
+            {% for year in years %}
+              <option value="{{ year.id }}" {% if selected_year.id == year.id %}selected{% endif %}>{{ year.name }}{% if year.is_current %} ✓{% endif %}</option>
+            {% endfor %}
+          </select>
+        </span>
+      </label>
+      <label class="rh-entry-filter-card context-exam">
+        <span class="rh-filter-icon"><i class="fa-solid fa-file-pen"></i></span>
+        <span class="rh-filter-copy">
+          <span class="rh-filter-title">Exam Type</span>
+          <select name="exam_id" id="singleExamSelect">
+            {% for exam in exams %}
+              <option value="{{ exam.id }}" {% if selected_exam.id == exam.id %}selected{% endif %}>{{ exam.name }}</option>
+            {% endfor %}
+          </select>
+        </span>
+      </label>
+      <div class="rh-entry-filter-card context-level">
+        <span class="rh-filter-icon"><i class="fa-solid fa-layer-group"></i></span>
+        <span class="rh-filter-copy">
+          <span class="rh-filter-title">Level</span>
+          <select disabled>
+            <option selected>{{ student.academic_level.name if student.academic_level else student.level or "-" }}</option>
+          </select>
+        </span>
+      </div>
+      <div class="rh-entry-filter-card context-class">
+        <span class="rh-filter-icon"><i class="fa-solid fa-chalkboard-user"></i></span>
+        <span class="rh-filter-copy">
+          <span class="rh-filter-title">Class</span>
+          <select disabled>
+            <option selected>{{ student.academic_class.name if student.academic_class else student.school_class.name if student.school_class else "-" }}</option>
+          </select>
+        </span>
+      </div>
+    </form>
+
+    <input type="hidden" id="csrfToken" value="{{ csrf_token() }}">
+    <input type="hidden" id="yearId" value="{{ selected_year.id }}">
+    <input type="hidden" id="examId" value="{{ selected_exam.id }}">
+    <input type="hidden" id="levelId" value="{{ student.academic_level_id or '' }}">
+    <input type="hidden" id="classId" value="{{ student.academic_class_id or '' }}">
+    <input type="hidden" id="sectionId" value="{{ student.academic_section_id or '' }}">
+
+    <section class="rh-single-layout">
+      <aside class="rh-single-right">
+        <section class="rh-single-card rh-single-profile">
+          <div class="rh-student-photo-frame">
+            {% if student.photo_path %}
+              <img src="{{ asset_url(student.photo_path) }}" alt="{{ student.full_name }}">
+            {% else %}
+              <i class="fa-solid fa-user-graduate"></i>
+            {% endif %}
+          </div>
+          <h2>{{ student.full_name }}</h2>
+          <p>{{ student.student_code }}</p>
+          <div class="rh-single-info-list">
+            <div><i class="fa-solid fa-user"></i><span>Mother Name</span><strong>{{ student.mother_name or "-" }}</strong></div>
+            <div><i class="fa-solid fa-calendar"></i><span>Academic Year</span><strong>{{ selected_year.name }}</strong></div>
+            <div><i class="fa-solid fa-file-lines"></i><span>Exam Type</span><strong>{{ selected_exam.name }}</strong></div>
+            <div><i class="fa-solid fa-layer-group"></i><span>Level</span><strong>{{ student.academic_level.name if student.academic_level else student.level or "-" }}</strong></div>
+            <div><i class="fa-solid fa-chalkboard"></i><span>Class</span><strong>{{ student.academic_class.name if student.academic_class else student.school_class.name if student.school_class else "-" }}</strong></div>
+            <div><i class="fa-solid fa-people-line"></i><span>Section</span><strong>{{ student.academic_section.name if student.academic_section else student.section or "-" }}</strong></div>
+            <div><i class="fa-solid fa-shield-heart"></i><span>Student Status</span><strong>{{ "Active" if student.is_active else "Inactive" }}</strong></div>
+            <div><i class="fa-solid fa-ranking-star"></i><span>Rank</span><strong>{{ rank }}</strong></div>
+          </div>
+        </section>
+
+        <section class="rh-single-card">
+          <h3>Performance Visualization</h3>
+          <div class="rh-chart-wrap">
+            <canvas id="gradeChart" width="260" height="260" aria-label="Grade distribution chart"></canvas>
+          </div>
+        </section>
       </aside>
 
-      <section class="rh-table-card">
-        <table class="rh-table">
-          <thead>
-            <tr>
-              <th>Subject</th>
-              <th>Score</th>
-              <th>%</th>
-              <th>Grade</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for subject_data in subject_data %}
+      <div class="rh-single-left">
+        <div class="rh-single-panel-title">
+          <div>
+            <h2>Subjects &amp; Marks Entry</h2>
+            <p>({{ subject_data|length }} Subjects)</p>
+          </div>
+          <span><i class="fa-solid fa-keyboard"></i> Auto Save Enabled</span>
+        </div>
+
+        <section class="rh-table-card rh-single-table-card">
+          <table class="rh-table rh-single-marks-table">
+            <thead>
               <tr>
-                <td>
-                  <span class="student-name">{{ subject_data.subject.name }}</span>
-                  <span class="mother-name">Max: {{ subject_data.max_score }}</span>
-                </td>
-                <td class="rh-mono">{{ subject_data.score }}</td>
-                <td class="rh-mono">{{ subject_data.percentage }}%</td>
-                <td>
-                  <span class="rh-grade-preview" style="background: {{ subject_data.grade.background_color }}; color: {{ subject_data.grade.text_color }}; border: 1px solid {{ subject_data.grade.border_color }};">
-                    {{ subject_data.grade.grade }}
-                  </span>
-                </td>
+                <th>#</th>
+                <th>Subject Name</th>
+                <th>Full Marks</th>
+                <th>Pass Marks</th>
+                <th>Mark Obtained</th>
+                <th>Remark</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </section>
-    </div>
+            </thead>
+            <tbody>
+              {% for item in subject_data %}
+                <tr class="rh-detail-subject-row">
+                  <td class="rh-mono">{{ loop.index }}</td>
+                  <td>
+                    <span class="student-name">{{ item.subject.name }}</span>
+                    <span class="mother-name">Max score: {{ item.max_score|round(2) }}</span>
+                  </td>
+                  <td class="rh-mono">{{ item.max_score|round(2) }}</td>
+                  <td class="rh-mono">{{ item.pass_mark|round(2) }}</td>
+                  <td>
+                    <input
+                      class="rh-input rh-score rh-single-score"
+                      type="number"
+                      value="{{ item.score if item.score else '' }}"
+                      min="0"
+                      max="{{ item.max_score }}"
+                      step="0.01"
+                      inputmode="decimal"
+                      data-max="{{ item.max_score }}"
+                      data-student-id="{{ student.id }}"
+                      data-subject-id="{{ item.subject.id }}"
+                      name="score_{{ student.id }}_{{ item.subject.id }}"
+                      aria-label="{{ item.subject.name }} mark obtained"
+                    >
+                  </td>
+                  <td>{{ item.remark }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </section>
+
+        <div class="rh-bottom-summary-grid">
+          <div class="rh-bottom-summary-card kpi-total"><i class="fa-solid fa-layer-group"></i><span>Total Marks</span><strong>{{ total_max|round(2) }}</strong></div>
+          <div class="rh-bottom-summary-card kpi-obtained"><i class="fa-solid fa-arrow-trend-up"></i><span>Marks Obtained</span><strong>{{ total_score|round(2) }}</strong></div>
+          <div class="rh-bottom-summary-card kpi-average"><i class="fa-solid fa-chart-pie"></i><span>Average</span><strong>{{ percentage|round(2) }}%</strong></div>
+          <div class="rh-bottom-summary-card kpi-gpa"><i class="fa-solid fa-star-half-stroke"></i><span>Grade Point</span><strong>{{ gp }}</strong></div>
+          <div class="rh-bottom-summary-card kpi-grade"><i class="fa-solid fa-award"></i><span>Overall Grade</span><strong>{{ grade.grade }}</strong></div>
+          <div class="rh-bottom-summary-card kpi-status {{ 'pass' if status == 'Passed' else 'fail' }}"><i class="fa-solid fa-circle-check"></i><span>Status</span><strong>{{ status }}</strong></div>
+        </div>
+      </div>
+    </section>
   </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
-function exportStudentPDF() {
-  window.location.href = `{{ url_for('admin_advanced_results.export_student_pdf') }}?year_id={{ selected_year.id }}&exam_id={{ selected_exam.id }}&student_id={{ student.id }}`;
+const debounceTimers = new Map();
+const pendingInputs = new Set();
+const saveStatus = document.getElementById('saveStatus');
+const contextForm = document.getElementById('singleContextForm');
+const gradeLabels = {{ grade_distribution.keys()|list|tojson }};
+const gradeValues = {{ grade_distribution.values()|list|tojson }};
+
+document.getElementById('singleYearSelect')?.addEventListener('change', () => {
+  document.getElementById('singleExamSelect').value = '';
+  contextForm.submit();
+});
+document.getElementById('singleExamSelect')?.addEventListener('change', () => contextForm.submit());
+
+function setSaveStatus(state, text) {
+  saveStatus.dataset.state = state;
+  saveStatus.querySelector('i').className = `fa-solid ${state === 'error' ? 'fa-triangle-exclamation' : state === 'saving' ? 'fa-rotate' : 'fa-circle-check'}`;
+  saveStatus.querySelector('span').textContent = text;
+}
+
+function validateScore(input) {
+  const maxScore = Number(input.dataset.max);
+  const value = Number(input.value);
+  if (input.value !== '' && (Number.isNaN(value) || value < 0 || value > maxScore)) {
+    input.classList.add('warn');
+    setSaveStatus('error', `Score must be 0-${maxScore}`);
+    return false;
+  }
+  input.classList.remove('warn');
+  return true;
+}
+
+async function autosaveScore(input) {
+  if (!validateScore(input)) return;
+  if (!input.value.trim()) {
+    pendingInputs.delete(input.name);
+    input.dataset.saveState = 'idle';
+    setSaveStatus('idle', 'Saved');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('csrf_token', document.getElementById('csrfToken').value);
+  formData.append('year_id', document.getElementById('yearId').value);
+  formData.append('exam_id', document.getElementById('examId').value);
+  formData.append('level_id', document.getElementById('levelId').value);
+  formData.append('class_id', document.getElementById('classId').value);
+  formData.append('section_id', document.getElementById('sectionId').value);
+  formData.append('student_id', input.dataset.studentId);
+  formData.append('subject_id', input.dataset.subjectId);
+  formData.append('score', input.value);
+
+  input.dataset.saveState = 'saving';
+  setSaveStatus('saving', 'Saving...');
+  try {
+    const response = await fetch('{{ url_for("admin_advanced_results.autosave_result_entry") }}', {
+      method: 'POST',
+      body: formData,
+      credentials: 'same-origin'
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.message || 'Save failed.');
+    pendingInputs.delete(input.name);
+    input.dataset.saveState = 'saved';
+    setSaveStatus('saved', pendingInputs.size ? 'Saving...' : 'Saved');
+  } catch (error) {
+    input.dataset.saveState = 'error';
+    setSaveStatus('error', navigator.onLine ? error.message : 'Offline');
+  }
+}
+
+document.querySelectorAll('.rh-score').forEach(input => {
+  input.addEventListener('focus', () => input.closest('tr')?.classList.add('active-row'));
+  input.addEventListener('blur', () => input.closest('tr')?.classList.remove('active-row'));
+  input.addEventListener('input', () => {
+    validateScore(input);
+    pendingInputs.add(input.name);
+    input.dataset.saveState = 'pending';
+    setSaveStatus('saving', 'Saving...');
+    clearTimeout(debounceTimers.get(input.name));
+    debounceTimers.set(input.name, setTimeout(() => autosaveScore(input), 1200));
+  });
+});
+
+window.addEventListener('online', () => setSaveStatus('idle', 'Saved'));
+window.addEventListener('offline', () => setSaveStatus('error', 'Offline'));
+window.addEventListener('beforeunload', event => {
+  if (pendingInputs.size) {
+    event.preventDefault();
+    event.returnValue = '';
+  }
+});
+
+if (window.Chart && document.getElementById('gradeChart')) {
+  new Chart(document.getElementById('gradeChart'), {
+    type: 'doughnut',
+    data: {
+      labels: gradeLabels,
+      datasets: [{
+        data: gradeValues,
+        backgroundColor: ['#1B2A4A', '#2E5F8A', '#3F7D58', '#C9A227', '#B15A24', '#B23B3B'],
+        borderColor: '#ffffff',
+        borderWidth: 4,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '66%',
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true } }
+      },
+      animation: { animateScale: true, animateRotate: true }
+    }
+  });
 }
 </script>
 {% endblock %}

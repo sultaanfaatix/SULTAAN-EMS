@@ -3,7 +3,7 @@ from decimal import Decimal
 from tempfile import NamedTemporaryFile
 from datetime import date
 
-from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, send_file, session, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from flask_login import login_required
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font
@@ -147,10 +147,14 @@ def get_default_academic_year(year_id=None):
 
 
 def get_latest_exam_for_year(academic_year):
-    """Return the latest exam for the selected academic year."""
+    """Return the latest active exam for the selected academic year, falling back to any latest exam."""
     if not academic_year:
         return None
     return (
+        Exam.query.filter_by(academic_year_id=academic_year.id, is_active=True)
+        .order_by(Exam.id.desc())
+        .first()
+        or
         Exam.query.filter_by(academic_year_id=academic_year.id)
         .order_by(Exam.id.desc())
         .first()
@@ -604,13 +608,20 @@ def student_view():
     selected_exam = db.session.get(Exam, exam_id)
     student = db.session.get(Student, student_id)
     
-    if not selected_year or not selected_exam or not student:
+    if not selected_year or not student:
         flash("Invalid selection.", "warning")
         return redirect(url_for("admin_advanced_results.new_dashboard"))
+    if not selected_exam or selected_exam.academic_year_id != selected_year.id:
+        selected_exam = get_latest_exam_for_year(selected_year)
+    if not selected_exam:
+        flash("Please select an exam type.", "warning")
+        return redirect(url_for("admin_advanced_results.result_entry", year_id=selected_year.id))
     
-    # Get subjects for this exam
-    subjects = Subject.query.filter_by(academic_level_id=selected_exam.academic_level_id).all() if selected_exam.academic_level_id else Subject.query.all()
-    subjects = sorted(subjects, key=lambda s: (s.sort_order, s.name))
+    subjects = subjects_for_scope(
+        selected_exam,
+        level_id=student.academic_level_id,
+        class_id=student.academic_class_id,
+    )
     
     # Get results for this student and exam
     results = Result.query.filter_by(student_id=student.id, exam_id=exam_id).all()
@@ -620,6 +631,7 @@ def student_view():
     subject_data = []
     total_score = 0
     total_max = 0
+    grade_distribution = {}
     
     for subject in subjects:
         result = results_dict.get(subject.id)
@@ -637,14 +649,17 @@ def student_view():
         if result and result.grade_override:
             grade_info = dict(grade_info)
             grade_info["grade"] = result.grade_override
+        grade_distribution[grade_info["grade"]] = grade_distribution.get(grade_info["grade"], 0) + 1
         
         subject_data.append({
             "subject": subject,
             "result": result,
             "score": score,
             "max_score": max_score,
+            "pass_mark": round(max_score * 0.5, 2),
             "percentage": percentage,
             "grade": grade_info,
+            "remark": grade_info.get("comment") or ("Pass" if grade_info.get("is_pass") else "Needs Improvement"),
         })
     
     overall_percentage = (total_score / total_max * 100) if total_max > 0 else 0
@@ -653,9 +668,13 @@ def student_view():
     # Calculate GP
     total_points = sum(s["grade"]["grade_point"] for s in subject_data if s["grade"]["grade_point"])
     gp = round(total_points / len(subject_data), 2) if subject_data else 0
+    status = "Passed" if overall_grade.get("is_pass") else "Failed"
+    rank = "-"
     
     return render_template(
         "admin/student_view.html",
+        years=AcademicYear.query.order_by(AcademicYear.name.desc()).all(),
+        exams=Exam.query.filter_by(academic_year_id=selected_year.id).order_by(Exam.id.desc()).all(),
         selected_year=selected_year,
         selected_exam=selected_exam,
         student=student,
@@ -665,6 +684,9 @@ def student_view():
         percentage=overall_percentage,
         grade=overall_grade,
         gp=gp,
+        rank=rank,
+        status=status,
+        grade_distribution=grade_distribution,
         settings=get_settings(),
     )
 
@@ -1039,16 +1061,20 @@ def result_entry():
     section_id = int_or_none(request.args.get("section_id"))
     
     selected_year = get_default_academic_year(year_id)
-    selected_exam = db.session.get(Exam, exam_id) if exam_id else None
+    selected_exam = db.session.get(Exam, exam_id) if exam_id else get_latest_exam_for_year(selected_year)
+    if selected_exam and selected_year and selected_exam.academic_year_id != selected_year.id:
+        selected_exam = get_latest_exam_for_year(selected_year)
     
     if not selected_year:
         flash("Please select an academic year.", "warning")
         return redirect(url_for("admin_advanced_results.new_dashboard"))
+
+    years = AcademicYear.query.order_by(AcademicYear.name.desc()).all()
+    exams = Exam.query.filter_by(academic_year_id=selected_year.id).order_by(Exam.id.desc()).all() if selected_year else []
+    levels = AcademicLevel.query.filter_by(is_active=True).order_by(AcademicLevel.sort_order).all()
     
     # If no exam selected, show exam selection interface
     if not selected_exam:
-        years = AcademicYear.query.order_by(AcademicYear.name.desc()).all()
-        exams = Exam.query.filter_by(academic_year_id=selected_year.id).order_by(Exam.id.desc()).all() if selected_year else []
         return render_template(
             "admin/result_entry.html",
             selected_year=selected_year,
@@ -1058,8 +1084,17 @@ def result_entry():
             entry_grid=[],
             years=years,
             exams=exams,
+            levels=levels,
+            classes=[],
+            sections=[],
             settings=get_settings(),
         )
+
+    level_id = level_id or selected_exam.academic_level_id
+    class_id = class_id or selected_exam.academic_class_id
+    section_id = section_id or selected_exam.academic_section_id
+    classes = AcademicClass.query.filter_by(academic_level_id=level_id, is_active=True).order_by(AcademicClass.sort_order, AcademicClass.name).all() if level_id else []
+    sections = AcademicSection.query.filter_by(academic_class_id=class_id, is_active=True).order_by(AcademicSection.sort_order, AcademicSection.name).all() if class_id else []
     
     # Build scope info
     scope_info = {
@@ -1069,16 +1104,18 @@ def result_entry():
     }
     
     subjects = subjects_for_scope(selected_exam, level_id=level_id, class_id=class_id)
-    students = (
-        students_for_scope_query(
-            selected_year.id,
-            level_id=level_id,
-            class_id=class_id,
-            section_id=section_id,
+    students = []
+    if level_id and class_id:
+        students = (
+            students_for_scope_query(
+                selected_year.id,
+                level_id=level_id,
+                class_id=class_id,
+                section_id=section_id,
+            )
+            .order_by(Student.full_name)
+            .all()
         )
-        .order_by(Student.full_name)
-        .all()
-    )
     
     # Get existing results for these students and this exam
     student_ids = [s.id for s in students]
@@ -1102,9 +1139,6 @@ def result_entry():
             }
         entry_grid.append(row_data)
     
-    years = AcademicYear.query.order_by(AcademicYear.name.desc()).all()
-    exams = Exam.query.filter_by(academic_year_id=selected_year.id).order_by(Exam.id.desc()).all() if selected_year else []
-    
     return render_template(
         "admin/result_entry.html",
         selected_year=selected_year,
@@ -1114,8 +1148,71 @@ def result_entry():
         entry_grid=entry_grid,
         years=years,
         exams=exams,
+        levels=levels,
+        classes=classes,
+        sections=sections,
         settings=get_settings(),
     )
+
+
+@advanced_results_bp.route("/result-entry/autosave", methods=["POST"])
+def autosave_result_entry():
+    """Autosave a single score from the Results Hub entry grid."""
+    year_id = int_or_none(request.form.get("year_id"))
+    exam_id = int_or_none(request.form.get("exam_id"))
+    level_id = int_or_none(request.form.get("level_id"))
+    class_id = int_or_none(request.form.get("class_id"))
+    section_id = int_or_none(request.form.get("section_id"))
+    student_id = int_or_none(request.form.get("student_id"))
+    subject_id = int_or_none(request.form.get("subject_id"))
+    raw_score = request.form.get("score", "").strip()
+
+    selected_year = db.session.get(AcademicYear, year_id)
+    selected_exam = db.session.get(Exam, exam_id)
+    student = db.session.get(Student, student_id)
+    subject = db.session.get(Subject, subject_id)
+
+    if not selected_year or not selected_exam or not student or not subject:
+        return jsonify({"ok": False, "message": "Invalid result context."}), 400
+
+    in_scope = students_for_scope_query(
+        selected_year.id,
+        level_id=level_id,
+        class_id=class_id,
+        section_id=section_id,
+    ).filter(Student.id == student.id).first()
+    if not in_scope:
+        return jsonify({"ok": False, "message": "Student is outside the selected scope."}), 400
+
+    if not raw_score:
+        return jsonify({"ok": True, "status": "empty", "message": "No score entered."})
+
+    try:
+        score = float(raw_score)
+    except ValueError:
+        return jsonify({"ok": False, "message": "Invalid score."}), 400
+
+    max_score = float(subject.max_score)
+    if score < 0 or score > max_score:
+        return jsonify({"ok": False, "message": f"Score must be between 0 and {max_score:g}."}), 400
+
+    result = Result.query.filter_by(student_id=student.id, exam_id=selected_exam.id, subject_id=subject.id).first()
+    if not result:
+        result = Result(student=student, exam=selected_exam, subject=subject)
+        db.session.add(result)
+
+    result.score = score
+    result.is_published = True
+    audit("Result Entry", f"Autosaved {student.student_code} - {subject.name}: {score:g}")
+    db.session.commit()
+
+    return jsonify({
+        "ok": True,
+        "status": "saved",
+        "score": score,
+        "student_id": student.id,
+        "subject_id": subject.id,
+    })
 
 
 @advanced_results_bp.route("/result-entry/save", methods=["POST"])
