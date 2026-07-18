@@ -20,6 +20,20 @@ class Config:
     )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 1800,
+        "pool_size": 5,
+        "max_overflow": 10,
+        "pool_timeout": 30,
+        "connect_args": {"connect_timeout": 10},
+    }
+
+    if SQLALCHEMY_DATABASE_URI.startswith("sqlite"):
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            "pool_pre_ping": True,
+            "pool_recycle": 1800,
+        }
 
     WTF_CSRF_TIME_LIMIT = None
 

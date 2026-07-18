@@ -20,6 +20,12 @@ def create_app(config_class=Config):
     csrf.init_app(app)
     login_manager.init_app(app)
 
+    @app.teardown_appcontext
+    def cleanup_database_session(exception=None):
+        if exception is not None:
+            db.session.rollback()
+        db.session.remove()
+
     from .models import User, Setting
     from .permissions import can
     from .services import DEFAULT_SETTINGS, seed_grade_scales
