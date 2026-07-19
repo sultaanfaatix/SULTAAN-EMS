@@ -1841,7 +1841,7 @@ def students_management():
     search_query = request.args.get("q", "").strip()
     status_filter = request.args.get("status_filter", "")
     page = int_or_none(request.args.get("page", 1)) or 1
-    per_page = 9  # Students per page for balanced layout
+    per_page = 7  # Students per page for balanced layout
     
     # Get selected year
     selected_year = db.session.get(AcademicYear, year_id) if year_id else AcademicYear.query.filter_by(is_current=True).first()
