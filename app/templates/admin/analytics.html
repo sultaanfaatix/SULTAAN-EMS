@@ -17,12 +17,12 @@
         <span class="rh-current">{{ rh_label("analytics.title", default="Analytics") }}</span>
       </div>
       <div class="rh-compact-selectors">
-        <select id="year-selector" onchange="changeYear()" class="rh-compact-select">
+        <select id="year-selector" onchange="changeYear()" class="rh-compact-select context-year">
           {% for year in years %}
             <option value="{{ year.id }}" {% if selected_year and selected_year.id == year.id %}selected{% endif %}>{{ year.name }}</option>
           {% endfor %}
         </select>
-        <select id="exam-selector" onchange="changeExam()" class="rh-compact-select">
+        <select id="exam-selector" onchange="changeExam()" class="rh-compact-select context-exam">
           <option value="">{{ rh_label("analytics.select_exam", default="Select Exam") }}</option>
           {% for exam in exams %}
             <option value="{{ exam.id }}" {% if selected_exam and selected_exam.id == exam.id %}selected{% endif %}>{{ exam.name }}</option>
@@ -32,7 +32,7 @@
     </div>
 
     <div class="rh-filter-grid">
-      <div class="rh-filter-card">
+      <div class="rh-filter-card context-level">
         <div class="rh-filter-icon"><i class="fa-solid fa-layer-group"></i></div>
         <label>{{ rh_label("analytics.level", default="Level") }}</label>
         <select id="level-selector" onchange="changeLevel()">
@@ -42,7 +42,7 @@
           {% endfor %}
         </select>
       </div>
-      <div class="rh-filter-card">
+      <div class="rh-filter-card context-class">
         <div class="rh-filter-icon"><i class="fa-solid fa-users"></i></div>
         <label>{{ rh_label("analytics.class", default="Class") }}</label>
         <select id="class-selector" onchange="changeClass()">
@@ -52,7 +52,7 @@
           {% endfor %}
         </select>
       </div>
-      <div class="rh-filter-card">
+      <div class="rh-filter-card context-section">
         <div class="rh-filter-icon"><i class="fa-solid fa-grip"></i></div>
         <label>{{ rh_label("analytics.section", default="Section") }}</label>
         <select id="section-selector" onchange="changeSection()">
@@ -62,7 +62,7 @@
           {% endfor %}
         </select>
       </div>
-      <div class="rh-filter-card">
+      <div class="rh-filter-card context-subject">
         <div class="rh-filter-icon"><i class="fa-solid fa-book-open"></i></div>
         <label>{{ rh_label("analytics.subject", default="Subject") }}</label>
         <select id="subject-selector" onchange="changeSubject()">

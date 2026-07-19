@@ -1,10 +1,11 @@
 from collections import defaultdict
 from decimal import Decimal
+import math
 from tempfile import NamedTemporaryFile
 from datetime import date
 
 from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
-from flask_login import login_required
+from flask_login import current_user, login_required
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font
 from sqlalchemy import or_ as db_or
@@ -19,6 +20,13 @@ from .security import ALLOWED_PHOTOS, ALLOWED_SHEETS, allowed_file
 from .services import get_label, get_settings, grade_for, result_payload
 
 advanced_results_bp = Blueprint("admin_advanced_results", __name__)
+
+
+def ordinal(value):
+    suffix = "th"
+    if value % 100 not in (11, 12, 13):
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(value % 10, "th")
+    return f"{value}{suffix}"
 
 
 @advanced_results_bp.before_request
@@ -216,6 +224,49 @@ def students_for_scope_query(academic_year_id, level_id=None, class_id=None, sec
         query = query.filter(db_or(*section_filters))
 
     return query
+
+
+def rank_student_in_scope(student, academic_year_id, exam, subjects, level_id=None, class_id=None, section_id=None):
+    """Return the student's rank within the selected academic scope."""
+    if not student or not exam or not subjects:
+        return "-"
+
+    scoped_students = students_for_scope_query(
+        academic_year_id,
+        level_id=level_id,
+        class_id=class_id,
+        section_id=section_id,
+        exam=exam,
+    ).all()
+    if not scoped_students:
+        return "-"
+
+    student_ids = [row.id for row in scoped_students]
+    results = Result.query.filter(
+        Result.exam_id == exam.id,
+        Result.student_id.in_(student_ids),
+    ).all()
+    results_by_student = {}
+    for result in results:
+        results_by_student.setdefault(result.student_id, {})[result.subject_id] = result
+
+    ranked = []
+    for scoped_student in scoped_students:
+        total_score = 0
+        total_max = 0
+        student_results = results_by_student.get(scoped_student.id, {})
+        for subject in subjects:
+            result = student_results.get(subject.id)
+            total_score += float(result.score) if result else 0
+            total_max += float(subject.max_score)
+        percentage = (total_score / total_max * 100) if total_max > 0 else 0
+        ranked.append((scoped_student.id, percentage, total_score))
+
+    ranked.sort(key=lambda item: (item[1], item[2]), reverse=True)
+    for index, (student_id, _percentage, _total_score) in enumerate(ranked, start=1):
+        if student_id == student.id:
+            return index
+    return "-"
 
 
 @advanced_results_bp.route("/")
@@ -481,24 +532,61 @@ def class_roster():
     search_query = request.args.get("q", "").strip()
     
     selected_year = get_default_academic_year(year_id)
-    selected_exam = db.session.get(Exam, exam_id) if exam_id else None
+    selected_exam = db.session.get(Exam, exam_id) if exam_id else get_latest_exam_for_year(selected_year)
+    if selected_exam and selected_year and selected_exam.academic_year_id != selected_year.id:
+        selected_exam = get_latest_exam_for_year(selected_year)
     
     if not selected_year:
         flash("Please select an academic year.", "warning")
         return redirect(url_for("admin_advanced_results.new_dashboard"))
+
+    years = AcademicYear.query.order_by(AcademicYear.name.desc()).all()
+    exams = Exam.query.filter_by(academic_year_id=selected_year.id).order_by(Exam.id.desc()).all() if selected_year else []
+    levels = AcademicLevel.query.filter_by(is_active=True).order_by(AcademicLevel.sort_order).all()
+    level_id = level_id or (selected_exam.academic_level_id if selected_exam else None)
+    class_id = class_id or (selected_exam.academic_class_id if selected_exam else None)
+    section_id = section_id or (selected_exam.academic_section_id if selected_exam else None)
+    classes = AcademicClass.query.filter_by(academic_level_id=level_id, is_active=True).order_by(AcademicClass.sort_order, AcademicClass.name).all() if level_id else []
+    sections = AcademicSection.query.filter_by(academic_class_id=class_id, is_active=True).order_by(AcademicSection.sort_order, AcademicSection.name).all() if class_id else []
+
+    scope_info = {
+        "level": db.session.get(AcademicLevel, level_id) if level_id else None,
+        "class": db.session.get(AcademicClass, class_id) if class_id else None,
+        "section": db.session.get(AcademicSection, section_id) if section_id else None,
+    }
     
     # If no exam selected, show exam selection interface
     if not selected_exam:
-        years = AcademicYear.query.order_by(AcademicYear.name.desc()).all()
-        exams = Exam.query.filter_by(academic_year_id=selected_year.id).order_by(Exam.id.desc()).all() if selected_year else []
         return render_template(
             "admin/class_roster.html",
             selected_year=selected_year,
             selected_exam=None,
-            scope_info={},
+            scope_info=scope_info,
             students=[],
+            subjects=[],
             years=years,
             exams=exams,
+            levels=levels,
+            classes=classes,
+            sections=sections,
+            search_query=search_query,
+            settings=get_settings(),
+        )
+
+    if not (level_id and class_id):
+        return render_template(
+            "admin/class_roster.html",
+            selected_year=selected_year,
+            selected_exam=selected_exam,
+            scope_info=scope_info,
+            students=[],
+            subjects=[],
+            years=years,
+            exams=exams,
+            levels=levels,
+            classes=classes,
+            sections=sections,
+            search_query=search_query,
             settings=get_settings(),
         )
     
@@ -578,15 +666,6 @@ def class_roster():
             "gp": gp,
         })
     
-    # Get scope information for breadcrumb
-    scope_info = {}
-    if level_id:
-        scope_info["level"] = db.session.get(AcademicLevel, level_id)
-    if class_id:
-        scope_info["class"] = db.session.get(AcademicClass, class_id)
-    if section_id:
-        scope_info["section"] = db.session.get(AcademicSection, section_id)
-    
     return render_template(
         "admin/class_roster.html",
         selected_year=selected_year,
@@ -594,6 +673,11 @@ def class_roster():
         scope_info=scope_info,
         students=roster_data,
         subjects=subjects,
+        years=years,
+        exams=exams,
+        levels=levels,
+        classes=classes,
+        sections=sections,
         search_query=search_query,
         settings=get_settings(),
     )
@@ -627,7 +711,7 @@ def student_view():
     )
     
     # Get results for this student and exam
-    results = Result.query.filter_by(student_id=student.id, exam_id=exam_id).all()
+    results = Result.query.filter_by(student_id=student.id, exam_id=selected_exam.id).all()
     results_dict = {r.subject_id: r for r in results}
     
     # Build subject data
@@ -646,7 +730,7 @@ def student_view():
         total_max += max_score
         
         # Get grade using exam-specific grade scale
-        grade_info = grade_for(percentage, exam_id=exam_id)
+        grade_info = grade_for(percentage, exam_id=selected_exam.id)
         
         # Apply grade_override if present
         if result and result.grade_override:
@@ -666,13 +750,21 @@ def student_view():
         })
     
     overall_percentage = (total_score / total_max * 100) if total_max > 0 else 0
-    overall_grade = grade_for(overall_percentage, exam_id=exam_id)
+    overall_grade = grade_for(overall_percentage, exam_id=selected_exam.id)
     
     # Calculate GP
     total_points = sum(s["grade"]["grade_point"] for s in subject_data if s["grade"]["grade_point"])
     gp = round(total_points / len(subject_data), 2) if subject_data else 0
     status = "Passed" if overall_grade.get("is_pass") else "Failed"
-    rank = "-"
+    rank = rank_student_in_scope(
+        student,
+        selected_year.id,
+        selected_exam,
+        subjects,
+        level_id=student.academic_level_id,
+        class_id=student.academic_class_id,
+        section_id=student.academic_section_id,
+    )
     
     return render_template(
         "admin/student_view.html",
@@ -849,6 +941,8 @@ def export_class_pdf():
     
     if not selected_year or not selected_exam:
         abort(404)
+    if not (level_id and class_id):
+        abort(400)
     
     students = (
         students_for_scope_query(
@@ -897,9 +991,6 @@ def export_class_pdf():
         overall_percentage = (total_score / total_max * 100) if total_max > 0 else 0
         overall_grade = grade_for(overall_percentage, exam_id=exam_id)
         
-        total_points = sum(s["grade"]["grade_point"] for s in subject_data if s["grade"]["grade_point"])
-        gp = round(total_points / len(subject_data), 2) if subject_data else 0
-        
         roster_data.append({
             "student": student,
             "subject_data": subject_data,
@@ -907,12 +998,35 @@ def export_class_pdf():
             "total_max": total_max,
             "percentage": overall_percentage,
             "grade": overall_grade,
-            "gp": gp,
         })
+
+    ranked_data = sorted(roster_data, key=lambda row: (row["percentage"], row["total_score"]), reverse=True)
+    rank_lookup = {row["student"].id: index for index, row in enumerate(ranked_data, start=1)}
+    for row in roster_data:
+        row["rank"] = rank_lookup.get(row["student"].id, 0)
+        row["rank_label"] = ordinal(row["rank"]) if row["rank"] else "-"
     
     # Calculate class stats
     class_average = round(sum(r["percentage"] for r in roster_data) / len(roster_data), 2) if roster_data else 0
-    class_gpa = round(sum(r["gp"] for r in roster_data) / len(roster_data), 2) if roster_data else 0
+    highest_total = round(max((row["total_score"] for row in roster_data), default=0), 2)
+    lowest_total = round(min((row["total_score"] for row in roster_data), default=0), 2)
+    average_total = round(sum(row["total_score"] for row in roster_data) / len(roster_data), 2) if roster_data else 0
+    passed_count = sum(1 for row in roster_data if row["grade"].get("is_pass"))
+    failed_count = len(roster_data) - passed_count
+    pass_rate = round((passed_count / len(roster_data) * 100), 2) if roster_data else 0
+    highest_score = max((row["percentage"] for row in roster_data), default=0)
+    lowest_score = min((row["percentage"] for row in roster_data), default=0)
+    subject_stats = []
+    for index, subject in enumerate(subjects):
+        scores = [float(row["subject_data"][index]["score"]) for row in roster_data if index < len(row["subject_data"])]
+        subject_stats.append({
+            "subject": subject,
+            "highest": round(max(scores), 2) if scores else 0,
+            "lowest": round(min(scores), 2) if scores else 0,
+            "average": round(sum(scores) / len(scores), 2) if scores else 0,
+        })
+    students_per_page = 15
+    total_pages = max(1, math.ceil(len(roster_data) / students_per_page))
     
     # Get scope info
     scope_info = {}
@@ -932,10 +1046,21 @@ def export_class_pdf():
         scope_info=scope_info,
         students=roster_data,
         subjects=subjects,
+        subject_stats=subject_stats,
         class_average=class_average,
-        class_gpa=class_gpa,
+        highest_total=highest_total,
+        lowest_total=lowest_total,
+        average_total=average_total,
+        passed_count=passed_count,
+        failed_count=failed_count,
+        pass_rate=pass_rate,
+        highest_score=round(highest_score, 2),
+        lowest_score=round(lowest_score, 2),
         completed_count=len(roster_data),
+        students_per_page=students_per_page,
+        total_pages=total_pages,
         settings=settings,
+        generated_by=current_user.full_name or current_user.username,
         date=date.today(),
     )
 
@@ -954,6 +1079,8 @@ def export_class_excel():
     
     if not selected_year or not selected_exam:
         abort(404)
+    if not (level_id and class_id):
+        abort(400)
     
     students = (
         students_for_scope_query(

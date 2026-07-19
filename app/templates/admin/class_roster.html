@@ -11,64 +11,162 @@
   <main class="rh-screen">
     <div class="rh-toolbar">
       <div>
-        <div class="rh-eyebrow">{{ scope_info.class.name if scope_info.class else rh_label("roster.eyebrow", default="Form 4") }} · {{ selected_exam.name }} · {{ selected_year.name }}</div>
+        <div class="rh-eyebrow">
+          {{ scope_info.class.name if scope_info and scope_info.class else rh_label("roster.eyebrow", default="Class Result List") }}
+          {% if selected_exam %} · {{ selected_exam.name }}{% endif %}
+          · {{ selected_year.name }}
+        </div>
         <h1 class="rh-title">{{ rh_label("roster.title", default="Liiska Natiijada Fasalka") }}</h1>
         <p class="rh-desc">{{ students|length }} {{ rh_label("roster.students", default="arday") }}</p>
       </div>
       <div style="display:flex; gap: 12px; align-items:center;">
-        <button class="rh-btn outline" onclick="exportExcel()">{{ rh_label("roster.export_excel", default="Export Excel") }}</button>
-        <button class="rh-btn outline" onclick="exportPDF()">{{ rh_label("roster.export_pdf", default="Export PDF") }}</button>
+        <button class="rh-btn outline" onclick="exportExcel()" {% if not (selected_exam and scope_info and scope_info.level and scope_info.class) %}disabled{% endif %}>{{ rh_label("roster.export_excel", default="Export Excel") }}</button>
+        <button class="rh-btn outline" onclick="exportPDF()" {% if not (selected_exam and scope_info and scope_info.level and scope_info.class) %}disabled{% endif %}>{{ rh_label("roster.export_pdf", default="Export PDF") }}</button>
       </div>
     </div>
 
-    <div class="results-search-box" style="margin-bottom: 22px;">
-      <span class="results-search-icon">🔍</span>
-      <input class="results-search-input" type="text" placeholder="{{ rh_label('roster.search', default='Raadi arday ID ama magac...') }}" value="{{ search_query }}" onkeyup="handleSearch(event)">
-    </div>
-
-    <div class="rh-table-card">
-      <table class="rh-table">
-        <thead>
-          <tr>
-            <th style="width:110px;">ID</th>
-            <th>{{ rh_label("roster.student_name", default="Magaca") }}</th>
-            {% for subject in subjects %}
-              <th class="mono">{{ subject.code or subject.name[:3]|upper }}{{ selected_year.name[-2:] if selected_year else "" }}</th>
+    <form class="rh-entry-filter-grid" id="rosterFilterForm" method="GET" action="{{ url_for('admin_advanced_results.class_roster') }}">
+      <label class="rh-entry-filter-card context-year">
+        <span class="rh-filter-icon"><i class="fa-solid fa-calendar-days"></i></span>
+        <span class="rh-filter-copy">
+          <span class="rh-filter-title">Academic Year</span>
+          <select name="year_id" id="yearSelect">
+            {% for year in years %}
+              <option value="{{ year.id }}" {% if selected_year and selected_year.id == year.id %}selected{% endif %}>{{ year.name }}{% if year.is_current %} ✓{% endif %}</option>
             {% endfor %}
-            <th>{{ rh_label("roster.total", default="Total") }}</th>
-            <th>%</th>
-            <th>{{ rh_label("roster.grade", default="Grade") }}</th>
-            <th class="mono">GP</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for student_data in students %}
-            <tr onclick="viewStudent({{ student_data.student.id }})" style="cursor:pointer;">
-              <td class="rh-mono">{{ student_data.student.student_code }}</td>
-              <td>
-                <span class="student-name">{{ student_data.student.full_name }}</span>
-                {% if student_data.student.mother_name %}<span class="mother-name">({{ student_data.student.mother_name }})</span>{% endif %}
-              </td>
-              {% for subject_data in student_data.subject_data %}
-                <td class="rh-mono">{{ subject_data.score|round(1) }}</td>
+          </select>
+        </span>
+      </label>
+
+      <label class="rh-entry-filter-card context-exam">
+        <span class="rh-filter-icon"><i class="fa-solid fa-file-pen"></i></span>
+        <span class="rh-filter-copy">
+          <span class="rh-filter-title">Exam Type</span>
+          <select name="exam_id" id="examSelect">
+            {% for exam in exams %}
+              <option value="{{ exam.id }}" {% if selected_exam and selected_exam.id == exam.id %}selected{% endif %}>{{ exam.name }}</option>
+            {% endfor %}
+          </select>
+        </span>
+      </label>
+
+      <label class="rh-entry-filter-card context-level">
+        <span class="rh-filter-icon"><i class="fa-solid fa-layer-group"></i></span>
+        <span class="rh-filter-copy">
+          <span class="rh-filter-title">Level</span>
+          <select name="level_id" id="levelSelect">
+            <option value="">Select level</option>
+            {% for level in levels %}
+              <option value="{{ level.id }}" {% if scope_info and scope_info.level and scope_info.level.id == level.id %}selected{% endif %}>{{ level.name }}</option>
+            {% endfor %}
+          </select>
+        </span>
+      </label>
+
+      <div class="rh-entry-filter-card context-class">
+        <span class="rh-filter-icon"><i class="fa-solid fa-chalkboard-user"></i></span>
+        <span class="rh-filter-copy">
+          <span class="rh-filter-title">Class</span>
+          <select name="class_id" id="classSelect">
+            <option value="">Select class</option>
+            {% for class_item in classes %}
+              <option value="{{ class_item.id }}" {% if scope_info and scope_info.class and scope_info.class.id == class_item.id %}selected{% endif %}>{{ class_item.name }}</option>
+            {% endfor %}
+          </select>
+          <select name="section_id" id="sectionSelect" class="rh-section-select">
+            <option value="">All sections</option>
+            {% for section in sections %}
+              <option value="{{ section.id }}" {% if scope_info and scope_info.section and scope_info.section.id == section.id %}selected{% endif %}>{{ section.name }}</option>
+            {% endfor %}
+          </select>
+        </span>
+      </div>
+    </form>
+
+    {% if selected_exam and scope_info and scope_info.level and scope_info.class %}
+      <div class="results-search-box" style="margin-bottom: 22px;">
+        <span class="results-search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input class="results-search-input" type="text" placeholder="{{ rh_label('roster.search', default='Raadi arday ID ama magac...') }}" value="{{ search_query }}" onkeyup="handleSearch(event)">
+      </div>
+    {% endif %}
+
+    {% if not selected_exam %}
+      <div class="rh-entry-empty">
+        <i class="fa-solid fa-file-circle-question"></i>
+        <h2>Select an exam type</h2>
+        <p>Choose an academic year and exam type before loading a class list.</p>
+      </div>
+    {% elif not (scope_info and scope_info.level and scope_info.class) %}
+      <div class="rh-entry-empty">
+        <i class="fa-solid fa-filter"></i>
+        <h2>Select level and class</h2>
+        <p>The class result list loads only after the academic context is defined.</p>
+      </div>
+    {% else %}
+      <div class="rh-table-card">
+        <table class="rh-table">
+          <thead>
+            <tr>
+              <th style="width:110px;">ID</th>
+              <th>{{ rh_label("roster.student_name", default="Magaca") }}</th>
+              {% for subject in subjects %}
+                <th class="mono">{{ subject.code or subject.name[:3]|upper }}{{ selected_year.name[-2:] if selected_year else "" }}</th>
               {% endfor %}
-              <td class="rh-mono"><strong>{{ student_data.total_score|round(1) }}/{{ student_data.total_max|round(0) }}</strong></td>
-              <td class="rh-mono">{{ student_data.percentage|round(1) }}%</td>
-              <td>
-                <span class="rh-grade-preview" style="background: {{ student_data.grade.background_color }}; color: {{ student_data.grade.text_color }}; border: 1px solid {{ student_data.grade.border_color }};">
-                  {{ student_data.grade.grade }}
-                </span>
-              </td>
-              <td class="rh-mono">{{ student_data.gp }}</td>
+              <th>{{ rh_label("roster.total", default="Total") }}</th>
+              <th>%</th>
+              <th>{{ rh_label("roster.grade", default="Grade") }}</th>
+              <th class="mono">GP</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {% for student_data in students %}
+              <tr onclick="viewStudent({{ student_data.student.id }})" style="cursor:pointer;">
+                <td class="rh-mono">{{ student_data.student.student_code }}</td>
+                <td>
+                  <span class="student-name">{{ student_data.student.full_name }}</span>
+                  {% if student_data.student.mother_name %}<span class="mother-name">({{ student_data.student.mother_name }})</span>{% endif %}
+                </td>
+                {% for subject_data in student_data.subject_data %}
+                  <td class="rh-mono">{{ subject_data.score|round(1) }}</td>
+                {% endfor %}
+                <td class="rh-mono"><strong>{{ student_data.total_score|round(1) }}/{{ student_data.total_max|round(0) }}</strong></td>
+                <td class="rh-mono">{{ student_data.percentage|round(1) }}%</td>
+                <td>
+                  <span class="rh-grade-preview" style="background: {{ student_data.grade.background_color }}; color: {{ student_data.grade.text_color }}; border: 1px solid {{ student_data.grade.border_color }};">
+                    {{ student_data.grade.grade }}
+                  </span>
+                </td>
+                <td class="rh-mono">{{ student_data.gp }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="{{ subjects|length + 6 }}" style="text-align:center; padding: 32px; color: var(--slate);">No students found for this class.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
   </main>
 </div>
 
 <script>
+const rosterFilterForm = document.getElementById('rosterFilterForm');
+
+function submitRosterFilters(resetFields = []) {
+  resetFields.forEach(id => {
+    const field = document.getElementById(id);
+    if (field) field.value = '';
+  });
+  rosterFilterForm.submit();
+}
+
+document.getElementById('yearSelect')?.addEventListener('change', () => submitRosterFilters(['examSelect', 'levelSelect', 'classSelect', 'sectionSelect']));
+document.getElementById('examSelect')?.addEventListener('change', () => submitRosterFilters([]));
+document.getElementById('levelSelect')?.addEventListener('change', () => submitRosterFilters(['classSelect', 'sectionSelect']));
+document.getElementById('classSelect')?.addEventListener('change', () => submitRosterFilters(['sectionSelect']));
+document.getElementById('sectionSelect')?.addEventListener('change', () => submitRosterFilters([]));
+
 function handleSearch(event) {
   if (event.key === 'Enter') {
     const url = new URL(window.location.href);
@@ -78,11 +176,11 @@ function handleSearch(event) {
 }
 
 function viewStudent(studentId) {
-  window.location.href = `{{ url_for('admin_advanced_results.student_view') }}?year_id={{ selected_year.id }}&exam_id={{ selected_exam.id }}&student_id=${studentId}`;
+  window.location.href = `{{ url_for('admin_advanced_results.student_view') }}?year_id={{ selected_year.id }}&exam_id={{ selected_exam.id if selected_exam else '' }}&student_id=${studentId}`;
 }
 
 function scopedExportUrl(baseUrl) {
-  const params = new URLSearchParams({year_id: '{{ selected_year.id }}', exam_id: '{{ selected_exam.id }}'});
+  const params = new URLSearchParams({year_id: '{{ selected_year.id }}', exam_id: '{{ selected_exam.id if selected_exam else "" }}'});
   {% if scope_info.level %}params.set('level_id', '{{ scope_info.level.id }}');{% endif %}
   {% if scope_info.class %}params.set('class_id', '{{ scope_info.class.id }}');{% endif %}
   {% if scope_info.section %}params.set('section_id', '{{ scope_info.section.id }}');{% endif %}

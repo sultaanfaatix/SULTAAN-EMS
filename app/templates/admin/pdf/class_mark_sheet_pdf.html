@@ -3,439 +3,654 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Class Mark Sheet - {{ selected_exam.name }}</title>
+    <title>Whole Class Results - {{ selected_exam.name }}</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-        
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
         @page {
             size: A4 landscape;
             margin: 0;
         }
-        
+
         :root {
-            --navy: #1B2A4A;
-            --navy-deep: #121E38;
-            --gold: #C9A227;
-            --gold-soft: #EFDFA4;
-            --paper: #F7F5EF;
-            --paper-line: #E7E2D4;
-            --paper-line-print: #D8D2C0;
-            --ink: #242A35;
-            --slate: #5B6472;
-            --green: #3F7D58;
-            --green-bg: #E7F1EA;
-            --blue: #2E5F8A;
-            --blue-bg: #E4EEF7;
-            --amber: #8a6d1a;
-            --amber-bg: #FBF3DE;
-            --orange: #B15A24;
-            --orange-bg: #FBE9DA;
-            --red: #B23B3B;
-            --red-bg: #F7E9E7;
+            --navy: #102A5C;
+            --navy-deep: #081C3D;
+            --gold: #C89A2A;
+            --white: #FFFFFF;
+            --line: #E7E7E7;
+            --soft: #F7F8FA;
+            --ink: #1E293B;
+            --muted: #64748B;
+            --green: #23924D;
+            --blue: #2D89D9;
+            --teal: #10A6A6;
+            --orange: #F5A400;
+            --deep-orange: #F05A24;
+            --red: #E63746;
+            --silver: #A8B0BA;
+            --bronze: #C47A3A;
         }
-        
+
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
-        
+
         body {
-            font-family: 'Inter', sans-serif;
+            background: #eef2f7;
             color: var(--ink);
-            background-color: white;
-            line-height: 1.4;
-            font-size: 11pt;
+            font-family: "Inter", Arial, sans-serif;
+            font-size: 7.2pt;
+            line-height: 1.22;
         }
-        
-        .font-serif {
-            font-family: 'Fraunces', Georgia, serif;
-        }
-        
-        .font-mono {
-            font-family: 'JetBrains Mono', monospace;
-        }
-        
+
         .page {
             width: 297mm;
             height: 210mm;
-            padding: 10mm;
-            background: white;
+            margin: 0 auto;
+            padding: 2.2mm;
+            background: var(--white);
+            border: 1px solid #cfd7e3;
+            border-radius: 12px;
+            box-shadow: 0 14px 34px rgba(8, 28, 61, .12);
+            overflow: hidden;
+            page-break-after: always;
         }
-        
-        .header {
-            background-color: var(--navy);
-            color: white;
-            padding: 8mm;
-            text-align: center;
-            border-bottom: 3px solid var(--gold);
-            margin-bottom: 5mm;
+
+        .page:last-child {
+            page-break-after: auto;
         }
-        
-        .school-name {
-            font-family: 'Fraunces', Georgia, serif;
-            font-size: 16pt;
-            font-weight: 700;
-            margin-bottom: 2mm;
+
+        .sheet {
+            height: 100%;
+            display: grid;
+            grid-template-rows: 25mm minmax(0, 1fr) 18mm;
+            gap: 1.6mm;
         }
-        
-        .school-motto {
-            color: var(--gold-soft);
-            font-size: 9pt;
+
+        .top-header {
+            display: grid;
+            grid-template-columns: .92fr 1.08fr;
+            gap: 5mm;
+            padding: 1.4mm 2mm 1.6mm;
+            border-bottom: 1px solid var(--line);
         }
-        
-        .meta-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 5mm;
-            padding: 3mm 5mm;
-            background-color: var(--paper);
-            border: 1px solid var(--paper-line-print);
-            border-radius: 4px;
+
+        .brand-block {
+            display: grid;
+            grid-template-columns: 19mm minmax(0, 1fr);
+            align-items: start;
+            gap: 2.6mm;
+            border-right: 1px solid var(--gold);
+            padding-right: 3mm;
         }
-        
-        .form-badge {
-            background-color: var(--navy);
-            color: var(--gold);
-            padding: 2mm 6mm;
-            font-family: 'Fraunces', Georgia, serif;
-            font-weight: 700;
-            font-size: 12pt;
-            border-radius: 4px;
+
+        .brand-emblem {
+            width: 18mm;
+            height: 21mm;
+            display: grid;
+            place-items: center;
+            padding: 1.6mm;
+            background: linear-gradient(145deg, var(--navy), var(--navy-deep));
+            border: 1.2mm solid var(--gold);
+            border-radius: 8px 8px 13px 13px;
+            box-shadow: 0 5px 14px rgba(8, 28, 61, .24);
         }
-        
-        .exam-info {
-            text-align: center;
-        }
-        
-        .exam-info h2 {
-            font-family: 'Fraunces', Georgia, serif;
-            font-size: 14pt;
-            color: var(--navy);
-            margin-bottom: 1mm;
-        }
-        
-        .exam-info p {
-            font-size: 9pt;
-            color: var(--slate);
-        }
-        
-        .title-block {
-            text-align: center;
-            margin-bottom: 5mm;
-            padding: 4mm;
-            background-color: var(--paper);
-            border: 1px solid var(--paper-line-print);
-            border-radius: 4px;
-        }
-        
-        .title-block h1 {
-            font-family: 'Fraunces', Georgia, serif;
-            font-size: 18pt;
-            color: var(--navy);
-            margin-bottom: 2mm;
-        }
-        
-        .title-block p {
-            font-size: 9pt;
-            color: var(--slate);
-        }
-        
-        table {
+
+        .brand-emblem img {
             width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 5mm;
-            font-size: 9pt;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,.18));
         }
-        
-        thead {
-            background-color: var(--navy);
+
+        .brand-emblem span {
+            color: #fff;
+            font-weight: 900;
+            font-size: 13pt;
+            letter-spacing: .04em;
         }
-        
-        th {
-            font-family: 'Inter', sans-serif;
-            font-size: 8pt;
-            font-weight: 600;
+
+        .school-name {
+            color: var(--navy-deep);
+            font-size: 15pt;
+            font-weight: 900;
+            letter-spacing: -.02em;
+            line-height: 1;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: white;
-            padding: 2mm 3mm;
-            text-align: left;
-            border: 1px solid var(--paper-line-print);
+        }
+
+        .school-motto {
+            margin-top: 1.8mm;
+            color: #bf6b00;
+            font-size: 8pt;
+            font-weight: 500;
+        }
+
+        .title-block {
+            padding-left: 2mm;
+        }
+
+        .main-title {
+            color: var(--navy-deep);
+            font-size: 17pt;
+            font-weight: 900;
+            letter-spacing: -.02em;
+            line-height: 1;
+            text-transform: uppercase;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.3mm 6mm;
+            margin-top: 3.2mm;
+            color: var(--navy-deep);
+            font-size: 7pt;
+            font-weight: 800;
+        }
+
+        .meta-row {
+            display: grid;
+            grid-template-columns: 24mm minmax(0, 1fr);
+            gap: 1.6mm;
+            align-items: center;
+        }
+
+        .meta-row label {
+            color: #b05f00;
+            font-size: 6.5pt;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .results-table {
+            width: 100%;
+            height: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            border: 1px solid #cbd5e1;
+            background: #fff;
+        }
+
+        .results-table th {
+            background: var(--navy);
+            color: #fff;
+            border: 1px solid #7180a1;
+            padding: .95mm .65mm;
+            text-align: center;
+            font-size: 5.7pt;
+            font-weight: 900;
+            line-height: 1.05;
+            text-transform: uppercase;
+        }
+
+        .results-table th small {
+            display: block;
+            margin-top: .45mm;
+            color: #dbeafe;
+            font-size: 4.35pt;
+            font-weight: 700;
+        }
+
+        .results-table td {
+            border: 1px solid #e3e8ef;
+            padding: .42mm .55mm;
+            text-align: center;
+            vertical-align: middle;
+            color: var(--navy-deep);
+            font-size: 6.35pt;
+            font-weight: 800;
+        }
+
+        .results-table tbody tr:nth-child(even) td {
+            background: #f8fafc;
+        }
+
+        .col-num { width: 7mm; }
+        .col-id { width: 23mm; }
+        .col-name { width: 39mm; }
+        .col-class { width: 12mm; }
+        .col-subject { width: auto; }
+        .col-total { width: 14mm; }
+        .col-percent { width: 19mm; }
+        .col-grade { width: 13mm; }
+        .col-rank { width: 13mm; }
+
+        .id-with-photo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.3mm;
             white-space: nowrap;
         }
-        
-        td {
-            padding: 2mm 3mm;
-            border: 1px solid var(--paper-line-print);
-            vertical-align: middle;
-        }
-        
-        .mono {
-            font-family: 'JetBrains Mono', monospace;
-        }
-        
+
         .name-cell {
-            vertical-align: top;
+            text-align: left !important;
+            padding-left: 1.3mm !important;
         }
-        
+
         .student-name {
-            font-weight: 600;
-            color: var(--navy);
             display: block;
+            color: var(--navy-deep);
+            font-size: 6.25pt;
+            font-weight: 900;
+            line-height: 1.15;
         }
-        
+
         .mother-name {
-            font-style: italic;
-            font-size: 8pt;
-            color: var(--slate);
             display: block;
-            margin-top: 1mm;
+            margin-top: .6mm;
+            color: var(--muted);
+            font-size: 5.35pt;
+            font-weight: 600;
         }
-        
-        .grade-pill {
-            display: inline-block;
-            padding: 1mm 3mm;
-            border-radius: 9999px;
-            font-weight: 700;
-            font-size: 8pt;
-            text-align: center;
-            min-width: 25px;
+
+        .student-photo {
+            flex: 0 0 auto;
+            width: 6.5mm;
+            height: 6.5mm;
+            margin: 0;
+            border-radius: 999px;
+            border: 1px solid #d7dde8;
+            overflow: hidden;
+            background: #eef2f7;
+            box-shadow: none;
         }
-        
-        .grade-a {
-            background-color: var(--green-bg);
-            color: var(--green);
-            border: 1px solid var(--green);
+
+        .student-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center top;
         }
-        
-        .grade-b {
-            background-color: var(--blue-bg);
-            color: var(--blue);
-            border: 1px solid var(--blue);
-        }
-        
-        .grade-c {
-            background-color: var(--amber-bg);
-            color: var(--amber);
-            border: 1px solid var(--amber);
-        }
-        
-        .grade-d {
-            background-color: var(--orange-bg);
-            color: var(--orange);
-            border: 1px solid var(--orange);
-        }
-        
-        .grade-f {
-            background-color: var(--red-bg);
-            color: var(--red);
-            border: 1px solid var(--red);
-        }
-        
-        .footer {
-            margin-top: 5mm;
-            padding-top: 4mm;
-            border-top: 2px dashed var(--paper-line-print);
-        }
-        
-        .legend {
-            font-size: 8pt;
-            color: var(--slate);
-            margin-bottom: 4mm;
-            text-align: center;
-        }
-        
-        .stats-footer {
-            display: flex;
-            justify-content: space-around;
-            margin-bottom: 6mm;
-        }
-        
-        .stat-item {
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-family: 'Fraunces', Georgia, serif;
-            font-size: 24pt;
-            font-weight: 700;
+
+        .student-photo span {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            place-items: center;
             color: var(--navy);
+            font-size: 6pt;
+            font-weight: 900;
         }
-        
-        .stat-label {
-            font-size: 8pt;
+
+        .class-code,
+        .total-score {
+            color: #002a7c;
+            font-weight: 900;
+        }
+
+        .badge {
+            display: inline-flex;
+            min-width: 10mm;
+            height: 4.8mm;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 6.1pt;
+            font-weight: 900;
+            line-height: 1;
+            box-shadow: none;
+        }
+
+        .percent-badge {
+            min-width: 14.8mm;
+        }
+
+        .grade-aplus,
+        .pct-aplus { background: var(--green); }
+        .grade-a,
+        .pct-a { background: var(--blue); }
+        .grade-b,
+        .pct-b { background: var(--teal); }
+        .grade-c,
+        .pct-c { background: var(--orange); }
+        .grade-d,
+        .pct-d { background: var(--deep-orange); }
+        .grade-e,
+        .grade-f,
+        .pct-e,
+        .pct-f { background: var(--red); }
+
+        .rank-badge {
+            min-width: 11mm;
+            background: var(--navy-deep);
+            border-radius: 4px;
+        }
+
+        .rank-1 {
+            background: linear-gradient(135deg, #f8cf55, #c98f16);
+            color: #081C3D;
+            border-radius: 999px;
+        }
+
+        .rank-2 {
+            background: linear-gradient(135deg, #eef2f7, #a8b0ba);
+            color: #081C3D;
+            border-radius: 999px;
+        }
+
+        .rank-3 {
+            background: linear-gradient(135deg, #e7ad72, #a95b24);
+            color: #081C3D;
+            border-radius: 999px;
+        }
+
+        .rank-medal {
+            margin-right: .8mm;
+            font-size: 6.2pt;
+            line-height: 1;
+        }
+
+        .summary-icon {
+            display: inline-flex;
+            width: 5mm;
+            height: 5mm;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .14);
+            border: 1px solid rgba(255, 255, 255, .32);
+            color: #fff;
+            font-size: 6pt;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .summary-row td {
+            background: #f9fbff !important;
+            padding: .62mm .55mm;
+            font-size: 5.9pt;
+        }
+
+        .summary-label {
+            background: var(--navy) !important;
+            color: #fff !important;
+            font-size: 7.4pt !important;
+            font-weight: 900 !important;
             text-transform: uppercase;
-            color: var(--slate);
+            letter-spacing: .02em;
         }
-        
-        .signatures {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 8mm;
+
+        .summary-label span {
+            display: inline-flex;
+            align-items: center;
+            gap: 1.3mm;
+            white-space: nowrap;
         }
-        
-        .signature-line {
+
+        .summary-name {
+            text-align: left !important;
+            color: var(--navy-deep);
+            font-weight: 900 !important;
+        }
+
+        .pass-card {
+            background: #fff !important;
+            border: 1px solid #b7c3d4 !important;
+            border-radius: 7px;
+            padding: .85mm .6mm !important;
+        }
+
+        .pass-title {
+            display: block;
+            color: var(--navy);
+            font-size: 5.5pt;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .pass-value {
+            display: block;
+            margin: .25mm 0;
+            color: var(--green);
+            font-size: 13pt;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .pass-sub {
+            color: var(--navy-deep);
+            font-size: 5.8pt;
+            font-weight: 600;
+        }
+
+        .footer {
+            display: grid;
+            grid-template-columns: 1.35fr 1.15fr .85fr 1fr 1fr 1fr .85fr;
+            align-items: end;
+            gap: 3mm;
+            padding: 1.5mm 4mm 0;
+            color: var(--navy-deep);
+            font-size: 5.8pt;
+            font-weight: 700;
+        }
+
+        .footer-item {
+            min-width: 0;
             text-align: center;
-            width: 80mm;
         }
-        
-        .signature-line-top {
-            border-top: 1px solid var(--ink);
-            padding-top: 2mm;
-            font-size: 8pt;
-            color: var(--slate);
+
+        .footer-left {
+            text-align: left;
         }
-        
-        .page-tag {
-            position: fixed;
-            bottom: 5mm;
-            right: 5mm;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 8pt;
-            color: var(--slate);
+
+        .seal {
+            width: 12mm;
+            height: 12mm;
+            margin: 0 auto .8mm;
+            border: 1px solid var(--gold);
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            color: var(--navy);
+            font-weight: 900;
         }
-        
+
+        .seal img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .signature-img {
+            height: 7mm;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto .3mm;
+        }
+
+        .signature-line {
+            border-top: 1px dotted var(--navy-deep);
+            padding-top: .8mm;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
+
+        .page-number {
+            text-align: right;
+            font-weight: 900;
+        }
+
         @media print {
             body {
-                background: white;
+                background: #fff;
             }
-            
+
             .page {
-                page-break-after: always;
-            }
-            
-            .page:last-child {
-                page-break-after: auto;
+                box-shadow: none;
+                margin: 0;
             }
         }
     </style>
 </head>
 <body>
-    {% set students_per_page = 30 %}
-    {% set total_pages = (students|length / students_per_page)|round(0, 'ceil') %}
-    
     {% for page_num in range(1, total_pages + 1) %}
         {% set start_idx = (page_num - 1) * students_per_page %}
         {% set end_idx = page_num * students_per_page %}
         {% set page_students = students[start_idx:end_idx] %}
-        
         <div class="page">
-            <!-- Header -->
-            <div class="header">
-                <div class="school-name">{{ settings.school_name }}</div>
-                <div class="school-motto">{{ settings.school_motto }}</div>
-            </div>
-            
-            <!-- Meta Section -->
-            <div class="meta-section">
-                <div class="form-badge">
-                    {% if scope_info.section %}
-                        {{ scope_info.class.name }} - {{ scope_info.section.name }}
-                    {% elif scope_info.class %}
-                        {{ scope_info.class.name }}
-                    {% elif scope_info.level %}
-                        {{ scope_info.level.name }}
-                    {% else %}
-                        ALL CLASSES
-                    {% endif %}
-                </div>
-                <div class="exam-info">
-                    <h2>{{ selected_exam.name }}</h2>
-                    <p>{{ selected_year.name }}</p>
-                </div>
-                <div class="font-mono" style="font-size: 9pt; color: var(--slate);">
-                    {{ date.strftime('%B %d, %Y') }}
-                </div>
-            </div>
-            
-            <!-- Title Block -->
-            <div class="title-block">
-                <h1>Class Mark Sheet</h1>
-                <p>Official Academic Results Record</p>
-            </div>
-            
-            <!-- Results Table -->
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Student Name</th>
-                        {% for subject in subjects %}
-                            <th class="mono">{{ subject.name }}</th>
-                        {% endfor %}
-                        <th class="mono">Total</th>
-                        <th class="mono">%</th>
-                        <th>Grade</th>
-                        <th class="mono">GP</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for student_data in page_students %}
-                        <tr>
-                            <td class="mono">{{ student_data.student.student_code }}</td>
-                            <td class="name-cell">
-                                <span class="student-name">{{ student_data.student.full_name }}</span>
-                                {% if student_data.student.mother_name %}
-                                    <span class="mother-name">({{ student_data.student.mother_name }})</span>
-                                {% endif %}
-                            </td>
-                            {% for subject_data in student_data.subject_data %}
-                                <td class="mono">{{ subject_data.score }}</td>
+            <div class="sheet">
+                <header class="top-header">
+                    <section class="brand-block">
+                        <div class="brand-emblem">
+                            {% if settings.logo_path %}
+                                <img src="{{ asset_url(settings.logo_path) }}" alt="{{ settings.school_name }} logo">
+                            {% else %}
+                                <span>{{ (settings.school_name or "S")[0] }}</span>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h1 class="school-name">{{ settings.school_name }}</h1>
+                            <p class="school-motto">{{ settings.school_motto }}</p>
+                        </div>
+                    </section>
+
+                    <section class="title-block">
+                        <h2 class="main-title">Whole Class Results</h2>
+                        <div class="meta-grid">
+                            <div class="meta-row"><label>Academic Year:</label><strong>{{ selected_year.name }}</strong></div>
+                            <div class="meta-row"><label>Date Generated:</label><strong>{{ date.strftime('%d %B %Y') }}</strong></div>
+                            <div class="meta-row"><label>Exam Type:</label><strong>{{ selected_exam.name }}</strong></div>
+                            <div class="meta-row"><label>Total Students:</label><strong>{{ students|length }}</strong></div>
+                            <div class="meta-row"><label>Class:</label><strong>{{ scope_info.class.name if scope_info.class else "-" }}</strong></div>
+                            <div class="meta-row"><label>Section:</label><strong>{{ scope_info.section.name if scope_info.section else "All" }}</strong></div>
+                        </div>
+                    </section>
+
+                </header>
+
+                <main>
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th class="col-num">#</th>
+                                <th class="col-id">Student ID</th>
+                                <th class="col-name">Student Name<small>Mother's Name</small></th>
+                                <th class="col-class">Class</th>
+                                {% for subject in subjects %}
+                                    <th class="col-subject">{{ subject.name[:5]|upper }}<small>{{ subject.name }}</small></th>
+                                {% endfor %}
+                                <th class="col-total">Total<small>({{ page_students[0].total_max|round(0) if page_students else 0 }})</small></th>
+                                <th class="col-percent">Percentage</th>
+                                <th class="col-grade">Grade<br>Letter</th>
+                                <th class="col-rank">Rank</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in page_students %}
+                                {% set grade_text = row.grade.grade %}
+                                {% set grade_class = 'aplus' if grade_text == 'A+' else grade_text[:1]|lower %}
+                                <tr>
+                                    <td>{{ start_idx + loop.index }}</td>
+                                    <td>
+                                        <div class="id-with-photo">
+                                            <div class="student-photo">
+                                                {% if row.student.photo_path %}
+                                                    <img src="{{ asset_url(row.student.photo_path) }}" alt="{{ row.student.full_name }} photo">
+                                                {% else %}
+                                                    <span>{{ (row.student.full_name or "S")[0] }}</span>
+                                                {% endif %}
+                                            </div>
+                                            <span>{{ row.student.student_code }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="name-cell">
+                                        <span class="student-name">{{ row.student.full_name }}</span>
+                                        <span class="mother-name">Hooyo: {{ row.student.mother_name or "-" }}</span>
+                                    </td>
+                                    <td class="class-code">{{ scope_info.class.name if scope_info.class else "-" }}</td>
+                                    {% for subject_data in row.subject_data %}
+                                        <td>{{ subject_data.score|round(0) }}</td>
+                                    {% endfor %}
+                                    <td class="total-score">{{ row.total_score|round(0) }}</td>
+                                    <td><span class="badge percent-badge pct-{{ grade_class }}">{{ row.percentage|round(2) }}%</span></td>
+                                    <td><span class="badge grade-{{ grade_class }}">{{ grade_text }}</span></td>
+                                    <td>
+                                        <span class="badge rank-badge rank-{{ row.rank }}">
+                                            {% if row.rank == 1 %}<span class="rank-medal">🥇</span>{% elif row.rank == 2 %}<span class="rank-medal">🥈</span>{% elif row.rank == 3 %}<span class="rank-medal">🥉</span>{% endif %}{{ row.rank_label }}
+                                        </span>
+                                    </td>
+                                </tr>
                             {% endfor %}
-                            <td class="mono">{{ student_data.total_score }}</td>
-                            <td class="mono">{{ student_data.percentage }}%</td>
-                            <td>
-                                <span class="grade-pill grade-{{ student_data.grade.grade|lower }}">
-                                    {{ student_data.grade.grade }}
-                                </span>
-                            </td>
-                            <td class="mono">{{ student_data.gp }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            
-            <!-- Footer -->
-            <div class="footer">
-                <!-- Legend -->
-                <div class="legend">
-                    Subject abbreviations: {% for subject in subjects %}{{ subject.name[:3].upper() }}{% if not loop.last %}, {% endif %}{% endfor %}
-                </div>
-                
-                <!-- Stats Footer -->
-                <div class="stats-footer">
-                    <div class="stat-item">
-                        <div class="stat-value">{{ class_average }}%</div>
-                        <div class="stat-label">Class Average</div>
+                            <tr class="summary-row">
+                                <td class="summary-label" colspan="4" rowspan="3"><span><span class="summary-icon">📊</span>CLASS SUMMARY</span></td>
+                                {% for stat in subject_stats %}
+                                    <td>{{ stat.highest|round(0) }}</td>
+                                {% endfor %}
+                                <td>{{ highest_total|round(0) }}</td>
+                                <td>{{ highest_score }}%</td>
+                                <td colspan="2" rowspan="3" class="pass-card">
+                                    <span class="pass-title">Class Pass Rate</span>
+                                    <span class="pass-value">{{ pass_rate }}%</span>
+                                    <span class="pass-sub">{{ passed_count }} / {{ students|length }} Students Passed</span>
+                                </td>
+                            </tr>
+                            <tr class="summary-row">
+                                {% for stat in subject_stats %}
+                                    <td>{{ stat.lowest|round(0) }}</td>
+                                {% endfor %}
+                                <td>{{ lowest_total|round(0) }}</td>
+                                <td>{{ lowest_score }}%</td>
+                            </tr>
+                            <tr class="summary-row">
+                                {% for stat in subject_stats %}
+                                    <td>{{ stat.average }}</td>
+                                {% endfor %}
+                                <td>{{ average_total }}</td>
+                                <td>{{ class_average }}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </main>
+
+                <footer class="footer">
+                    <div class="footer-item footer-left">
+                        <strong>{{ settings.school_name }}</strong> | {{ date.strftime('%Y') }}. All Rights Reserved.
                     </div>
-                    <div class="stat-item">
-                        <div class="stat-value">{{ class_gpa }}</div>
-                        <div class="stat-label">Class GPA</div>
+                    <div class="footer-item">
+                        <strong>Generated By:</strong> {{ generated_by }}
+                        <br><strong>Date:</strong> {{ date.strftime('%d %B %Y') }}
                     </div>
-                    <div class="stat-item">
-                        <div class="stat-value">{{ completed_count }}</div>
-                        <div class="stat-label">Results Completed</div>
+                    <div class="footer-item">
+                        <div class="seal">
+                            {% if settings.school_stamp_path %}
+                                <img src="{{ asset_url(settings.school_stamp_path) }}" alt="Official school seal">
+                            {% else %}
+                                <span>SEAL</span>
+                            {% endif %}
+                        </div>
+                        Official School Seal
                     </div>
-                </div>
-                
-                <!-- Signatures -->
-                <div class="signatures">
-                    <div class="signature-line">
-                        <div class="signature-line-top">Class Teacher</div>
+                    <div class="footer-item">
+                        {% if settings.principal_signature_path %}
+                            <img class="signature-img" src="{{ asset_url(settings.principal_signature_path) }}" alt="Principal signature">
+                        {% endif %}
+                        <div class="signature-line">Principal</div>
                     </div>
-                    <div class="signature-line">
-                        <div class="signature-line-top">Academic Admin</div>
+                    <div class="footer-item">
+                        {% if settings.exam_officer_signature_path %}
+                            <img class="signature-img" src="{{ asset_url(settings.exam_officer_signature_path) }}" alt="Examination officer signature">
+                        {% endif %}
+                        <div class="signature-line">Exam Officer</div>
                     </div>
-                    <div class="signature-line">
-                        <div class="signature-line-top">Date</div>
+                    <div class="footer-item">
+                        {% if settings.vice_principal_signature_path %}
+                            <img class="signature-img" src="{{ asset_url(settings.vice_principal_signature_path) }}" alt="Class teacher signature">
+                        {% endif %}
+                        <div class="signature-line">Class Teacher</div>
                     </div>
-                </div>
+                    <div class="footer-item page-number">
+                        Page {{ page_num }} of {{ total_pages }}
+                    </div>
+                </footer>
             </div>
-            
-            <!-- Page Tag -->
-            <div class="page-tag">Page {{ page_num }} of {{ total_pages }}</div>
         </div>
     {% endfor %}
 </body>

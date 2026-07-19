@@ -1156,6 +1156,29 @@
     border-color: var(--gold);
 }
 
+.rh-compact-select.context-year,
+.rh-compact-select.context-exam {
+    border-color: rgba(var(--context-rgb), .22);
+    background:
+        linear-gradient(135deg, #fff, rgba(var(--context-rgb), .075));
+    color: var(--navy);
+    box-shadow: 0 10px 24px rgba(var(--context-rgb), .1);
+}
+
+.rh-compact-select.context-year:focus,
+.rh-compact-select.context-exam:focus {
+    border-color: rgba(var(--context-rgb), .52);
+    box-shadow: 0 0 0 3px rgba(var(--context-rgb), .12);
+}
+
+.rh-compact-select.context-year {
+    --context-rgb: 37, 99, 235;
+}
+
+.rh-compact-select.context-exam {
+    --context-rgb: 124, 58, 237;
+}
+
 .rh-filter-card {
     background: #fff;
     border: 1px solid var(--paper-line);
@@ -1212,6 +1235,99 @@
 
 .rh-filter-card select:focus {
     border-color: var(--gold);
+}
+
+.rh-filter-card.context-level,
+.rh-filter-card.context-class,
+.rh-filter-card.context-section,
+.rh-filter-card.context-subject {
+    position: relative;
+    overflow: hidden;
+    border-color: rgba(var(--context-rgb), .18);
+    background:
+        radial-gradient(circle at 92% 8%, rgba(var(--context-rgb), .15), transparent 36%),
+        linear-gradient(135deg, #fff, rgba(var(--context-rgb), .055));
+    box-shadow:
+        0 16px 36px rgba(27, 42, 74, .07),
+        inset 4px 0 0 rgba(var(--context-rgb), .86);
+}
+
+.rh-filter-card.context-level::after,
+.rh-filter-card.context-class::after,
+.rh-filter-card.context-section::after,
+.rh-filter-card.context-subject::after {
+    content: "";
+    position: absolute;
+    right: -30px;
+    bottom: -38px;
+    width: 108px;
+    height: 108px;
+    border-radius: 999px;
+    background: rgba(var(--context-rgb), .075);
+    pointer-events: none;
+}
+
+.rh-filter-card.context-level:hover,
+.rh-filter-card.context-class:hover,
+.rh-filter-card.context-section:hover,
+.rh-filter-card.context-subject:hover {
+    border-color: rgba(var(--context-rgb), .36);
+    box-shadow:
+        0 22px 46px rgba(var(--context-rgb), .14),
+        inset 4px 0 0 rgba(var(--context-rgb), .96);
+}
+
+.rh-filter-card.context-level .rh-filter-icon,
+.rh-filter-card.context-class .rh-filter-icon,
+.rh-filter-card.context-section .rh-filter-icon,
+.rh-filter-card.context-subject .rh-filter-icon {
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(135deg, rgba(var(--context-rgb), .16), rgba(var(--context-rgb), .08));
+    color: rgb(var(--context-rgb));
+    box-shadow: 0 12px 24px rgba(var(--context-rgb), .14);
+}
+
+.rh-filter-card.context-level label,
+.rh-filter-card.context-class label,
+.rh-filter-card.context-section label,
+.rh-filter-card.context-subject label {
+    position: relative;
+    z-index: 1;
+    color: rgb(var(--context-rgb));
+}
+
+.rh-filter-card.context-level select,
+.rh-filter-card.context-class select,
+.rh-filter-card.context-section select,
+.rh-filter-card.context-subject select {
+    position: relative;
+    z-index: 1;
+    border-color: rgba(var(--context-rgb), .2);
+}
+
+.rh-filter-card.context-level select:focus,
+.rh-filter-card.context-class select:focus,
+.rh-filter-card.context-section select:focus,
+.rh-filter-card.context-subject select:focus {
+    border-color: rgba(var(--context-rgb), .52);
+    box-shadow: 0 0 0 3px rgba(var(--context-rgb), .1);
+}
+
+.rh-filter-card.context-level {
+    --context-rgb: 5, 150, 105;
+}
+
+.rh-filter-card.context-class {
+    --context-rgb: 249, 115, 22;
+}
+
+.rh-filter-card.context-section {
+    --context-rgb: 14, 165, 233;
+}
+
+.rh-filter-card.context-subject {
+    --context-rgb: 79, 70, 229;
 }
 
 .rh-kpi-grid {
@@ -1963,6 +2079,91 @@
 
 .rh-entry-filter-card select:focus {
     border-color: var(--gold);
+}
+
+.rh-entry-filter-card.context-year,
+.rh-entry-filter-card.context-exam,
+.rh-entry-filter-card.context-level,
+.rh-entry-filter-card.context-class {
+    position: relative;
+    overflow: hidden;
+    border-color: rgba(var(--context-rgb), .18);
+    background:
+        radial-gradient(circle at 90% 10%, rgba(var(--context-rgb), .16), transparent 34%),
+        linear-gradient(135deg, #fff, rgba(var(--context-rgb), .055));
+    box-shadow:
+        0 16px 38px rgba(27, 42, 74, .08),
+        inset 4px 0 0 rgba(var(--context-rgb), .88);
+}
+
+.rh-entry-filter-card.context-year::after,
+.rh-entry-filter-card.context-exam::after,
+.rh-entry-filter-card.context-level::after,
+.rh-entry-filter-card.context-class::after {
+    content: "";
+    position: absolute;
+    right: -28px;
+    bottom: -34px;
+    width: 110px;
+    height: 110px;
+    border-radius: 999px;
+    background: rgba(var(--context-rgb), .08);
+    pointer-events: none;
+}
+
+.rh-entry-filter-card.context-year:hover,
+.rh-entry-filter-card.context-exam:hover,
+.rh-entry-filter-card.context-level:hover,
+.rh-entry-filter-card.context-class:hover {
+    border-color: rgba(var(--context-rgb), .34);
+    box-shadow:
+        0 22px 48px rgba(var(--context-rgb), .15),
+        inset 4px 0 0 rgba(var(--context-rgb), .96);
+}
+
+.rh-entry-filter-card.context-year .rh-filter-icon,
+.rh-entry-filter-card.context-exam .rh-filter-icon,
+.rh-entry-filter-card.context-level .rh-filter-icon,
+.rh-entry-filter-card.context-class .rh-filter-icon {
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(135deg, rgba(var(--context-rgb), .16), rgba(var(--context-rgb), .08));
+    color: rgb(var(--context-rgb));
+    box-shadow: 0 12px 24px rgba(var(--context-rgb), .14);
+}
+
+.rh-entry-filter-card.context-year .rh-filter-title,
+.rh-entry-filter-card.context-exam .rh-filter-title,
+.rh-entry-filter-card.context-level .rh-filter-title,
+.rh-entry-filter-card.context-class .rh-filter-title {
+    color: rgb(var(--context-rgb));
+}
+
+.rh-entry-filter-card.context-year select,
+.rh-entry-filter-card.context-exam select,
+.rh-entry-filter-card.context-level select,
+.rh-entry-filter-card.context-class select {
+    position: relative;
+    z-index: 1;
+    border-color: rgba(var(--context-rgb), .2);
+    color: var(--navy);
+    font-size: 1.28rem;
+}
+
+.rh-entry-filter-card.context-year {
+    --context-rgb: 37, 99, 235;
+}
+
+.rh-entry-filter-card.context-exam {
+    --context-rgb: 124, 58, 237;
+}
+
+.rh-entry-filter-card.context-level {
+    --context-rgb: 5, 150, 105;
+}
+
+.rh-entry-filter-card.context-class {
+    --context-rgb: 249, 115, 22;
 }
 
 .rh-section-select {
