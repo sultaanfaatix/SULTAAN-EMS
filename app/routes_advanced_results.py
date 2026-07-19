@@ -1840,6 +1840,8 @@ def students_management():
     class_id = int_or_none(request.args.get("class_id"))
     search_query = request.args.get("q", "").strip()
     status_filter = request.args.get("status_filter", "")
+    page = int_or_none(request.args.get("page", 1)) or 1
+    per_page = 9  # Students per page for balanced layout
     
     # Get selected year
     selected_year = db.session.get(AcademicYear, year_id) if year_id else AcademicYear.query.filter_by(is_current=True).first()
@@ -1911,7 +1913,16 @@ def students_management():
     elif status_filter == "active":
         students_query = students_query.filter_by(is_result_locked=False)
     
-    students = students_query.order_by(Student.student_code).all()
+    # Get total count for pagination
+    total_students = students_query.count()
+    
+    # Apply pagination
+    students = students_query.order_by(Student.student_code).offset((page - 1) * per_page).limit(per_page).all()
+    
+    # Calculate pagination info
+    total_pages = (total_students + per_page - 1) // per_page if total_students > 0 else 1
+    has_prev = page > 1
+    has_next = page < total_pages
     
     return render_template(
         "admin/students_management.html",
@@ -1925,6 +1936,12 @@ def students_management():
         q=search_query,
         status_filter=status_filter,
         stats=stats,
+        page=page,
+        per_page=per_page,
+        total_students=total_students,
+        total_pages=total_pages,
+        has_prev=has_prev,
+        has_next=has_next,
         settings=get_settings(),
     )
 

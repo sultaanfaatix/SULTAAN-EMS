@@ -218,6 +218,27 @@
             {{ rh_label("students.no_students", default="Arday lama helin") }}
           </div>
         {% endfor %}
+        
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <div class="sm-pagination">
+          {% if has_prev %}
+            <a href="javascript:void(0)" data-page="{{ page - 1 }}" class="pagination-link pagination-nav">
+              <i class="fa-solid fa-chevron-left"></i> Previous
+            </a>
+          {% endif %}
+          
+          <span class="pagination-info">
+            Page {{ page }} of {{ total_pages }} ({{ total_students }} students)
+          </span>
+          
+          {% if has_next %}
+            <a href="javascript:void(0)" data-page="{{ page + 1 }}" class="pagination-link pagination-nav">
+              Next <i class="fa-solid fa-chevron-right"></i>
+            </a>
+          {% endif %}
+        </div>
+        {% endif %}
       </div>
 
       <div class="sm-profile">
@@ -296,20 +317,20 @@
 <script>
 function changeYear() {
   const yearId = document.getElementById('year-selector').value;
-  window.location.href = `{{ url_for('admin_advanced_results.students_management') }}?year_id=${yearId}`;
+  window.location.href = `{{ url_for('admin_advanced_results.students_management') }}?year_id=${yearId}&page=1`;
 }
 
 function changeLevel() {
   const yearId = document.getElementById('year-selector').value;
   const levelId = document.getElementById('level-selector').value;
-  window.location.href = `{{ url_for('admin_advanced_results.students_management') }}?year_id=${yearId}&level_id=${levelId}`;
+  window.location.href = `{{ url_for('admin_advanced_results.students_management') }}?year_id=${yearId}&level_id=${levelId}&page=1`;
 }
 
 function changeClass() {
   const yearId = document.getElementById('year-selector').value;
   const levelId = document.getElementById('level-selector').value;
   const classId = document.getElementById('class-selector').value;
-  window.location.href = `{{ url_for('admin_advanced_results.students_management') }}?year_id=${yearId}&level_id=${levelId}&class_id=${classId}`;
+  window.location.href = `{{ url_for('admin_advanced_results.students_management') }}?year_id=${yearId}&level_id=${levelId}&class_id=${classId}&page=1`;
 }
 
 function handleSearch(event) {
@@ -317,6 +338,7 @@ function handleSearch(event) {
     const query = event.target.value;
     const url = new URL(window.location.href);
     url.searchParams.set('q', query);
+    url.searchParams.set('page', '1'); // Reset to page 1 on search
     window.location.href = url.toString();
   }
 }
@@ -325,8 +347,27 @@ function handleFilter() {
   const statusFilter = document.querySelector('.sm-filter').value;
   const url = new URL(window.location.href);
   url.searchParams.set('status_filter', statusFilter);
+  url.searchParams.set('page', '1'); // Reset to page 1 on filter change
   window.location.href = url.toString();
 }
+
+function goToPage(pageNum) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('page', pageNum);
+  window.location.href = url.toString();
+}
+
+// Add event listeners for pagination links
+document.addEventListener('DOMContentLoaded', function() {
+  const paginationLinks = document.querySelectorAll('.pagination-nav');
+  paginationLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const pageNum = this.getAttribute('data-page');
+      goToPage(pageNum);
+    });
+  });
+});
 
 function selectStudent(studentId) {
   // Load student details into profile panel via AJAX
@@ -796,6 +837,91 @@ document.addEventListener('DOMContentLoaded', function() {
 .sm-row.selected .nm {
   color: #1e3a8a;
   font-weight: 600;
+}
+
+/* Pagination styling */
+.sm-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  margin-top: 16px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid var(--paper-line);
+  box-shadow: 0 1px 3px rgba(27, 42, 74, 0.04);
+}
+
+.pagination-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: var(--navy);
+  color: #fff;
+  text-decoration: none;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.pagination-link:hover {
+  background: #1e3a8a;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(30, 58, 138, 0.2);
+}
+
+.pagination-info {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--slate);
+}
+
+/* Height balance for student list and preview */
+.sm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.sm-list {
+  max-height: 600px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.sm-profile {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+/* Custom scrollbar for better UX */
+.sm-list::-webkit-scrollbar,
+.sm-profile::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sm-list::-webkit-scrollbar-track,
+.sm-profile::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.sm-list::-webkit-scrollbar-thumb,
+.sm-profile::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.sm-list::-webkit-scrollbar-thumb:hover,
+.sm-profile::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 </style>
 {% endblock %}
