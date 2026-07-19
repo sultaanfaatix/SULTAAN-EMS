@@ -71,13 +71,22 @@ def sync_all_model_columns():
     inspector = inspect(db.engine)
     dialect = db.engine.dialect
     for table in db.metadata.sorted_tables:
-        if not inspector.has_table(table.name):
-            continue  # brand-new table; db.create_all() already handled it
-        existing = {row["name"] for row in inspector.get_columns(table.name)}
-        for column in table.columns:
-            if column.name in existing:
-                continue
-            add_model_column(table, column, dialect)
+        try:
+            if not inspector.has_table(table.name):
+                continue  # brand-new table; db.create_all() already handled it
+            existing = {row["name"] for row in inspector.get_columns(table.name)}
+            for column in table.columns:
+                if column.name in existing:
+                    continue
+                add_model_column(table, column, dialect)
+        except Exception as e:
+            # Handle connection errors during inspection (e.g., Railway MySQL timeout)
+            # Log and continue to next table rather than failing startup
+            print(f"Warning: Could not inspect table {table.name}: {e}")
+            db.session.rollback()
+            # Refresh inspector to handle potential connection loss
+            inspector = inspect(db.engine)
+            continue
 
 
 def add_model_column(table, column, dialect):
