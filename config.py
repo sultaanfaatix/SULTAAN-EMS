@@ -31,7 +31,7 @@ class Config:
         # MySQL/PostgreSQL options for production (Render + Railway)
         SQLALCHEMY_ENGINE_OPTIONS = {
             "pool_pre_ping": True,
-            "pool_recycle": 1800,  # Recycle connections every 30 minutes to handle Railway MySQL timeouts
+            "pool_recycle": 600,  # Recycle connections every 10 minutes to handle Railway MySQL timeouts (Railway has ~10 min idle timeout)
             "pool_use_lifo": True,
             "pool_size": 5,
             "max_overflow": 10,
