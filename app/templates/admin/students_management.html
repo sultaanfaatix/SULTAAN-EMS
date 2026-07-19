@@ -12,59 +12,178 @@
     <div class="rh-eyebrow">{{ rh_label("students.eyebrow", default="Maamulka Ardayda") }}</div>
     <h1 class="rh-title">{{ rh_label("students.title", default="Wadarta Ardayda") }}</h1>
 
-    <div class="rh-selector-row">
-      <div class="rh-selector">
-        <label for="year-selector">{{ rh_label("students.year", default="Sanad Dugsiyeedka") }}</label>
-        <select id="year-selector" onchange="changeYear()">
-          {% for year in years %}
-            <option value="{{ year.id }}" {% if selected_year and selected_year.id == year.id %}selected{% endif %}>{{ year.name }}</option>
-          {% endfor %}
-        </select>
+    <!-- Summary Cards -->
+    <div class="sm-summary-cards">
+      <div class="sm-card sm-card-royal">
+        <div class="sm-card-icon">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="sm-card-content">
+          <div class="sm-card-value" data-target="{{ stats.total_students }}">0</div>
+          <div class="sm-card-label">{{ rh_label("students.total_students", default="Total Students") }}</div>
+        </div>
+        <div class="sm-card-trend">
+          <i class="fa-solid fa-chart-line"></i>
+        </div>
       </div>
-      <div class="rh-selector">
-        <label for="level-selector">{{ rh_label("students.level", default="Level") }}</label>
-        <select id="level-selector" onchange="changeLevel()">
-          <option value="">{{ rh_label("students.all_levels", default="Dhammaan") }}</option>
-          {% for level in levels %}
-            <option value="{{ level.id }}" {% if selected_level_id and selected_level_id == level.id %}selected{% endif %}>{{ level.name }}</option>
-          {% endfor %}
-        </select>
+
+      <div class="sm-card sm-card-magenta">
+        <div class="sm-card-icon">
+          <i class="fa-solid fa-school"></i>
+        </div>
+        <div class="sm-card-content">
+          <div class="sm-card-value" data-target="{{ stats.secondary }}">0</div>
+          <div class="sm-card-label">{{ rh_label("students.secondary", default="Secondary") }}</div>
+        </div>
+        <div class="sm-card-trend">
+          <i class="fa-solid fa-award"></i>
+        </div>
       </div>
-      <div class="rh-selector">
-        <label for="class-selector">{{ rh_label("students.class", default="Fasalka") }}</label>
-        <select id="class-selector" onchange="changeClass()">
-          <option value="">{{ rh_label("students.all_classes", default="Dhammaan") }}</option>
-          {% for cls in classes %}
-            <option value="{{ cls.id }}" {% if selected_class_id and selected_class_id == cls.id %}selected{% endif %}>{{ cls.name }}</option>
-          {% endfor %}
-        </select>
+
+      <div class="sm-card sm-card-teal">
+        <div class="sm-card-icon">
+          <i class="fa-solid fa-book-open"></i>
+        </div>
+        <div class="sm-card-content">
+          <div class="sm-card-value" data-target="{{ stats.upper_primary }}">0</div>
+          <div class="sm-card-label">{{ rh_label("students.upper_primary", default="Upper Primary") }}</div>
+        </div>
+        <div class="sm-card-trend">
+          <i class="fa-solid fa-arrow-trend-up"></i>
+        </div>
+      </div>
+
+      <div class="sm-card sm-card-lime">
+        <div class="sm-card-icon">
+          <i class="fa-solid fa-book"></i>
+        </div>
+        <div class="sm-card-content">
+          <div class="sm-card-value" data-target="{{ stats.lower_primary }}">0</div>
+          <div class="sm-card-label">{{ rh_label("students.lower_primary", default="Lower Primary") }}</div>
+        </div>
+        <div class="sm-card-trend">
+          <i class="fa-solid fa-seedling"></i>
+        </div>
+      </div>
+
+      <div class="sm-card sm-card-violet">
+        <div class="sm-card-icon">
+          <i class="fa-solid fa-child"></i>
+        </div>
+        <div class="sm-card-content">
+          <div class="sm-card-value" data-target="{{ stats.kindergarten }}">0</div>
+          <div class="sm-card-label">{{ rh_label("students.kindergarten", default="Kindergarten") }}</div>
+        </div>
+        <div class="sm-card-trend">
+          <i class="fa-solid fa-shapes"></i>
+        </div>
+      </div>
+
+      <div class="sm-card sm-card-success">
+        <div class="sm-card-icon">
+          <i class="fa-solid fa-user-check"></i>
+        </div>
+        <div class="sm-card-content">
+          <div class="sm-card-value" data-target="{{ stats.active_students }}">0</div>
+          <div class="sm-card-label">{{ rh_label("students.active_students", default="Active Students") }}</div>
+        </div>
+        <div class="sm-card-trend">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="sm-filters-section">
+      <div class="sm-filter-group">
+        <div class="sm-filter-item sm-filter-year">
+          <label for="year-selector">
+            <i class="fa-solid fa-calendar"></i>
+            {{ rh_label("students.year", default="Sanad Dugsiyeedka") }}
+          </label>
+          <select id="year-selector" onchange="changeYear()">
+            {% for year in years %}
+              <option value="{{ year.id }}" {% if selected_year and selected_year.id == year.id %}selected{% endif %}>{{ year.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="sm-filter-item sm-filter-level">
+          <label for="level-selector">
+            <i class="fa-solid fa-layer-group"></i>
+            {{ rh_label("students.level", default="Level") }}
+          </label>
+          <select id="level-selector" onchange="changeLevel()">
+            <option value="">{{ rh_label("students.all_levels", default="Dhammaan") }}</option>
+            {% for level in levels %}
+              <option value="{{ level.id }}" {% if selected_level_id and selected_level_id == level.id %}selected{% endif %}>{{ level.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="sm-filter-item sm-filter-class">
+          <label for="class-selector">
+            <i class="fa-solid fa-chalkboard-user"></i>
+            {{ rh_label("students.class", default="Fasalka") }}
+          </label>
+          <select id="class-selector" onchange="changeClass()">
+            <option value="">{{ rh_label("students.all_classes", default="Dhammaan") }}</option>
+            {% for cls in classes %}
+              <option value="{{ cls.id }}" {% if selected_class_id and selected_class_id == cls.id %}selected{% endif %}>{{ cls.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="sm-filter-item sm-filter-status">
+          <label for="status-filter">
+            <i class="fa-solid fa-filter"></i>
+            {{ rh_label("students.status", default="Xaalada") }}
+          </label>
+          <select id="status-filter" class="sm-filter" onchange="handleFilter()">
+            <option value="">{{ rh_label("students.status_all", default="Dhammaan") }}</option>
+            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>{{ rh_label("students.status_active", default="Active") }}</option>
+            <option value="locked" {% if status_filter == 'locked' %}selected{% endif %}>{{ rh_label("students.status_locked", default="Locked") }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="sm-search-group">
+        <div class="sm-search-wrapper">
+          <i class="fa-solid fa-search"></i>
+          <input type="text" class="sm-search" placeholder="{{ rh_label("students.search_placeholder", default="Raadi arday (magac, ID)...") }}" value="{{ q }}" onkeyup="handleSearch(event)">
+        </div>
       </div>
     </div>
 
     <div class="sm-toolbar">
-      <input type="text" class="sm-search" placeholder="{{ rh_label("students.search_placeholder", default="Raadi arday (magac, ID)...") }}" value="{{ q }}" onkeyup="handleSearch(event)">
-      <select class="sm-filter" onchange="handleFilter()">
-        <option value="">{{ rh_label("students.status_all", default="Dhammaan") }}</option>
-        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>{{ rh_label("students.status_active", default="Active") }}</option>
-        <option value="locked" {% if status_filter == 'locked' %}selected{% endif %}>{{ rh_label("students.status_locked", default="Locked") }}</option>
-      </select>
-      <a href="{{ url_for('admin_advanced_results.student_form') }}" class="btn btn-gold">+ {{ rh_label("students.add_student", default="Cali Arday Cusub") }}</a>
-      <a href="{{ url_for('admin_advanced_results.student_import_template') }}" class="btn btn-outline">{{ rh_label("students.template", default="Template") }}</a>
+      <a href="{{ url_for('admin_advanced_results.student_form') }}" class="btn btn-gold">
+        <i class="fa-solid fa-plus"></i>
+        {{ rh_label("students.add_student", default="Cali Arday Cusub") }}
+      </a>
+      <a href="{{ url_for('admin_advanced_results.student_import_template') }}" class="btn btn-outline">
+        <i class="fa-solid fa-file-lines"></i>
+        {{ rh_label("students.template", default="Template") }}
+      </a>
       <form method="post" action="{{ url_for('admin_advanced_results.import_students') }}" enctype="multipart/form-data" style="display: inline;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label class="btn btn-outline" style="cursor: pointer;">
+          <i class="fa-solid fa-file-import"></i>
           {{ rh_label("students.import_excel", default="Excel Import") }}
           <input type="file" name="file" accept=".xlsx" required style="display: none;">
         </label>
       </form>
-      <a href="{{ url_for('admin_advanced_results.export_students') }}" class="btn btn-outline">{{ rh_label("students.export_excel", default="Excel Export") }}</a>
+      <a href="{{ url_for('admin_advanced_results.export_students') }}" class="btn btn-outline">
+        <i class="fa-solid fa-file-export"></i>
+        {{ rh_label("students.export_excel", default="Excel Export") }}
+      </a>
     </div>
 
     <div class="sm-grid">
       <div class="sm-list">
         {% for student in students %}
           <div class="sm-row" onclick="selectStudent('{{ student.id }}')">
-            <div class="sm-avatar">{{ student.student_code[:2] }}</div>
+            <div class="sm-avatar">
+              {% if student.photo_url %}
+                <img src="{{ student.photo_url }}" alt="{{ student.full_name }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+              {% else %}
+                {{ student.student_code[:2] }}
+              {% endif %}
+            </div>
             <div class="sm-info">
               <div class="nm">{{ student.full_name }}</div>
               <div class="mt">{{ student.mother_name }}</div>
@@ -211,8 +330,472 @@ function handleFilter() {
 
 function selectStudent(studentId) {
   // Load student details into profile panel via AJAX
-  console.log('Selected student:', studentId);
-  // TODO: Implement AJAX call to load student details
+  fetch(`{{ url_for('admin_advanced_results.student_data_json', student_id=0) }}`.replace('0', studentId))
+    .then(response => response.json())
+    .then(data => {
+      // Update profile panel with student data
+      const profileHead = document.querySelector('.profile-head');
+      const avatarLg = profileHead.querySelector('.avatar-lg');
+      const pname = profileHead.querySelector('.pname');
+      const pid = profileHead.querySelector('.pid');
+      
+      // Update avatar with photo or initials
+      if (data.photo_url) {
+        avatarLg.innerHTML = `<img src="${data.photo_url}" alt="${data.full_name}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+      } else {
+        avatarLg.textContent = data.student_code ? data.student_code.substring(0, 2).toUpperCase() : 'AD';
+      }
+      
+      pname.textContent = data.full_name;
+      pid.textContent = `${data.student_code} · ${data.academic_level_name || ''} · ${data.academic_class_name || ''}`;
+      
+      // Update form fields
+      const fieldGrid = document.querySelector('.field-grid');
+      const inputs = fieldGrid.querySelectorAll('input, select');
+      
+      inputs[0].value = data.student_code || '';
+      inputs[1].value = data.full_name || '';
+      inputs[2].value = data.mother_name || '';
+      inputs[3].value = data.phone || '';
+      
+      // Update academic info
+      const academicGrid = fieldGrid.nextElementSibling.nextElementSibling.querySelectorAll('select');
+      if (academicGrid.length >= 2) {
+        academicGrid[0].value = data.academic_level_name || '';
+        academicGrid[1].value = data.academic_class_name || '';
+      }
+      
+      // Update status
+      const statusSelect = fieldGrid.nextElementSibling.nextElementSibling.nextElementSibling.querySelector('select');
+      if (statusSelect) {
+        statusSelect.value = data.enrollment_status || 'active';
+      }
+      
+      // Highlight selected row
+      document.querySelectorAll('.sm-row').forEach(row => row.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
+    })
+    .catch(error => {
+      console.error('Error loading student data:', error);
+    });
 }
+
+// Animated counters for summary cards
+document.addEventListener('DOMContentLoaded', function() {
+  const counters = document.querySelectorAll('.sm-card-value');
+  counters.forEach(counter => {
+    const target = parseInt(counter.getAttribute('data-target'));
+    const duration = 2000; // 2 seconds
+    const increment = target / (duration / 16); // 60fps
+    let current = 0;
+    
+    const updateCounter = () => {
+      current += increment;
+      if (current < target) {
+        counter.textContent = Math.ceil(current);
+        requestAnimationFrame(updateCounter);
+      } else {
+        counter.textContent = target;
+      }
+    };
+    
+    updateCounter();
+  });
+});
 </script>
+
+<style>
+/* Summary Cards */
+.sm-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.sm-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 12px rgba(27, 42, 74, 0.08);
+  border: 1px solid var(--paper-line);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.sm-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 16px 16px 0 0;
+}
+
+.sm-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(27, 42, 74, 0.12);
+}
+
+.sm-card-royal::before {
+  background: linear-gradient(90deg, #1e3a8a, #3b82f6, #60a5fa);
+}
+
+.sm-card-magenta::before {
+  background: linear-gradient(90deg, #c026d3, #e879f9, #f0abfc);
+}
+
+.sm-card-teal::before {
+  background: linear-gradient(90deg, #0d9488, #14b8a6, #2dd4bf);
+}
+
+.sm-card-lime::before {
+  background: linear-gradient(90deg, #65a30d, #84cc16, #a3e635);
+}
+
+.sm-card-violet::before {
+  background: linear-gradient(90deg, #7c3aed, #8b5cf6, #a78bfa);
+}
+
+.sm-card-success::before {
+  background: linear-gradient(90deg, #059669, #10b981, #34d399);
+}
+
+.sm-card-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.sm-card-royal .sm-card-icon {
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.15), rgba(59, 130, 246, 0.15));
+  color: #1e3a8a;
+}
+
+.sm-card-magenta .sm-card-icon {
+  background: linear-gradient(135deg, rgba(192, 38, 211, 0.15), rgba(232, 121, 249, 0.15));
+  color: #c026d3;
+}
+
+.sm-card-teal .sm-card-icon {
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.15), rgba(20, 184, 166, 0.15));
+  color: #0d9488;
+}
+
+.sm-card-lime .sm-card-icon {
+  background: linear-gradient(135deg, rgba(101, 163, 13, 0.15), rgba(132, 204, 22, 0.15));
+  color: #65a30d;
+}
+
+.sm-card-violet .sm-card-icon {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(139, 92, 246, 0.15));
+  color: #7c3aed;
+}
+
+.sm-card-success .sm-card-icon {
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.15), rgba(16, 185, 129, 0.15));
+  color: #059669;
+}
+
+.sm-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.sm-card-value {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.sm-card-label {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--slate);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sm-card-trend {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.sm-card-royal .sm-card-trend {
+  color: #1e3a8a;
+  background: rgba(30, 58, 138, 0.08);
+}
+
+.sm-card-magenta .sm-card-trend {
+  color: #c026d3;
+  background: rgba(192, 38, 211, 0.08);
+}
+
+.sm-card-teal .sm-card-trend {
+  color: #0d9488;
+  background: rgba(13, 148, 136, 0.08);
+}
+
+.sm-card-lime .sm-card-trend {
+  color: #65a30d;
+  background: rgba(101, 163, 13, 0.08);
+}
+
+.sm-card-violet .sm-card-trend {
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.sm-card-success .sm-card-trend {
+  color: #059669;
+  background: rgba(5, 150, 105, 0.08);
+}
+
+/* Filter Section */
+.sm-filters-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(27, 42, 74, 0.06);
+  border: 1px solid var(--paper-line);
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.sm-filter-group {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+}
+
+.sm-filter-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.sm-filter-item label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 8px;
+}
+
+.sm-filter-item label i {
+  font-size: 14px;
+}
+
+.sm-filter-year label i {
+  color: #1e3a8a;
+}
+
+.sm-filter-level label i {
+  color: #c026d3;
+}
+
+.sm-filter-class label i {
+  color: #0d9488;
+}
+
+.sm-filter-status label i {
+  color: #65a30d;
+}
+
+.sm-filter-item select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--paper-line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--navy);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(27, 42, 74, 0.04);
+}
+
+.sm-filter-item select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.1);
+}
+
+.sm-filter-year select:focus {
+  border-color: #1e3a8a;
+  box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+}
+
+.sm-filter-year select:hover {
+  border-color: #3b82f6;
+}
+
+.sm-filter-level select:focus {
+  border-color: #c026d3;
+  box-shadow: 0 0 0 3px rgba(192, 38, 211, 0.1);
+}
+
+.sm-filter-level select:hover {
+  border-color: #e879f9;
+}
+
+.sm-filter-class select:focus {
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+}
+
+.sm-filter-class select:hover {
+  border-color: #14b8a6;
+}
+
+.sm-filter-status select:focus {
+  border-color: #65a30d;
+  box-shadow: 0 0 0 3px rgba(101, 163, 13, 0.1);
+}
+
+.sm-filter-status select:hover {
+  border-color: #84cc16;
+}
+
+.sm-search-group {
+  flex-shrink: 0;
+}
+
+.sm-search-wrapper {
+  position: relative;
+  width: 280px;
+}
+
+.sm-search-wrapper i {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--slate);
+  font-size: 14px;
+}
+
+.sm-search {
+  width: 100%;
+  padding: 10px 14px 10px 40px;
+  border: 1px solid var(--paper-line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--navy);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(27, 42, 74, 0.04);
+}
+
+.sm-search:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.1);
+}
+
+.sm-search:hover {
+  border-color: var(--navy);
+}
+
+/* Toolbar */
+.sm-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  align-items: center;
+}
+
+.sm-toolbar .btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(27, 42, 74, 0.04);
+}
+
+.sm-toolbar .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(27, 42, 74, 0.12);
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+  .sm-summary-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .sm-filters-section {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .sm-filter-group {
+    flex-direction: column;
+  }
+  
+  .sm-search-wrapper {
+    width: 100%;
+  }
+  
+  .sm-toolbar {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .sm-summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Selected row highlight */
+.sm-row.selected {
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.05), rgba(59, 130, 246, 0.05));
+  border-left: 3px solid #1e3a8a;
+}
+
+.sm-row.selected .sm-avatar {
+  background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+  color: #fff;
+}
+
+.sm-row.selected .nm {
+  color: #1e3a8a;
+  font-weight: 600;
+}
+</style>
 {% endblock %}

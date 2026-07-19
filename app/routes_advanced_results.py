@@ -1851,6 +1851,41 @@ def students_management():
     levels = AcademicLevel.query.filter_by(is_active=True).order_by(AcademicLevel.sort_order).all()
     classes = AcademicClass.query.order_by(AcademicClass.name).all() if not level_id else AcademicClass.query.filter_by(academic_level_id=level_id).all()
     
+    # Calculate statistics for summary cards
+    stats = {
+        "total_students": 0,
+        "secondary": 0,
+        "upper_primary": 0,
+        "lower_primary": 0,
+        "kindergarten": 0,
+        "active_students": 0,
+    }
+    
+    if selected_year:
+        # Total students for selected year
+        stats["total_students"] = Student.query.filter_by(academic_year_id=selected_year.id).count()
+        
+        # Students by level
+        for level in levels:
+            level_count = Student.query.filter_by(academic_year_id=selected_year.id, academic_level_id=level.id).count()
+            level_name_lower = level.name.lower()
+            if "kindergarten" in level_name_lower or "kg" in level_name_lower:
+                stats["kindergarten"] = level_count
+            elif "upper" in level_name_lower and "primary" in level_name_lower:
+                stats["upper_primary"] = level_count
+            elif "lower" in level_name_lower and "primary" in level_name_lower:
+                stats["lower_primary"] = level_count
+            elif "primary" in level_name_lower:
+                # If just "primary" without upper/lower, count as upper primary
+                stats["upper_primary"] += level_count
+            elif "middle" in level_name_lower:
+                stats["upper_primary"] += level_count  # Count middle as upper primary for this context
+            elif "secondary" in level_name_lower:
+                stats["secondary"] = level_count
+        
+        # Active students (not locked)
+        stats["active_students"] = Student.query.filter_by(academic_year_id=selected_year.id, is_result_locked=False).count()
+    
     # Get students with filters
     students_query = Student.query.filter_by(academic_year_id=selected_year.id) if selected_year else Student.query()
     
@@ -1889,6 +1924,7 @@ def students_management():
         selected_class_id=class_id,
         q=search_query,
         status_filter=status_filter,
+        stats=stats,
         settings=get_settings(),
     )
 
@@ -1930,6 +1966,34 @@ def delete_student(student_id):
     db.session.commit()
     flash("Student deleted.", "success")
     return redirect(url_for("admin_advanced_results.students_management"))
+
+
+@advanced_results_bp.route("/students/<int:student_id>/data")
+def student_data_json(student_id):
+    """API endpoint to fetch student data as JSON for AJAX preview"""
+    student = db.session.get(Student, student_id) or abort(404)
+    
+    return jsonify({
+        "id": student.id,
+        "student_code": student.student_code,
+        "full_name": student.full_name,
+        "mother_name": student.mother_name,
+        "phone": student.phone,
+        "date_of_birth": student.date_of_birth.isoformat() if student.date_of_birth else None,
+        "gender": student.gender,
+        "address": student.address,
+        "photo_url": student.photo_url,
+        "academic_level_id": student.academic_level_id,
+        "academic_level_name": student.academic_level.name if student.academic_level else None,
+        "academic_class_id": student.academic_class_id,
+        "academic_class_name": student.academic_class.name if student.academic_class else None,
+        "academic_section_id": student.academic_section_id,
+        "academic_section_name": student.academic_section.name if student.academic_section else None,
+        "academic_year_id": student.academic_year_id,
+        "academic_year_name": student.academic_year.name if student.academic_year else None,
+        "is_result_locked": student.is_result_locked,
+        "enrollment_status": student.enrollment_status,
+    })
 
 
 @advanced_results_bp.route("/students/<int:student_id>/toggle-lock", methods=["POST"])
