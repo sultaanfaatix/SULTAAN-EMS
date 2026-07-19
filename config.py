@@ -20,26 +20,29 @@ class Config:
     )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_pre_ping": True,
-        "pool_recycle": 900,
-        "pool_use_lifo": True,
-        "pool_size": 5,
-        "max_overflow": 10,
-        "pool_timeout": 30,
-        "pool_reset_on_return": "rollback",
-        "connect_args": {
-            "connect_timeout": 10,
-            "read_timeout": 30,
-            "write_timeout": 30,
-            "charset": "utf8mb4",
-        },
-    }
-
+    
+    # Default SQLite options for local development
     if SQLALCHEMY_DATABASE_URI.startswith("sqlite"):
         SQLALCHEMY_ENGINE_OPTIONS = {
             "pool_pre_ping": True,
             "pool_recycle": 1800,
+        }
+    else:
+        # MySQL/PostgreSQL options for production (Render + Railway)
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            "pool_pre_ping": True,
+            "pool_recycle": 1800,  # Recycle connections every 30 minutes to handle Railway MySQL timeouts
+            "pool_use_lifo": True,
+            "pool_size": 5,
+            "max_overflow": 10,
+            "pool_timeout": 30,
+            "pool_reset_on_return": "rollback",
+            "connect_args": {
+                "connect_timeout": 10,
+                "read_timeout": 30,
+                "write_timeout": 30,
+                "charset": "utf8mb4",
+            },
         }
 
     WTF_CSRF_TIME_LIMIT = None
