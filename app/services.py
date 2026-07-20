@@ -1,5 +1,6 @@
 from decimal import Decimal
 from flask import current_app, g
+from sqlalchemy import or_
 
 from . import db
 from .models import (
@@ -562,7 +563,7 @@ def active_exam_for_student(student):
     candidates = (
         Exam.query.filter(
             Exam.academic_year_id == student.academic_year_id,
-            db.or_(Exam.is_published.is_(True), Exam.is_active.is_(True)),
+            or_(Exam.is_published.is_(True), Exam.is_active.is_(True)),
         )
         .order_by(Exam.id.desc())
         .all()
