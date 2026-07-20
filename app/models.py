@@ -245,6 +245,13 @@ class GradeScale(TimestampMixin, db.Model):
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     exam_id = db.Column(db.Integer, db.ForeignKey("exams.id", ondelete="SET NULL"), nullable=True)
 
+    __table_args__ = (
+        db.Index('idx_grade_scale_exam_id', 'exam_id'),
+        db.Index('idx_grade_scale_min_score', 'min_score'),
+        db.Index('idx_grade_scale_max_score', 'max_score'),
+        db.Index('idx_grade_scale_is_active', 'is_active'),
+    )
+
 
 class ReportVerification(TimestampMixin, db.Model):
     __tablename__ = "report_verifications"

@@ -1570,6 +1570,50 @@ def build_analytics_data(results, students, exam, top_limit=5, bottom_limit=5):
             "lowest_score": 0,
         }
     
+    # Load grade scales once to avoid N+1 queries
+    from .models import GradeScale
+    exam_scales = GradeScale.query.filter(
+        GradeScale.is_active.is_(True),
+        GradeScale.exam_id == exam.id
+    ).order_by(GradeScale.sort_order.asc(), GradeScale.min_score.desc()).all()
+    
+    global_scales = GradeScale.query.filter(
+        GradeScale.is_active.is_(True),
+        GradeScale.exam_id.is_(None)
+    ).order_by(GradeScale.sort_order.asc(), GradeScale.min_score.desc()).all()
+    
+    # Create in-memory lookup function
+    def cached_grade_for(score):
+        """Get grade for a score using cached grade scales"""
+        # Try exam-specific scales first
+        for scale in exam_scales:
+            if scale.min_score <= score <= scale.max_score:
+                return {
+                    "grade": scale.grade,
+                    "comment": scale.comment,
+                    "grade_point": float(scale.grade_point or 0),
+                    "is_pass": bool(scale.is_pass),
+                    "badge_color": scale.badge_color,
+                    "text_color": scale.text_color,
+                    "background_color": scale.background_color,
+                    "border_color": scale.border_color,
+                }
+        # Fall back to global scales
+        for scale in global_scales:
+            if scale.min_score <= score <= scale.max_score:
+                return {
+                    "grade": scale.grade,
+                    "comment": scale.comment,
+                    "grade_point": float(scale.grade_point or 0),
+                    "is_pass": bool(scale.is_pass),
+                    "badge_color": scale.badge_color,
+                    "text_color": scale.text_color,
+                    "background_color": scale.background_color,
+                    "border_color": scale.border_color,
+                }
+        # Final fallback
+        return {"grade": "-", "comment": "", "grade_point": 0.0, "is_pass": False, "badge_color": "#64748b", "text_color": "#ffffff", "background_color": "#f1f5f9", "border_color": "#cbd5e1"}
+    
     # Calculate percentages for each result
     percentages = []
     for result in results:
@@ -1588,7 +1632,7 @@ def build_analytics_data(results, students, exam, top_limit=5, bottom_limit=5):
     grade_counts = {}
     grade_colors = {}
     for pct in percentages:
-        grade_info = grade_for(pct, exam_id=exam.id)
+        grade_info = cached_grade_for(pct)
         grade = grade_info["grade"]
         grade_counts[grade] = grade_counts.get(grade, 0) + 1
         if grade not in grade_colors:
@@ -1623,7 +1667,7 @@ def build_analytics_data(results, students, exam, top_limit=5, bottom_limit=5):
             exam_trend_values.append(0)
     
     # Pass/fail ratio
-    pass_count = sum(1 for pct in percentages if grade_for(pct, exam_id=exam.id).get("is_pass"))
+    pass_count = sum(1 for pct in percentages if cached_grade_for(pct).get("is_pass"))
     fail_count = len(percentages) - pass_count
     
     # Student averages for top/bottom performers
@@ -1649,7 +1693,7 @@ def build_analytics_data(results, students, exam, top_limit=5, bottom_limit=5):
                 "mother_name": student.mother_name,
                 "code": student.student_code,
                 "average": avg,
-                "grade": grade_for(avg, exam_id=exam.id)["grade"],
+                "grade": cached_grade_for(avg)["grade"],
                 "class_name": student.academic_class.name if student.academic_class else None,
                 "section_name": student.academic_section.name if student.academic_section else None,
             })
@@ -1662,7 +1706,7 @@ def build_analytics_data(results, students, exam, top_limit=5, bottom_limit=5):
                 "mother_name": student.mother_name,
                 "code": student.student_code,
                 "average": avg,
-                "grade": grade_for(avg, exam_id=exam.id)["grade"],
+                "grade": cached_grade_for(avg)["grade"],
                 "class_name": student.academic_class.name if student.academic_class else None,
                 "section_name": student.academic_section.name if student.academic_section else None,
             })
