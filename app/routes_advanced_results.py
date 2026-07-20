@@ -536,56 +536,191 @@ def class_roster():
         student_id = int_or_none(request.args.get("student_id"))
         search_query = request.args.get("q", "").strip()
     
-    selected_year = get_default_academic_year(year_id)
-    selected_exam = db.session.get(Exam, exam_id) if exam_id else get_latest_exam_for_year(selected_year)
-    if selected_exam and selected_year and selected_exam.academic_year_id != selected_year.id:
-        selected_exam = get_latest_exam_for_year(selected_year)
-    
-    if not selected_year:
-        flash("Please select an academic year.", "warning")
-        return redirect(url_for("admin_advanced_results.new_dashboard"))
+        selected_year = get_default_academic_year(year_id)
+        selected_exam = db.session.get(Exam, exam_id) if exam_id else get_latest_exam_for_year(selected_year)
+        if selected_exam and selected_year and selected_exam.academic_year_id != selected_year.id:
+            selected_exam = get_latest_exam_for_year(selected_year)
+        
+        if not selected_year:
+            flash("Please select an academic year.", "warning")
+            return redirect(url_for("admin_advanced_results.new_dashboard"))
 
-    years = AcademicYear.query.order_by(AcademicYear.name.desc()).all()
-    exams = Exam.query.filter_by(academic_year_id=selected_year.id).order_by(Exam.id.desc()).all() if selected_year else []
-    levels = AcademicLevel.query.filter_by(is_active=True).order_by(AcademicLevel.sort_order).all()
-    level_id = level_id or (selected_exam.academic_level_id if selected_exam else None)
-    class_id = class_id or (selected_exam.academic_class_id if selected_exam else None)
-    section_id = section_id or (selected_exam.academic_section_id if selected_exam else None)
-    classes = AcademicClass.query.filter_by(academic_level_id=level_id, is_active=True).order_by(AcademicClass.sort_order, AcademicClass.name).all() if level_id else []
-    sections = AcademicSection.query.filter_by(academic_class_id=class_id, is_active=True).order_by(AcademicSection.sort_order, AcademicSection.name).all() if class_id else []
+        years = AcademicYear.query.order_by(AcademicYear.name.desc()).all()
+        exams = Exam.query.filter_by(academic_year_id=selected_year.id).order_by(Exam.id.desc()).all() if selected_year else []
+        levels = AcademicLevel.query.filter_by(is_active=True).order_by(AcademicLevel.sort_order).all()
+        level_id = level_id or (selected_exam.academic_level_id if selected_exam else None)
+        class_id = class_id or (selected_exam.academic_class_id if selected_exam else None)
+        section_id = section_id or (selected_exam.academic_section_id if selected_exam else None)
+        classes = AcademicClass.query.filter_by(academic_level_id=level_id, is_active=True).order_by(AcademicClass.sort_order, AcademicClass.name).all() if level_id else []
+        sections = AcademicSection.query.filter_by(academic_class_id=class_id, is_active=True).order_by(AcademicSection.sort_order, AcademicSection.name).all() if class_id else []
 
-    scope_info = {
-        "level": db.session.get(AcademicLevel, level_id) if level_id else None,
-        "class": db.session.get(AcademicClass, class_id) if class_id else None,
-        "section": db.session.get(AcademicSection, section_id) if section_id else None,
-    }
-    
-    # If no exam selected, show exam selection interface
-    if not selected_exam:
-        return render_template(
-            "admin/class_roster.html",
-            selected_year=selected_year,
-            selected_exam=None,
-            scope_info=scope_info,
-            students=[],
-            subjects=[],
-            years=years,
-            exams=exams,
-            levels=levels,
-            classes=classes,
-            sections=sections,
-            search_query=search_query,
-            settings=get_settings(),
+        scope_info = {
+            "level": db.session.get(AcademicLevel, level_id) if level_id else None,
+            "class": db.session.get(AcademicClass, class_id) if class_id else None,
+            "section": db.session.get(AcademicSection, section_id) if section_id else None,
+        }
+        
+        # If no exam selected, show exam selection interface
+        if not selected_exam:
+            return render_template(
+                "admin/class_roster.html",
+                selected_year=selected_year,
+                selected_exam=None,
+                scope_info=scope_info,
+                students=[],
+                subjects=[],
+                years=years,
+                exams=exams,
+                levels=levels,
+                classes=classes,
+                sections=sections,
+                search_query=search_query,
+                settings=get_settings(),
+            )
+        
+        if not (level_id and class_id):
+            return render_template(
+                "admin/class_roster.html",
+                selected_year=selected_year,
+                selected_exam=selected_exam,
+                scope_info=scope_info,
+                students=[],
+                subjects=[],
+                years=years,
+                exams=exams,
+                levels=levels,
+                classes=classes,
+                sections=sections,
+                search_query=search_query,
+                settings=get_settings(),
+            )
+        
+        # Load grade scales once to avoid N+1 queries (similar to analytics optimization)
+        exam_scales = GradeScale.query.filter(
+            GradeScale.is_active.is_(True),
+            GradeScale.exam_id == selected_exam.id
+        ).order_by(GradeScale.sort_order.asc(), GradeScale.min_score.desc()).all()
+        
+        global_scales = GradeScale.query.filter(
+            GradeScale.is_active.is_(True),
+            GradeScale.exam_id.is_(None)
+        ).order_by(GradeScale.sort_order.asc(), GradeScale.min_score.desc()).all()
+        
+        # Create in-memory lookup function
+        def cached_grade_for(score):
+            """Get grade for a score using cached grade scales"""
+            # Try exam-specific scales first
+            for scale in exam_scales:
+                if scale.min_score <= score <= scale.max_score:
+                    return {
+                        "grade": scale.grade,
+                        "comment": scale.comment,
+                        "grade_point": float(scale.grade_point or 0),
+                        "is_pass": bool(scale.is_pass),
+                        "badge_color": scale.badge_color,
+                        "text_color": scale.text_color,
+                        "background_color": scale.background_color,
+                        "border_color": scale.border_color,
+                    }
+            # Fall back to global scales
+            for scale in global_scales:
+                if scale.min_score <= score <= scale.max_score:
+                    return {
+                        "grade": scale.grade,
+                        "comment": scale.comment,
+                        "grade_point": float(scale.grade_point or 0),
+                        "is_pass": bool(scale.is_pass),
+                        "badge_color": scale.badge_color,
+                        "text_color": scale.text_color,
+                        "background_color": scale.background_color,
+                        "border_color": scale.border_color,
+                    }
+            # Final fallback
+            return {"grade": "-", "comment": "", "grade_point": 0.0, "is_pass": False, "badge_color": "#64748b", "text_color": "#ffffff", "background_color": "#f1f5f9", "border_color": "#cbd5e1"}
+        
+        student_query = students_for_scope_query(
+            selected_year.id,
+            level_id=level_id,
+            class_id=class_id,
+            section_id=section_id,
         )
-
-    if not (level_id and class_id):
+        
+        # Apply search filter
+        if search_query:
+            search_pattern = f"%{search_query}%"
+            student_query = student_query.filter(
+                db_or(
+                    Student.student_code.like(search_pattern),
+                    Student.full_name.like(search_pattern)
+                )
+            )
+        
+        students = student_query.order_by(Student.full_name).all()
+        
+        subjects = subjects_for_scope(selected_exam, level_id=level_id, class_id=class_id)
+        
+        # Build results data for each student
+        roster_data = []
+        for student in students:
+            # Get results for this student and exam (only published results)
+            results = Result.query.filter_by(student_id=student.id, exam_id=exam_id, is_published=True).all()
+            results_dict = {r.subject_id: r for r in results}
+            
+            # Calculate totals and grades
+            total_score = 0
+            total_max = 0
+            subject_data = []
+            
+            for subject in subjects:
+                result = results_dict.get(subject.id)
+                score = float(result.score) if result else 0
+                max_score = float(subject.max_score)
+                percentage = (score / max_score * 100) if max_score > 0 else 0
+                
+                total_score += score
+                total_max += max_score
+                
+                # Get grade using exam-specific grade scale
+                grade_info = cached_grade_for(percentage)
+                
+                # Apply grade_override if present
+                if result and result.grade_override:
+                    grade_info = dict(grade_info)
+                    grade_info["grade"] = result.grade_override
+                
+                subject_data.append({
+                    "subject": subject,
+                    "result": result,
+                    "score": score,
+                    "max_score": max_score,
+                    "percentage": percentage,
+                    "grade": grade_info,
+                })
+            
+            overall_percentage = (total_score / total_max * 100) if total_max > 0 else 0
+            overall_grade = cached_grade_for(overall_percentage)
+            
+            # Calculate GP (grade point average)
+            total_points = sum(s["grade"]["grade_point"] for s in subject_data if s["grade"]["grade_point"])
+            gp = round(total_points / len(subject_data), 2) if subject_data else 0
+            
+            roster_data.append({
+                "student": student,
+                "subject_data": subject_data,
+                "total_score": total_score,
+                "total_max": total_max,
+                "percentage": overall_percentage,
+                "grade": overall_grade,
+                "gp": gp,
+            })
+        
         return render_template(
             "admin/class_roster.html",
             selected_year=selected_year,
             selected_exam=selected_exam,
             scope_info=scope_info,
-            students=[],
-            subjects=[],
+            students=roster_data,
+            subjects=subjects,
             years=years,
             exams=exams,
             levels=levels,
@@ -594,141 +729,6 @@ def class_roster():
             search_query=search_query,
             settings=get_settings(),
         )
-    
-    # Load grade scales once to avoid N+1 queries (similar to analytics optimization)
-    exam_scales = GradeScale.query.filter(
-        GradeScale.is_active.is_(True),
-        GradeScale.exam_id == selected_exam.id
-    ).order_by(GradeScale.sort_order.asc(), GradeScale.min_score.desc()).all()
-    
-    global_scales = GradeScale.query.filter(
-        GradeScale.is_active.is_(True),
-        GradeScale.exam_id.is_(None)
-    ).order_by(GradeScale.sort_order.asc(), GradeScale.min_score.desc()).all()
-    
-    # Create in-memory lookup function
-    def cached_grade_for(score):
-        """Get grade for a score using cached grade scales"""
-        # Try exam-specific scales first
-        for scale in exam_scales:
-            if scale.min_score <= score <= scale.max_score:
-                return {
-                    "grade": scale.grade,
-                    "comment": scale.comment,
-                    "grade_point": float(scale.grade_point or 0),
-                    "is_pass": bool(scale.is_pass),
-                    "badge_color": scale.badge_color,
-                    "text_color": scale.text_color,
-                    "background_color": scale.background_color,
-                    "border_color": scale.border_color,
-                }
-        # Fall back to global scales
-        for scale in global_scales:
-            if scale.min_score <= score <= scale.max_score:
-                return {
-                    "grade": scale.grade,
-                    "comment": scale.comment,
-                    "grade_point": float(scale.grade_point or 0),
-                    "is_pass": bool(scale.is_pass),
-                    "badge_color": scale.badge_color,
-                    "text_color": scale.text_color,
-                    "background_color": scale.background_color,
-                    "border_color": scale.border_color,
-                }
-        # Final fallback
-        return {"grade": "-", "comment": "", "grade_point": 0.0, "is_pass": False, "badge_color": "#64748b", "text_color": "#ffffff", "background_color": "#f1f5f9", "border_color": "#cbd5e1"}
-    
-    student_query = students_for_scope_query(
-        selected_year.id,
-        level_id=level_id,
-        class_id=class_id,
-        section_id=section_id,
-    )
-    
-    # Apply search filter
-    if search_query:
-        search_pattern = f"%{search_query}%"
-        student_query = student_query.filter(
-            db_or(
-                Student.student_code.like(search_pattern),
-                Student.full_name.like(search_pattern)
-            )
-        )
-    
-    students = student_query.order_by(Student.full_name).all()
-    
-    subjects = subjects_for_scope(selected_exam, level_id=level_id, class_id=class_id)
-    
-    # Build results data for each student
-    roster_data = []
-    for student in students:
-        # Get results for this student and exam (only published results)
-        results = Result.query.filter_by(student_id=student.id, exam_id=exam_id, is_published=True).all()
-        results_dict = {r.subject_id: r for r in results}
-        
-        # Calculate totals and grades
-        total_score = 0
-        total_max = 0
-        subject_data = []
-        
-        for subject in subjects:
-            result = results_dict.get(subject.id)
-            score = float(result.score) if result else 0
-            max_score = float(subject.max_score)
-            percentage = (score / max_score * 100) if max_score > 0 else 0
-            
-            total_score += score
-            total_max += max_score
-            
-            # Get grade using exam-specific grade scale
-            grade_info = cached_grade_for(percentage)
-            
-            # Apply grade_override if present
-            if result and result.grade_override:
-                grade_info = dict(grade_info)
-                grade_info["grade"] = result.grade_override
-            
-            subject_data.append({
-                "subject": subject,
-                "result": result,
-                "score": score,
-                "max_score": max_score,
-                "percentage": percentage,
-                "grade": grade_info,
-            })
-        
-        overall_percentage = (total_score / total_max * 100) if total_max > 0 else 0
-        overall_grade = cached_grade_for(overall_percentage)
-        
-        # Calculate GP (grade point average)
-        total_points = sum(s["grade"]["grade_point"] for s in subject_data if s["grade"]["grade_point"])
-        gp = round(total_points / len(subject_data), 2) if subject_data else 0
-        
-        roster_data.append({
-            "student": student,
-            "subject_data": subject_data,
-            "total_score": total_score,
-            "total_max": total_max,
-            "percentage": overall_percentage,
-            "grade": overall_grade,
-            "gp": gp,
-        })
-    
-    return render_template(
-        "admin/class_roster.html",
-        selected_year=selected_year,
-        selected_exam=selected_exam,
-        scope_info=scope_info,
-        students=roster_data,
-        subjects=subjects,
-        years=years,
-        exams=exams,
-        levels=levels,
-        classes=classes,
-        sections=sections,
-        search_query=search_query,
-        settings=get_settings(),
-    )
     except Exception as e:
         logger.error(f"Class roster error: {str(e)}")
         logger.error(traceback.format_exc())
