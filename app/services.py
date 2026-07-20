@@ -555,39 +555,60 @@ def grade_scale_payload(scale):
     }
 
 
-def active_exam_for_student(student):
+def active_exam_for_student(student, preferred_year_id=None):
     """Return the generated active exam that best matches a student's academic scope."""
     if not student:
         return None
 
     active_filter = or_(Exam.is_published.is_(True), Exam.is_active.is_(True))
     year_ids = []
+    if preferred_year_id:
+        year_ids.append(preferred_year_id)
     if student.academic_year_id:
-        year_ids.append(student.academic_year_id)
+        if student.academic_year_id not in year_ids:
+            year_ids.append(student.academic_year_id)
     current_year = AcademicYear.query.filter_by(is_current=True).order_by(AcademicYear.id.desc()).first()
     if current_year and current_year.id not in year_ids:
         year_ids.append(current_year.id)
 
+    def collect(rows, bucket, seen):
+        for row in rows:
+            if row.id not in seen:
+                bucket.append(row)
+                seen.add(row.id)
+
     candidates = []
     seen = set()
     for year_id in year_ids:
-        rows = (
+        collect(
             Exam.query.filter(Exam.academic_year_id == year_id, active_filter)
             .order_by(Exam.id.desc())
-            .all()
+            .all(),
+            candidates,
+            seen,
         )
-        for row in rows:
-            if row.id not in seen:
-                candidates.append(row)
-                seen.add(row.id)
+
+    if not candidates:
+        for year_id in year_ids:
+            collect(
+                Exam.query.filter(Exam.academic_year_id == year_id)
+                .order_by(Exam.id.desc())
+                .all(),
+                candidates,
+                seen,
+            )
 
     if not candidates:
         candidates = Exam.query.filter(active_filter).order_by(Exam.id.desc()).all()
+    if not candidates:
+        candidates = Exam.query.order_by(Exam.id.desc()).all()
     if not candidates:
         return None
 
     def score(exam):
         value = 0
+        if preferred_year_id and exam.academic_year_id == preferred_year_id:
+            value += 20
         if student.academic_year_id and exam.academic_year_id == student.academic_year_id:
             value += 16
         elif current_year and exam.academic_year_id == current_year.id:
