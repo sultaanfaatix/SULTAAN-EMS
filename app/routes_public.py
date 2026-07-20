@@ -7,7 +7,7 @@ from sqlalchemy import func
 from . import db
 from .i18n import language_redirect
 from .models import AcademicYear, Exam, IdCardIssue, IncidentAction, IncidentCategory, IncidentReport, ReportVerification, SeverityLevel, Student, Subject
-from .services import active_exam_for_student, get_settings, result_payload
+from .services import get_settings, result_payload
 from .verification import verification_payload
 
 public_bp = Blueprint("public", __name__)
@@ -195,13 +195,41 @@ def verify_report(token):
 
 @public_bp.route("/verify-id/<token>")
 def verify_id_card(token):
+    import logging
+    logger = logging.getLogger(__name__)
+    
     settings = get_settings()
     issue = IdCardIssue.query.filter_by(token=token).first()
     if not issue:
         return render_template("verify_id.html", settings=settings, verified=False), 404
     status = "Expired" if issue.expiry_date and issue.expiry_date < date.today() else issue.status
     
-    exam = active_exam_for_student(issue.student)
+    # Debug logging - Student details
+    logger.info(f"VERIFY STUDENT - Student ID: {issue.student.id}, Student Code: {issue.student.student_code}")
+    logger.info(f"VERIFY STUDENT - Student academic_year_id: {issue.student.academic_year_id}")
+    logger.info(f"VERIFY STUDENT - Student academic_level_id: {issue.student.academic_level_id}")
+    logger.info(f"VERIFY STUDENT - Student academic_class_id: {issue.student.academic_class_id}")
+    logger.info(f"VERIFY STUDENT - Student academic_section_id: {issue.student.academic_section_id}")
+    
+    exam = Exam.query.filter_by(
+        academic_year_id=issue.student.academic_year_id,
+        is_active=True
+    ).order_by(Exam.id.desc()).first()
+    
+    if exam:
+        # Debug logging - Exam details
+        logger.info(f"VERIFY STUDENT - Exam found: ID={exam.id}, Name={exam.name}")
+        logger.info(f"VERIFY STUDENT - Exam academic_year_id: {exam.academic_year_id}")
+        logger.info(f"VERIFY STUDENT - Exam academic_level_id: {exam.academic_level_id}")
+        logger.info(f"VERIFY STUDENT - Exam academic_class_id: {exam.academic_class_id}")
+        logger.info(f"VERIFY STUDENT - Exam academic_section_id: {exam.academic_section_id}")
+        logger.info(f"VERIFY STUDENT - Exam is_active: {exam.is_active}")
+        logger.info(f"VERIFY STUDENT - Exam is_published: {exam.is_published}")
+    else:
+        logger.warning(f"VERIFY STUDENT - No exam found for student academic_year_id={issue.student.academic_year_id} with is_active=True")
+        # Log all exams for this academic year for debugging
+        all_exams = Exam.query.filter_by(academic_year_id=issue.student.academic_year_id).all()
+        logger.info(f"VERIFY STUDENT - All exams for this academic year: {[(e.id, e.name, e.is_active, e.is_published, e.academic_level_id, e.academic_class_id, e.academic_section_id) for e in all_exams]}")
     
     return render_template("verify_id.html", settings=settings, verified=True, issue=issue, display_status=status, exam=exam)
 
@@ -229,7 +257,34 @@ def incident_report_form(token):
     
     student = issue.student
     
-    exam = active_exam_for_student(student)
+    # Debug logging - Student details
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"INCIDENT REPORT - Student ID: {student.id}, Student Code: {student.student_code}")
+    logger.info(f"INCIDENT REPORT - Student academic_year_id: {student.academic_year_id}")
+    logger.info(f"INCIDENT REPORT - Student academic_level_id: {student.academic_level_id}")
+    logger.info(f"INCIDENT REPORT - Student academic_class_id: {student.academic_class_id}")
+    logger.info(f"INCIDENT REPORT - Student academic_section_id: {student.academic_section_id}")
+    
+    exam = Exam.query.filter_by(
+        academic_year_id=student.academic_year_id,
+        is_active=True
+    ).order_by(Exam.id.desc()).first()
+    
+    if exam:
+        # Debug logging - Exam details
+        logger.info(f"INCIDENT REPORT - Exam found: ID={exam.id}, Name={exam.name}")
+        logger.info(f"INCIDENT REPORT - Exam academic_year_id: {exam.academic_year_id}")
+        logger.info(f"INCIDENT REPORT - Exam academic_level_id: {exam.academic_level_id}")
+        logger.info(f"INCIDENT REPORT - Exam academic_class_id: {exam.academic_class_id}")
+        logger.info(f"INCIDENT REPORT - Exam academic_section_id: {exam.academic_section_id}")
+        logger.info(f"INCIDENT REPORT - Exam is_active: {exam.is_active}")
+        logger.info(f"INCIDENT REPORT - Exam is_published: {exam.is_published}")
+    else:
+        logger.warning(f"INCIDENT REPORT - No exam found for student academic_year_id={student.academic_year_id} with is_active=True")
+        # Log all exams for this academic year for debugging
+        all_exams = Exam.query.filter_by(academic_year_id=student.academic_year_id).all()
+        logger.info(f"INCIDENT REPORT - All exams for this academic year: {[(e.id, e.name, e.is_active, e.is_published, e.academic_level_id, e.academic_class_id, e.academic_section_id) for e in all_exams]}")
     
     # Check if invigilator is logged in
     invigilator = current_invigilator()

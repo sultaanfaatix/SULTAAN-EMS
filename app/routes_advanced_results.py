@@ -1422,6 +1422,9 @@ def export_class_excel():
 @advanced_results_bp.route("/result-entry")
 def result_entry():
     """Whole-Class Result Entry grid for bulk score entry"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     year_id = int_or_none(request.args.get("year_id"))
     exam_id = int_or_none(request.args.get("exam_id"))
     level_id = int_or_none(request.args.get("level_id"))
@@ -1432,6 +1435,18 @@ def result_entry():
     selected_exam = db.session.get(Exam, exam_id) if exam_id else get_latest_exam_for_year(selected_year)
     if selected_exam and selected_year and selected_exam.academic_year_id != selected_year.id:
         selected_exam = get_latest_exam_for_year(selected_year)
+    
+    # Debug logging - Result Entry exam selection
+    if selected_exam:
+        logger.info(f"RESULT ENTRY - Exam selected: ID={selected_exam.id}, Name={selected_exam.name}")
+        logger.info(f"RESULT ENTRY - Exam academic_year_id: {selected_exam.academic_year_id}")
+        logger.info(f"RESULT ENTRY - Exam academic_level_id: {selected_exam.academic_level_id}")
+        logger.info(f"RESULT ENTRY - Exam academic_class_id: {selected_exam.academic_class_id}")
+        logger.info(f"RESULT ENTRY - Exam academic_section_id: {selected_exam.academic_section_id}")
+        logger.info(f"RESULT ENTRY - Exam is_active: {selected_exam.is_active}")
+        logger.info(f"RESULT ENTRY - Exam is_published: {selected_exam.is_published}")
+    else:
+        logger.warning(f"RESULT ENTRY - No exam selected for year_id={year_id}, exam_id={exam_id}")
     
     if not selected_year:
         flash("Please select an academic year.", "warning")
