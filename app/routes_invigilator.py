@@ -244,7 +244,9 @@ def login():
             next_url = session.pop("invigilator_next", None)
             if next_url:
                 return redirect(next_url)
-            return redirect(url_for("invigilator.profile"))
+            flash("Please scan a student QR code to continue to an incident workflow.", "info")
+            logout_invigilator()
+            return redirect(url_for("invigilator.login"))
         else:
             flash("Invalid username or password.", "danger")
             record_login_history(invigilator, "Failed", failure_reason="Invalid password")
@@ -377,7 +379,9 @@ def change_password():
         next_url = session.pop("invigilator_next", None)
         if next_url:
             return redirect(next_url)
-        return redirect(url_for("invigilator.profile"))
+        flash("Password changed successfully. Please sign in again, then scan a student QR code to continue.", "success")
+        logout_invigilator()
+        return redirect(url_for("invigilator.login"))
     
     return render_template("invigilator/change_password.html", settings=get_settings())
 
@@ -385,6 +389,7 @@ def change_password():
 @invigilator_bp.route("/profile")
 @invigilator_login_required
 def profile():
-    """Invigilator profile page"""
-    invigilator = current_invigilator()
-    return render_template("invigilator/profile.html", invigilator=invigilator)
+    """Compatibility route for older profile redirects."""
+    flash("Please scan a student QR code to continue to an incident workflow.", "info")
+    logout_invigilator()
+    return redirect(url_for("invigilator.login"))
