@@ -23,6 +23,23 @@ INCIDENT_SETTING_DEFAULTS = [
     ("invigilator_password_type", "letters_numbers", "string", "security", "Invigilator password character type"),
     ("invigilator_password_min_length", "6", "integer", "security", "Invigilator password minimum length"),
     ("allow_signature_reuse", "true", "boolean", "security", "Allow invigilators to reuse saved digital signatures"),
+    ("reset_require_username", "true", "boolean", "security", "Require username for invigilator password reset"),
+    ("reset_require_invigilator_id", "true", "boolean", "security", "Require Invigilator ID for password reset"),
+    ("reset_require_phone", "false", "boolean", "security", "Require phone number for password reset when available"),
+    ("invigilator_session_timeout", "30", "integer", "security", "Invigilator session timeout in minutes"),
+    ("invigilator_idle_timeout", "30", "integer", "security", "Invigilator idle timeout in minutes"),
+    ("invigilator_remember_duration", "1440", "integer", "security", "Remember login duration in minutes"),
+    ("incident_reference_prefix", "INC", "string", "general", "Incident reference prefix"),
+    ("incident_image_display_size", "medium", "string", "general", "Incident image display size"),
+    ("require_category", "true", "boolean", "requirements", "Incident Category"),
+    ("require_severity", "true", "boolean", "requirements", "Severity Level"),
+    ("require_description", "true", "boolean", "requirements", "Description"),
+    ("require_signature", "false", "boolean", "requirements", "Digital Signature"),
+    ("require_evidence", "false", "boolean", "requirements", "Evidence Upload"),
+    ("require_subject", "false", "boolean", "requirements", "Subject"),
+    ("require_actions_taken", "false", "boolean", "requirements", "Actions Taken"),
+    ("require_incident_date", "true", "boolean", "requirements", "Incident Date"),
+    ("require_incident_time", "true", "boolean", "requirements", "Incident Time"),
 ]
 
 
@@ -45,6 +62,10 @@ def ensure_incident_setting_defaults():
 def incident_setting_value(key, default=None):
     row = IncidentReportSettings.query.filter_by(setting_key=key).first()
     return row.setting_value if row else default
+
+
+def incident_bool_setting(key, default=False):
+    return str(incident_setting_value(key, "true" if default else "false")).lower() == "true"
 
 
 def validate_invigilator_password(password):
@@ -204,10 +225,18 @@ def incidents():
 @admin_bp.route("/incidents/<int:report_id>")
 def incident_view(report_id):
     """View single incident report details"""
+    ensure_incident_setting_defaults()
     report = IncidentReport.query.get_or_404(report_id)
     categories = IncidentCategory.query.filter_by(is_active=True).order_by(IncidentCategory.sort_order).all()
     severities = SeverityLevel.query.filter_by(is_active=True).order_by(SeverityLevel.sort_order).all()
-    return render_template("admin/incident_view.html", report=report, categories=categories, severities=severities)
+    image_display_size = incident_setting_value("incident_image_display_size", "medium")
+    return render_template(
+        "admin/incident_view.html",
+        report=report,
+        categories=categories,
+        severities=severities,
+        image_display_size=image_display_size,
+    )
 
 
 @admin_bp.route("/incidents/<int:report_id>/edit", methods=["GET", "POST"])
@@ -1353,7 +1382,10 @@ def incident_settings_update():
         else:
             # For non-boolean settings, use the form value if present
             if form_key in request.form:
-                setting.setting_value = request.form[form_key]
+                value = request.form[form_key]
+                if setting.setting_key == "incident_reference_prefix":
+                    value = "".join(ch for ch in value.strip().upper() if ch.isalnum())[:10] or "INC"
+                setting.setting_value = value
     
     db.session.commit()
     

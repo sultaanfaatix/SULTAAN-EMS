@@ -249,7 +249,7 @@
           </thead>
           <tbody>
             {% for report in reports %}
-            <tr>
+            <tr class="severity-row severity-row-{{ report.severity.name.lower().replace(' ', '-') if report.severity else 'unknown' }}">
               <td>
                 <span class="report-number">{{ report.report_number }}</span>
               </td>
@@ -275,14 +275,14 @@
                 </div>
               </td>
               <td>
-                <span class="severity-badge severity-{{ report.severity.name.lower() if report.severity else 'unknown' }}" style="background: {{ report.severity.color if report.severity else '#64748b' }};">
+                <span class="severity-badge severity-{{ report.severity.name.lower().replace(' ', '-') if report.severity else 'unknown' }}" style="background: {{ report.severity.color if report.severity else '#64748b' }};">
                   {{ report.severity.name if report.severity else 'N/A' }}
                 </span>
               </td>
               <td>
                 <div class="date-cell">
                   <span class="date">{{ report.incident_date.strftime('%d %b %Y') if report.incident_date else 'N/A' }}</span>
-                  <span class="time">{{ report.incident_date.strftime('%I:%M %p') if report.incident_date else 'N/A' }}</span>
+                  <span class="time">{{ report.incident_time.strftime('%I:%M %p') if report.incident_time else 'N/A' }}</span>
                 </div>
               </td>
               <td>
@@ -1204,6 +1204,16 @@
   border-bottom: 1px solid #f1f5f9;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+.premium-table tbody tr.severity-row-minor { background: linear-gradient(90deg, rgba(220, 252, 231, .72), #fff 42%); }
+.premium-table tbody tr.severity-row-moderate { background: linear-gradient(90deg, rgba(254, 249, 195, .74), #fff 42%); }
+.premium-table tbody tr.severity-row-serious { background: linear-gradient(90deg, rgba(255, 237, 213, .76), #fff 42%); }
+.premium-table tbody tr.severity-row-critical { background: linear-gradient(90deg, rgba(254, 226, 226, .82), #fff 42%); }
+.premium-table tbody tr.severity-row-success { background: linear-gradient(90deg, rgba(220, 252, 231, .72), #fff 42%); }
+.premium-table tbody tr.severity-row-info { background: linear-gradient(90deg, rgba(219, 234, 254, .72), #fff 42%); }
+.premium-table tbody tr.severity-row-warning { background: linear-gradient(90deg, rgba(254, 249, 195, .74), #fff 42%); }
+.premium-table tbody tr.severity-row-danger { background: linear-gradient(90deg, rgba(254, 226, 226, .82), #fff 42%); }
+.premium-table tbody tr.severity-row-unknown { background: linear-gradient(90deg, rgba(241, 245, 249, .72), #fff 42%); }
 
 .premium-table tbody tr:hover {
   background: linear-gradient(to right, #f8fafc, #f1f5f9);

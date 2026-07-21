@@ -35,6 +35,10 @@
 
   <!-- Tab Navigation -->
   <div class="tab-navigation">
+    <button class="tab-btn" data-tab="general">
+      <i class="fa-solid fa-sliders"></i>
+      <span>General</span>
+    </button>
     <button class="tab-btn active" data-tab="fields">
       <i class="fa-solid fa-eye"></i>
       <span>Fields</span>
@@ -71,6 +75,47 @@
     <div class="settings-column">
       <form method="POST" action="{{ url_for('admin.incident_settings_update') }}" id="settingsForm">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- General Tab -->
+        <div class="tab-content" id="tab-general">
+          <div class="settings-card">
+            <div class="card-header">
+              <i class="fa-solid fa-sliders"></i>
+              <div class="header-text">
+                <h3>General Incident Configuration</h3>
+                <p>Control report references and incident media presentation.</p>
+              </div>
+            </div>
+            <div class="card-body">
+              {% for setting in grouped_settings.get('general', []) %}
+              <div class="setting-row">
+                <div class="setting-left">
+                  <div class="setting-icon">
+                    <i class="fa-solid fa-{% if 'prefix' in setting.setting_key %}hashtag{% elif 'image' in setting.setting_key %}image{% else %}gear{% endif %}"></i>
+                  </div>
+                  <div class="setting-info">
+                    <label class="setting-title">{{ setting.description }}</label>
+                    <span class="setting-desc">Applies to newly submitted incident reports and admin views.</span>
+                  </div>
+                </div>
+                <div class="setting-right">
+                  {% if setting.setting_key == 'incident_image_display_size' %}
+                    <select name="setting_{{ setting.setting_key }}" class="modern-select">
+                      <option value="small" {% if setting.setting_value == 'small' %}selected{% endif %}>Small</option>
+                      <option value="medium" {% if setting.setting_value == 'medium' %}selected{% endif %}>Medium</option>
+                      <option value="large" {% if setting.setting_value == 'large' %}selected{% endif %}>Large</option>
+                    </select>
+                  {% elif setting.setting_key == 'incident_reference_prefix' %}
+                    <input type="text" name="setting_{{ setting.setting_key }}" value="{{ setting.setting_value }}" class="modern-input" maxlength="10" style="text-transform: uppercase;">
+                  {% else %}
+                    <input type="text" name="setting_{{ setting.setting_key }}" value="{{ setting.setting_value }}" class="modern-input">
+                  {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
         
         <!-- Fields Tab -->
         <div class="tab-content active" id="tab-fields">
@@ -175,7 +220,11 @@
                       <span class="toggle-slider"></span>
                     </label>
                   {% else %}
-                    <input type="number" name="setting_{{ setting.setting_key }}" value="{{ setting.setting_value }}" min="4" max="32" class="modern-input">
+                    {% if 'timeout' in setting.setting_key or 'duration' in setting.setting_key %}
+                      <input type="number" name="setting_{{ setting.setting_key }}" value="{{ setting.setting_value }}" min="1" max="10080" class="modern-input">
+                    {% else %}
+                      <input type="number" name="setting_{{ setting.setting_key }}" value="{{ setting.setting_value }}" min="4" max="32" class="modern-input">
+                    {% endif %}
                   {% endif %}
                 </div>
               </div>

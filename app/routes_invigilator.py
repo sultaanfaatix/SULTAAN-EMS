@@ -9,13 +9,24 @@ from .services import get_settings
 
 invigilator_bp = Blueprint("invigilator", __name__)
 
-# Session timeout in minutes
-INVIGILATOR_SESSION_TIMEOUT = 30
-
-
 def incident_setting_value(key, default=None):
     row = IncidentReportSettings.query.filter_by(setting_key=key).first()
     return row.setting_value if row else default
+
+
+def incident_bool_setting(key, default=False):
+    return str(incident_setting_value(key, "true" if default else "false")).lower() == "true"
+
+
+def incident_int_setting(key, default):
+    try:
+        return int(incident_setting_value(key, str(default)) or default)
+    except (TypeError, ValueError):
+        return default
+
+
+def incident_settings_dict():
+    return {row.setting_key: row.setting_value for row in IncidentReportSettings.query.all()}
 
 
 def validate_invigilator_password(password):
@@ -32,7 +43,7 @@ def validate_invigilator_password(password):
     return True, ""
 
 
-def login_invigilator(invigilator):
+def login_invigilator(invigilator, remember=False):
     """Log in an invigilator and create session"""
     session["invigilator_id"] = invigilator.id
     session["invigilator_invigilator_id"] = invigilator.invigilator_id
@@ -42,6 +53,8 @@ def login_invigilator(invigilator):
     session["invigilator_photo_path"] = invigilator.photo_path
     session["invigilator_logged_in"] = True
     session["invigilator_login_time"] = datetime.utcnow().isoformat()
+    session["invigilator_last_activity"] = datetime.utcnow().isoformat()
+    session["invigilator_remember_login"] = bool(remember)
     
     # Update last login time
     invigilator.last_login_at = datetime.utcnow()
@@ -65,6 +78,8 @@ def logout_invigilator():
     session.pop("invigilator_photo_path", None)
     session.pop("invigilator_logged_in", None)
     session.pop("invigilator_login_time", None)
+    session.pop("invigilator_last_activity", None)
+    session.pop("invigilator_remember_login", None)
 
 
 def current_invigilator():
@@ -88,8 +103,18 @@ def check_invigilator_session():
         login_time = datetime.fromisoformat(login_time_str)
         session_age = datetime.utcnow() - login_time
         
-        if session_age > timedelta(minutes=INVIGILATOR_SESSION_TIMEOUT):
+        if session.get("invigilator_remember_login"):
+            session_timeout = incident_int_setting("invigilator_remember_duration", 1440)
+        else:
+            session_timeout = incident_int_setting("invigilator_session_timeout", 30)
+        if session_age > timedelta(minutes=session_timeout):
             return False
+        last_activity_str = session.get("invigilator_last_activity") or login_time_str
+        last_activity = datetime.fromisoformat(last_activity_str)
+        idle_timeout = incident_int_setting("invigilator_idle_timeout", 30)
+        if datetime.utcnow() - last_activity > timedelta(minutes=idle_timeout):
+            return False
+        session["invigilator_last_activity"] = datetime.utcnow().isoformat()
     except (ValueError, TypeError):
         return False
     
@@ -140,6 +165,8 @@ def invigilator_role_required(*allowed_roles):
 
 def record_login_history(invigilator, status, ip_address=None, failure_reason=None):
     """Record invigilator login attempt in history"""
+    if not invigilator:
+        return
     history = InvigilatorLoginHistory(
         invigilator_id=invigilator.id,
         login_time=datetime.utcnow(),
@@ -203,13 +230,13 @@ def login():
         if invigilator.check_password(password):
             # Check if password change is forced
             if invigilator.force_password_change:
-                login_invigilator(invigilator)
+                login_invigilator(invigilator, remember=bool(request.form.get("remember_login")))
                 session["invigilator_requires_password_change"] = True
                 flash("You must change your password before continuing.", "warning")
                 return redirect(url_for("invigilator.change_password"))
             
             # Successful login
-            login_invigilator(invigilator)
+            login_invigilator(invigilator, remember=bool(request.form.get("remember_login")))
             record_login_history(invigilator, "Success")
             flash(f"Welcome, {invigilator.full_name}!", "success")
             
@@ -217,7 +244,7 @@ def login():
             next_url = session.pop("invigilator_next", None)
             if next_url:
                 return redirect(next_url)
-            return redirect(url_for("public.qr_landing"))
+            return redirect(url_for("invigilator.profile"))
         else:
             flash("Invalid username or password.", "danger")
             record_login_history(invigilator, "Failed", failure_reason="Invalid password")
@@ -234,20 +261,35 @@ def forgot_password():
         invigilator_code = request.form.get("invigilator_id", "").strip()
         mobile_number = request.form.get("mobile_number", "").strip()
 
-        invigilator = ExamInvigilator.query.filter_by(username=username).first()
-        if not invigilator or invigilator.invigilator_id != invigilator_code:
-            flash("We could not verify those invigilator details.", "danger")
-            return render_template("invigilator/forgot_password.html", settings=get_settings())
+        if incident_bool_setting("reset_require_username", True) and not username:
+            flash("Username is required to verify your account.", "danger")
+            return render_template("invigilator/forgot_password.html", settings=get_settings(), incident_settings=incident_settings_dict())
+        if incident_bool_setting("reset_require_invigilator_id", True) and not invigilator_code:
+            flash("Invigilator ID is required to verify your account.", "danger")
+            return render_template("invigilator/forgot_password.html", settings=get_settings(), incident_settings=incident_settings_dict())
 
+        query = ExamInvigilator.query
+        if username:
+            query = query.filter_by(username=username)
+        if invigilator_code:
+            query = query.filter_by(invigilator_id=invigilator_code)
+        invigilator = query.first()
+        if not invigilator:
+            flash("We could not verify those invigilator details.", "danger")
+            return render_template("invigilator/forgot_password.html", settings=get_settings(), incident_settings=incident_settings_dict())
+
+        if incident_bool_setting("reset_require_phone", False) and invigilator.mobile_number and not mobile_number:
+            flash("Mobile number is required to verify this account.", "danger")
+            return render_template("invigilator/forgot_password.html", settings=get_settings(), incident_settings=incident_settings_dict())
         if invigilator.mobile_number and mobile_number and invigilator.mobile_number.strip() != mobile_number:
             flash("The mobile number does not match this invigilator account.", "danger")
-            return render_template("invigilator/forgot_password.html", settings=get_settings())
+            return render_template("invigilator/forgot_password.html", settings=get_settings(), incident_settings=incident_settings_dict())
 
         session["invigilator_reset_id"] = invigilator.id
         flash("Identity verified. Please create a new password.", "success")
         return redirect(url_for("invigilator.reset_password"))
 
-    return render_template("invigilator/forgot_password.html", settings=get_settings())
+    return render_template("invigilator/forgot_password.html", settings=get_settings(), incident_settings=incident_settings_dict())
 
 
 @invigilator_bp.route("/reset-password", methods=["GET", "POST"])
@@ -335,7 +377,7 @@ def change_password():
         next_url = session.pop("invigilator_next", None)
         if next_url:
             return redirect(next_url)
-        return redirect(url_for("public.qr_landing"))
+        return redirect(url_for("invigilator.profile"))
     
     return render_template("invigilator/change_password.html", settings=get_settings())
 

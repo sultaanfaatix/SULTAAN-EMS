@@ -25,8 +25,8 @@
       <h3>{{ invigilator.full_name }}</h3>
       <p><strong>ID:</strong> {{ invigilator.invigilator_id }}</p>
       <p><strong>Username:</strong> {{ invigilator.username }}</p>
-      <p><strong>Role:</strong> {{ invigilator.role }}</p>
-      <p><strong>Status:</strong> <span class="status-badge status-{{ invigilator.status.lower() }}">{{ invigilator.status }}</span></p>
+      <p><strong>Role:</strong> {{ invigilator.role or 'Not Assigned' }}</p>
+      <p><strong>Status:</strong> <span class="status-badge status-{{ (invigilator.status or 'Unknown').lower() }}">{{ invigilator.status or 'Unknown' }}</span></p>
       <p><strong>Last Login:</strong> {% if invigilator.last_login_at %}{{ invigilator.last_login_at.strftime('%b %d, %Y %H:%M') }}{% else %}Never{% endif %}</p>
     </div>
   </div>
@@ -51,15 +51,15 @@
         <tr>
           <td>{{ entry.login_time.strftime('%b %d, %Y %H:%M:%S') }}</td>
           <td>
-            <span class="login-status login-{{ entry.login_status.lower() }}">
-              {{ entry.login_status }}
+            <span class="login-status login-{{ (entry.login_status or 'Unknown').lower() }}">
+              {{ entry.login_status or 'Unknown' }}
             </span>
             {% if entry.failure_reason %}
             <br><small class="text-danger">{{ entry.failure_reason }}</small>
             {% endif %}
           </td>
           <td>{{ entry.ip_address or 'N/A' }}</td>
-          <td><small>{{ entry.user_agent[:50] }}...</small></td>
+          <td><small>{{ (entry.user_agent or 'Unknown Device')[:50] }}...</small></td>
           <td>
             {% if entry.logout_time %}
             {{ entry.logout_time.strftime('%b %d, %Y %H:%M:%S') }}

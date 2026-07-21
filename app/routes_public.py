@@ -13,6 +13,15 @@ from .verification import verification_payload
 public_bp = Blueprint("public", __name__)
 
 
+def incident_bool_setting(settings_dict, key, default=False):
+    return str(settings_dict.get(key, "true" if default else "false")).lower() == "true"
+
+
+def incident_reference_prefix(settings_dict):
+    raw = (settings_dict.get("incident_reference_prefix") or "INC").strip().upper()
+    return "".join(ch for ch in raw if ch.isalnum())[:10] or "INC"
+
+
 def parse_incident_date(value):
     value = (value or "").strip()
     for fmt in ("%Y-%m-%d", "%B %d, %Y", "%d %B %Y", "%m/%d/%Y", "%d/%m/%Y"):
@@ -297,7 +306,7 @@ def incident_report_form(token):
         setting.setting_key: setting.setting_value
         for setting in IncidentReportSettings.query.all()
     }
-    allow_signature_reuse = settings_dict.get("allow_signature_reuse", "true") == "true"
+    allow_signature_reuse = incident_bool_setting(settings_dict, "allow_signature_reuse", True)
     
     if request.method == "POST":
         # Generate report number
@@ -307,10 +316,49 @@ def incident_report_form(token):
         category_id = request.form.get("category_id")
         severity_id = request.form.get("severity_id")
         description = request.form.get("description", "").strip()
-        if not category_id or not severity_id or not description:
-            flash("Please complete the required incident details before submitting.", "danger")
+        actions_list = request.form.getlist("actions_taken")
+        evidence_files = [file for file in request.files.getlist("evidence") if file and file.filename]
+        signature_data = request.form.get("signature_data", "").strip()
+        if not signature_data and allow_signature_reuse:
+            signature_data = invigilator.signature_data or ""
+
+        validation_errors = []
+        if incident_bool_setting(settings_dict, "require_category", True) and not category_id:
+            validation_errors.append("Please select a Category.")
+        if incident_bool_setting(settings_dict, "require_severity", True) and not severity_id:
+            validation_errors.append("Please select a Severity Level.")
+        if incident_bool_setting(settings_dict, "require_description", True) and not description:
+            validation_errors.append("Description is required.")
+        if incident_bool_setting(settings_dict, "require_signature", False) and not signature_data:
+            validation_errors.append("Signature is required.")
+        if incident_bool_setting(settings_dict, "require_evidence", False) and not evidence_files:
+            validation_errors.append("Please upload evidence.")
+        if incident_bool_setting(settings_dict, "require_subject", False) and not request.form.get("subject_id"):
+            validation_errors.append("Please select a Subject.")
+        if incident_bool_setting(settings_dict, "require_actions_taken", False) and not actions_list:
+            validation_errors.append("Please select at least one Action Taken.")
+        if incident_bool_setting(settings_dict, "require_incident_date", True) and not request.form.get("incident_date"):
+            validation_errors.append("Incident Date is required.")
+        if incident_bool_setting(settings_dict, "require_incident_time", True) and not request.form.get("incident_time"):
+            validation_errors.append("Incident Time is required.")
+        if validation_errors:
+            for message in validation_errors:
+                flash(message, "danger")
             return redirect(request.url)
-        if settings_dict.get("require_exam") == "true" and not exam:
+
+        if not category_id:
+            default_category = IncidentCategory.query.filter_by(is_active=True).order_by(IncidentCategory.sort_order, IncidentCategory.id).first()
+            category_id = default_category.id if default_category else None
+        if not severity_id:
+            default_severity = SeverityLevel.query.filter_by(is_active=True).order_by(SeverityLevel.sort_order, SeverityLevel.id).first()
+            severity_id = default_severity.id if default_severity else None
+        if not category_id or not severity_id:
+            flash("Incident categories and severity levels must be configured before submitting reports.", "danger")
+            return redirect(request.url)
+        if not description:
+            description = "No description provided."
+
+        if incident_bool_setting(settings_dict, "require_exam", False) and not exam:
             flash("No active exam found for this student.", "danger")
             return redirect(request.url)
         try:
@@ -320,14 +368,10 @@ def incident_report_form(token):
             flash("Please enter a valid incident date and time.", "danger")
             return redirect(request.url)
         
-        report_num = f"INC-{datetime.now().strftime('%Y%m%d')}-{''.join(random.choices(string.digits, k=4))}"
+        report_num = f"{incident_reference_prefix(settings_dict)}-{datetime.now().strftime('%Y%m%d')}-{''.join(random.choices(string.digits, k=4))}"
         
         # Handle actions taken as comma-separated string from checkboxes
-        actions_list = request.form.getlist("actions_taken")
         actions_taken = ", ".join(actions_list) if actions_list else ""
-        signature_data = request.form.get("signature_data", "").strip()
-        if not signature_data and allow_signature_reuse:
-            signature_data = invigilator.signature_data or ""
         
         # Create incident report
         report = IncidentReport(
@@ -355,26 +399,28 @@ def incident_report_form(token):
         db.session.commit()
         
         # Handle file uploads if any (optional - report saves even if upload fails)
-        if request.files.getlist("evidence"):
+        if evidence_files:
             try:
                 from .cloudinary_service import upload_image
-                for file in request.files.getlist("evidence"):
-                    if file and file.filename:
-                        try:
-                            file_path = upload_image(file, "incident/evidence")
-                            from .models import IncidentAttachment
-                            attachment = IncidentAttachment(
-                                report_id=report.id,
-                                file_path=file_path,
-                                file_name=file.filename,
-                                file_type=file.content_type or "application/octet-stream",
-                                file_size=len(file.read()),
-                                uploaded_by_id=current_user.id if getattr(current_user, "is_authenticated", False) else None
-                            )
-                            db.session.add(attachment)
-                        except Exception as upload_error:
-                            # Log error but continue - report saves even if upload fails
-                            current_app.logger.error(f"Failed to upload evidence file {file.filename}: {str(upload_error)}")
+                for file in evidence_files:
+                    try:
+                        file.stream.seek(0, 2)
+                        file_size = file.stream.tell()
+                        file.stream.seek(0)
+                        file_path = upload_image(file, "incident/evidence")
+                        from .models import IncidentAttachment
+                        attachment = IncidentAttachment(
+                            report_id=report.id,
+                            file_path=file_path,
+                            file_name=file.filename,
+                            file_type=file.content_type or "application/octet-stream",
+                            file_size=file_size,
+                            uploaded_by_id=current_user.id if getattr(current_user, "is_authenticated", False) else None
+                        )
+                        db.session.add(attachment)
+                    except Exception as upload_error:
+                        # Log error but continue - report saves even if upload fails
+                        current_app.logger.error(f"Failed to upload evidence file {file.filename}: {str(upload_error)}")
                 db.session.commit()
             except Exception as e:
                 # Log error but don't fail the entire report submission
@@ -399,7 +445,7 @@ def incident_report_form(token):
     # Generate preview report number
     import random
     import string
-    preview_report_num = f"INC-{datetime.now().strftime('%Y%m%d')}-{''.join(random.choices(string.digits, k=4))}"
+    preview_report_num = f"{incident_reference_prefix(settings_dict)}-{datetime.now().strftime('%Y%m%d')}-{''.join(random.choices(string.digits, k=4))}"
     
     return render_template(
         "incident_form.html",

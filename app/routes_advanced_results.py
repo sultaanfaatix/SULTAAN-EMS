@@ -8,7 +8,7 @@ from flask import Blueprint, abort, current_app, flash, jsonify, redirect, rende
 from flask_login import current_user, login_required
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font
-from sqlalchemy import or_ as db_or
+from sqlalchemy import func, or_ as db_or
 from sqlalchemy.orm import selectinload
 
 from . import db
@@ -2198,6 +2198,29 @@ def students_management():
     
     # Apply pagination
     students = students_query.order_by(Student.student_code).offset((page - 1) * per_page).limit(per_page).all()
+    student_ids = [student.id for student in students]
+    incident_counts = {}
+    incident_badges = {}
+    if student_ids:
+        incident_counts = dict(
+            db.session.query(IncidentReport.student_id, func.count(IncidentReport.id))
+            .filter(IncidentReport.student_id.in_(student_ids))
+            .group_by(IncidentReport.student_id)
+            .all()
+        )
+        recent_incidents = (
+            IncidentReport.query.options(selectinload(IncidentReport.severity))
+            .filter(IncidentReport.student_id.in_(student_ids))
+            .order_by(IncidentReport.created_at.desc(), IncidentReport.id.desc())
+            .all()
+        )
+        for incident in recent_incidents:
+            if incident.student_id in incident_badges:
+                continue
+            incident_badges[incident.student_id] = {
+                "severity": incident.severity.name if incident.severity else "Unknown",
+                "color": incident.severity.color if incident.severity and incident.severity.color else "#e11d48",
+            }
     
     # Calculate pagination info
     total_pages = (total_students + per_page - 1) // per_page if total_students > 0 else 1
@@ -2222,6 +2245,8 @@ def students_management():
         total_pages=total_pages,
         has_prev=has_prev,
         has_next=has_next,
+        incident_counts=incident_counts,
+        incident_badges=incident_badges,
         settings=get_settings(),
     )
 
