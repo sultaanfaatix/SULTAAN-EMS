@@ -8,7 +8,7 @@ from flask import Blueprint, abort, current_app, flash, jsonify, redirect, rende
 from flask_login import current_user, login_required
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font
-from sqlalchemy import func, or_ as db_or
+from sqlalchemy import and_ as db_and, func, or_ as db_or
 from sqlalchemy.orm import selectinload
 
 from . import db
@@ -18,7 +18,7 @@ from .import_wizard import preview_students, student_template
 from .models import AcademicYear, AcademicClass, AcademicLevel, AcademicSection, Exam, GradeScale, IncidentReport, Result, SchoolClass, Setting, Student, Subject, LabelTranslation
 from .permissions import can, enforce_endpoint_permission
 from .security import ALLOWED_PHOTOS, ALLOWED_SHEETS, allowed_file
-from .services import get_label, get_settings, grade_for, grade_for_from_cache, load_grade_scale_cache, result_payload
+from .services import get_label, get_settings, grade_for, grade_for_from_cache, load_grade_scale_cache, result_payload, subject_display_name, subject_short_name
 
 advanced_results_bp = Blueprint("admin_advanced_results", __name__)
 
@@ -51,7 +51,7 @@ def require_login():
 
 @advanced_results_bp.app_context_processor
 def inject_results_hub_helpers():
-    return {"rh_label": get_label}
+    return {"rh_label": get_label, "subject_display_name": subject_display_name, "subject_short_name": subject_short_name}
 
 
 RESULTS_LABEL_SEEDS = [
@@ -221,19 +221,19 @@ def students_for_scope_query(academic_year_id, level_id=None, class_id=None, sec
         if academic_class:
             legacy_class = SchoolClass.query.filter_by(name=academic_class.name).first()
             if legacy_class:
-                class_filters.append(Student.class_id == legacy_class.id)
+                class_filters.append(db_and(Student.academic_class_id.is_(None), Student.class_id == legacy_class.id))
         query = query.filter(db_or(*class_filters))
     elif effective_level_id:
         level_filters = [Student.academic_level_id == effective_level_id]
         academic_level = db.session.get(AcademicLevel, effective_level_id)
         if academic_level:
-            level_filters.append(Student.level == academic_level.name)
+            level_filters.append(db_and(Student.academic_level_id.is_(None), Student.level == academic_level.name))
         query = query.filter(db_or(*level_filters))
 
     if effective_section_id:
         section_filters = [Student.academic_section_id == effective_section_id]
         if section:
-            section_filters.append(Student.section == section.name)
+            section_filters.append(db_and(Student.academic_section_id.is_(None), Student.section == section.name))
         query = query.filter(db_or(*section_filters))
 
     return query
@@ -2052,48 +2052,95 @@ def grade_management():
 def save_grade_scales():
     """Save grade scales for an exam"""
     exam_id = int_or_none(request.form.get("exam_id"))
-    
-    # Update existing grade scales
-    for grade in GradeScale.query.filter_by(exam_id=exam_id if exam_id else None).all():
-        grade.grade = request.form.get(f"grade_{grade.id}", grade.grade).strip() or grade.grade
-        grade.min_score = request.form.get(f"min_{grade.id}", grade.min_score)
-        grade.max_score = request.form.get(f"max_{grade.id}", grade.max_score)
-        grade.grade_point = request.form.get(f"point_{grade.id}", grade.grade_point)
-        grade.comment = request.form.get(f"comment_{grade.id}", grade.comment).strip() or grade.comment
-        grade.is_pass = request.form.get(f"status_{grade.id}", "fail") == "pass"
-        grade.badge_color = request.form.get(f"badge_color_{grade.id}", grade.badge_color)
-        grade.text_color = request.form.get(f"text_color_{grade.id}", grade.text_color)
-        grade.background_color = request.form.get(f"background_color_{grade.id}", grade.background_color)
-        grade.border_color = request.form.get(f"border_color_{grade.id}", grade.border_color)
-        grade.sort_order = int(request.form.get(f"sort_order_{grade.id}") or grade.sort_order or 0)
-        grade.is_active = request.form.get(f"active_{grade.id}") == "on"
-    
-    # Create new grade scale if provided
-    new_grade = request.form.get("new_grade", "").strip()
-    if new_grade and exam_id:
-        db.session.add(GradeScale(
-            grade=new_grade,
-            exam_id=exam_id,
-            min_score=request.form.get("new_min") or 0,
-            max_score=request.form.get("new_max") or 0,
-            grade_point=request.form.get("new_point") or 0,
-            comment=request.form.get("new_comment", "").strip() or "Custom grade",
-            is_pass=request.form.get("new_status", "pass") == "pass",
-            badge_color=request.form.get("new_badge_color") or "#2563eb",
-            text_color=request.form.get("new_text_color") or "#ffffff",
-            background_color=request.form.get("new_background_color") or "#eff6ff",
-            border_color=request.form.get("new_border_color") or "#3b82f6",
-            sort_order=0,
-            is_active=True,
-        ))
-    
-    audit("Grade Management", f"Saved grade scales for exam {exam_id if exam_id else 'global'}")
-    db.session.commit()
-    flash("Grade scales saved successfully.", "success")
-    
+    selected_exam = db.session.get(Exam, exam_id) if exam_id else None
+    posted_grade_ids = []
+    for key in request.form:
+        if key.startswith("grade_"):
+            grade_id = int_or_none(key.split("_", 1)[1])
+            if grade_id:
+                posted_grade_ids.append(grade_id)
+
+    existing_custom = GradeScale.query.filter_by(exam_id=exam_id).count() if exam_id else 0
+    clone_global_for_exam = bool(exam_id and posted_grade_ids and existing_custom == 0)
+
+    try:
+        target_rows = []
+        if clone_global_for_exam:
+            source_rows = GradeScale.query.filter(GradeScale.id.in_(posted_grade_ids)).order_by(GradeScale.sort_order.asc(), GradeScale.min_score.desc()).all()
+            for source in source_rows:
+                clone = GradeScale(exam_id=exam_id)
+                db.session.add(clone)
+                target_rows.append((clone, source.id))
+        else:
+            query_exam_id = exam_id if exam_id else None
+            target_rows = [(grade, grade.id) for grade in GradeScale.query.filter_by(exam_id=query_exam_id).all()]
+
+        for grade, form_id in target_rows:
+            grade_value = request.form.get(f"grade_{form_id}", grade.grade).strip() or grade.grade
+            min_score = _decimal_form_value(f"min_{form_id}", grade.min_score)
+            max_score = _decimal_form_value(f"max_{form_id}", grade.max_score)
+            grade_point = _decimal_form_value(f"point_{form_id}", grade.grade_point)
+            if min_score > max_score:
+                flash(f"Grade {grade_value}: minimum percentage cannot be greater than maximum percentage.", "danger")
+                return redirect(url_for("admin_advanced_results.grade_management", year_id=selected_exam.academic_year_id if selected_exam else request.form.get("year_id"), exam_id=exam_id) if exam_id else url_for("admin_advanced_results.grade_management"))
+            grade.grade = grade_value
+            grade.min_score = min_score
+            grade.max_score = max_score
+            grade.grade_point = grade_point
+            grade.comment = request.form.get(f"comment_{form_id}", grade.comment).strip() or grade.comment
+            grade.is_pass = request.form.get(f"status_{form_id}", "fail") == "pass"
+            grade.badge_color = request.form.get(f"badge_color_{form_id}", grade.badge_color)
+            grade.text_color = request.form.get(f"text_color_{form_id}", grade.text_color)
+            grade.background_color = request.form.get(f"background_color_{form_id}", grade.background_color)
+            grade.border_color = request.form.get(f"border_color_{form_id}", grade.border_color)
+            grade.sort_order = int_or_none(request.form.get(f"sort_order_{form_id}")) or grade.sort_order or 0
+            grade.is_active = request.form.get(f"active_{form_id}") == "on"
+
+        # Create new grade scale if provided
+        new_grade = request.form.get("new_grade", "").strip()
+        if new_grade and exam_id:
+            min_score = _decimal_form_value("new_min", 0)
+            max_score = _decimal_form_value("new_max", 0)
+            if min_score > max_score:
+                flash("New grade minimum percentage cannot be greater than maximum percentage.", "danger")
+                return redirect(url_for("admin_advanced_results.grade_management", year_id=selected_exam.academic_year_id if selected_exam else None, exam_id=exam_id))
+            db.session.add(GradeScale(
+                grade=new_grade,
+                exam_id=exam_id,
+                min_score=min_score,
+                max_score=max_score,
+                grade_point=_decimal_form_value("new_point", 0),
+                comment=request.form.get("new_comment", "").strip() or "Custom grade",
+                is_pass=request.form.get("new_status", "pass") == "pass",
+                badge_color=request.form.get("new_badge_color") or "#2563eb",
+                text_color=request.form.get("new_text_color") or "#ffffff",
+                background_color=request.form.get("new_background_color") or "#eff6ff",
+                border_color=request.form.get("new_border_color") or "#3b82f6",
+                sort_order=len(target_rows) + 1,
+                is_active=True,
+            ))
+
+        audit("Grade Management", f"Saved grade scales for exam {exam_id if exam_id else 'global'}")
+        db.session.commit()
+        flash("Grade scales saved successfully.", "success")
+    except Exception as exc:
+        db.session.rollback()
+        flash(f"Could not save grade scales: {exc}", "danger")
+
+    year_id = selected_exam.academic_year_id if selected_exam else request.form.get("year_id")
     if exam_id:
-        return redirect(url_for("admin_advanced_results.grade_management", exam_id=exam_id))
-    return redirect(url_for("admin_advanced_results.grade_management"))
+        return redirect(url_for("admin_advanced_results.grade_management", year_id=year_id, exam_id=exam_id))
+    return redirect(url_for("admin_advanced_results.grade_management", year_id=year_id))
+
+
+def _decimal_form_value(field_name, default=0):
+    value = request.form.get(field_name)
+    if value in (None, ""):
+        return Decimal(str(default or 0))
+    try:
+        return Decimal(str(value))
+    except Exception:
+        return Decimal(str(default or 0))
 
 
 @advanced_results_bp.route("/settings")

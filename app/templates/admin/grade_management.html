@@ -44,9 +44,11 @@
       </div>
     {% endif %}
 
-    <form method="POST" action="{{ url_for('admin_advanced_results.save_grade_scales') }}" class="rh-table-card">
+    <form method="POST" action="{{ url_for('admin_advanced_results.save_grade_scales') }}" class="rh-table-card grade-scale-card">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="year_id" value="{{ selected_year.id if selected_year else '' }}">
       <input type="hidden" name="exam_id" value="{{ selected_exam.id if selected_exam else '' }}">
-      <table class="rh-table">
+      <table class="rh-table grade-scale-table">
         <thead>
           <tr>
             <th>{{ rh_label("grades.grade", default="Grade") }}</th>

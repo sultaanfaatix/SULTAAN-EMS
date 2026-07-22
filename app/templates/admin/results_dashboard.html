@@ -143,7 +143,7 @@ function selectLevel(levelId) {
 function openClassStudents(levelId, classId, sectionId) {
   const yearId = document.getElementById('year-selector').value;
   const examId = document.getElementById('exam-selector').value;
-  let url = `{{ url_for('admin_advanced_results.students_management') }}?year_id=${yearId}&exam_id=${examId}`;
+  let url = `{{ url_for('admin_advanced_results.class_roster') }}?year_id=${yearId}&exam_id=${examId}`;
   if (levelId) url += `&level_id=${levelId}`;
   if (classId) url += `&class_id=${classId}`;
   if (sectionId) url += `&section_id=${sectionId}`;

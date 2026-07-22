@@ -103,6 +103,33 @@
     color: var(--gold);
 }
 
+/* Grade Management refinement: preserve the table workflow while making the
+   long configuration list easier to scan and safer to edit. */
+.grade-scale-card {
+    overflow: hidden;
+    border: 1px solid rgba(201, 162, 39, .24);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 18px 42px rgba(27, 42, 74, .10);
+    background: rgba(255, 255, 255, .94);
+}
+.grade-scale-card .grade-scale-table { min-width: 980px; }
+.grade-scale-card .grade-scale-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    color: #fff;
+    background: linear-gradient(135deg, var(--navy-deep), var(--navy));
+    border-bottom: 2px solid var(--gold);
+    letter-spacing: .04em;
+}
+.grade-scale-card .grade-scale-table tbody tr { transition: background .18s ease, box-shadow .18s ease; }
+.grade-scale-card .grade-scale-table tbody tr:hover {
+    background: #fbfcff;
+    box-shadow: inset 3px 0 0 var(--gold);
+}
+.grade-scale-card .grade-scale-table input,
+.grade-scale-card .grade-scale-table select { min-height: 38px; border-radius: 10px; }
+
 /* ========================================
    Top Bar
    ======================================== */

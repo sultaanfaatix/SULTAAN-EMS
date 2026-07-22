@@ -6,7 +6,7 @@ from sqlalchemy import func
 
 from . import db
 from .i18n import language_redirect
-from .models import AcademicYear, Exam, IdCardIssue, IncidentAction, IncidentCategory, IncidentReport, ReportVerification, SeverityLevel, Student, Subject
+from .models import AcademicYear, Exam, IdCardIssue, IncidentAction, IncidentCategory, IncidentReport, ReportVerification, Result, SeverityLevel, Student, Subject
 from .services import active_exam_for_student, get_settings, result_payload
 from .verification import verification_payload
 
@@ -60,6 +60,8 @@ def result():
     student_id = request.form.get("student_id", "").strip()
     settings = get_settings()
     phone = request.form.get("phone", "").strip()
+    selected_year_id = request.form.get("year_id", type=int)
+    selected_exam_id = request.form.get("exam_id", type=int)
 
     student = Student.query.filter(
         func.trim(Student.student_code) == student_id
@@ -87,12 +89,50 @@ def result():
             student=student
         )
 
-    exam = Exam.query.filter_by(
-        academic_year_id=student.academic_year_id,
-        is_published=True
-    ).order_by(Exam.id.desc()).first()
+    available_exams = (
+        Exam.query.join(Result, Result.exam_id == Exam.id)
+        .filter(Result.student_id == student.id, Result.is_published.is_(True), Exam.is_published.is_(True))
+        .order_by(Exam.academic_year_id.desc(), Exam.id.desc())
+        .distinct()
+        .all()
+    )
 
-    payload = result_payload(student, exam=exam, public_only=True)
+    if not available_exams:
+        return render_template(
+            "portal.html",
+            settings=settings,
+            error="Natiijada ardaygan wali lama daabicin."
+        )
+
+    if not selected_exam_id:
+        years = []
+        seen_years = set()
+        for exam_option in available_exams:
+            if exam_option.academic_year and exam_option.academic_year_id not in seen_years:
+                years.append(exam_option.academic_year)
+                seen_years.add(exam_option.academic_year_id)
+        return render_template(
+            "portal.html",
+            settings=settings,
+            result_options={
+                "student": student,
+                "years": years,
+                "exams": available_exams,
+                "selected_year_id": selected_year_id or (years[0].id if years else None),
+                "phone": phone,
+            }
+        )
+
+    exam = next(
+        (
+            item for item in available_exams
+            if item.id == selected_exam_id
+            and (not selected_year_id or item.academic_year_id == selected_year_id)
+        ),
+        None,
+    )
+
+    payload = result_payload(student, exam=exam, public_only=True) if exam else None
 
     if not payload or not payload.get("subjects"):
         return render_template(
@@ -127,10 +167,20 @@ def print_report(student_code):
             student=student
         ), 403
 
-    exam = Exam.query.filter_by(
-        academic_year_id=student.academic_year_id,
-        is_published=True
-    ).order_by(Exam.id.desc()).first_or_404()
+    requested_exam_id = request.args.get("exam_id", type=int)
+    exam_query = (
+        Exam.query.join(Result, Result.exam_id == Exam.id)
+        .filter(
+            Result.student_id == student.id,
+            Result.is_published.is_(True),
+            Exam.is_published.is_(True),
+        )
+    )
+    if requested_exam_id:
+        exam_query = exam_query.filter(Exam.id == requested_exam_id)
+    else:
+        exam_query = exam_query.filter(Exam.academic_year_id == student.academic_year_id)
+    exam = exam_query.order_by(Exam.id.desc()).first_or_404()
 
     payload = result_payload(student, exam=exam, public_only=True)
     payload["verification"] = verification_payload(student, exam)

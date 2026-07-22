@@ -1004,6 +1004,61 @@ body {
   font-weight: 600;
 }
 
+.config-filter-selects {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.config-filter-select {
+  min-height: 42px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light);
+  background: linear-gradient(135deg, #FFFFFF, #F8FAFC);
+  color: var(--text-primary);
+  font-weight: 800;
+  padding: 0 14px;
+  box-shadow: var(--shadow-xs);
+}
+
+.config-subject-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.config-subject-icon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #DBEAFE, #EFF6FF);
+  color: #2563EB;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, .16);
+}
+
+.config-subject-icon img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.subject-theme-mathematics .config-subject-icon,
+.subject-theme-math .config-subject-icon { background: linear-gradient(135deg, #DBEAFE, #BFDBFE); color: #1D4ED8; }
+.subject-theme-science .config-subject-icon,
+.subject-theme-biology .config-subject-icon,
+.subject-theme-chemistry .config-subject-icon,
+.subject-theme-physics .config-subject-icon { background: linear-gradient(135deg, #DCFCE7, #BBF7D0); color: #15803D; }
+.subject-theme-english .config-subject-icon { background: linear-gradient(135deg, #F3E8FF, #E9D5FF); color: #7E22CE; }
+.subject-theme-technology .config-subject-icon,
+.subject-theme-ict .config-subject-icon,
+.subject-theme-computer .config-subject-icon { background: linear-gradient(135deg, #CFFAFE, #A5F3FC); color: #0E7490; }
+.subject-theme-business .config-subject-icon { background: linear-gradient(135deg, #FFEDD5, #FED7AA); color: #C2410C; }
+.subject-theme-arabic .config-subject-icon { background: linear-gradient(135deg, #FEF3C7, #FDE68A); color: #B45309; }
+
 .config-empty-state {
   display: grid;
   justify-items: center;
@@ -1054,3 +1109,16 @@ body {
   margin: var(--space-2) 0 0;
   padding-left: 20px;
 }
+.config-defaults-card { margin: 0 0 22px; padding: 24px; border: 1px solid #e4e9f2; border-radius: 20px; background: linear-gradient(135deg, #ffffff, #f7faff); box-shadow: 0 14px 34px rgba(35, 51, 84, .08); }
+.config-defaults-heading { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.config-defaults-icon { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 14px; color: #0b63ce; background: #e8f2ff; }
+.config-defaults-heading h2 { margin: 0; color: #14213d; font-size: 1.05rem; }
+.config-defaults-heading p { margin: 4px 0 0; color: #718096; }
+.config-defaults-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 12px; align-items: stretch; }
+.config-default-option { display: flex; align-items: center; gap: 10px; padding: 14px; border: 1px solid #e2e8f0; border-radius: 14px; background: #fff; cursor: pointer; }
+.config-default-option:has(input:checked) { border-color: #7bb6ff; box-shadow: 0 0 0 3px rgba(35, 124, 232, .1); }
+.config-default-option input { accent-color: #1769d1; }
+.config-default-option span { display: grid; gap: 3px; color: #1c2b4a; }
+.config-default-option small { color: #7a879d; }
+@media (max-width: 900px) { .config-defaults-form { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 620px) { .config-defaults-form { grid-template-columns: 1fr; } }

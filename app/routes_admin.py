@@ -14,7 +14,7 @@ from .import_wizard import preview_results, preview_students, result_template, s
 from .models import AcademicLevel, AcademicClass, AcademicSection, AcademicYear, AttendanceRecord, AuditLog, Exam, GradeScale, IncidentAction, IncidentAttachment, IncidentCategory, IncidentReport, ReportVerification, Result, SchoolClass, SeverityLevel, Setting, Student, Subject, User, ExamInvigilator, InvigilatorLoginHistory, IncidentReportSettings
 from .permissions import PERMISSIONS, can, enforce_endpoint_permission, permission_required
 from .security import ALLOWED_PHOTOS, ALLOWED_SHEETS, allowed_file
-from .services import get_settings, grade_for, result_payload
+from .services import get_settings, grade_for, result_payload, subject_icon, subject_short_name
 from .services import slug
 
 admin_bp = Blueprint("admin", __name__)
@@ -1506,7 +1506,7 @@ CONFIG_CENTER_SECTIONS = {
     'subjects': {
         'title': 'Subjects',
         'description': 'Manage subject offerings and their level assignments',
-        'columns': ['Subject', 'Status', 'Code', 'Level', 'Classes', 'Created By']
+        'columns': ['Subject', 'Status', 'Short Name', 'Level', 'Classes', 'Created By']
     },
     'promotion-rules': {
         'title': 'Promotion Rules',
@@ -1719,6 +1719,14 @@ def config_center():
     classes_by_level = {}
     class_student_counts = {}
     subject_class_map = {}
+    subject_icons = {}
+    subject_short_names = {}
+    selected_subject_year_id = _parse_int(request.args.get("year_id"))
+    selected_subject_level_id = _parse_int(request.args.get("level_id"))
+    settings = get_settings()
+    if not selected_subject_year_id:
+        latest_year = AcademicYear.query.order_by(AcademicYear.is_current.desc(), AcademicYear.name.desc(), AcademicYear.id.desc()).first()
+        selected_subject_year_id = latest_year.id if latest_year else None
 
     # Get data based on section
     items = []
@@ -1735,8 +1743,15 @@ def config_center():
             classes_by_level.setdefault(academic_class.academic_level_id, []).append(academic_class)
             class_student_counts[academic_class.id] = Student.query.filter_by(academic_class_id=academic_class.id).count()
     elif section == 'subjects':
-        items = Subject.query.order_by(Subject.academic_level_id, Subject.sort_order, Subject.name).all()
+        subject_query = Subject.query
+        if selected_subject_level_id:
+            subject_query = subject_query.filter_by(academic_level_id=selected_subject_level_id)
+        else:
+            subject_query = subject_query.filter(Subject.academic_level_id.is_(None))
+        items = subject_query.order_by(Subject.academic_level_id, Subject.sort_order, Subject.name).all()
         for subject in items:
+            subject_icons[subject.id] = subject_icon(subject.name, settings)
+            subject_short_names[subject.id] = subject_short_name(subject, settings)
             if subject.academic_level_id:
                 subject_class_map[subject.id] = AcademicClass.query.filter_by(academic_level_id=subject.academic_level_id, is_active=True).order_by(AcademicClass.sort_order, AcademicClass.name).all()
             else:
@@ -1776,7 +1791,12 @@ def config_center():
                          levels=AcademicLevel.query.order_by(AcademicLevel.sort_order, AcademicLevel.name).all(),
                          classes_by_level=classes_by_level,
                          class_student_counts=class_student_counts,
-                         subject_class_map=subject_class_map)
+                         subject_class_map=subject_class_map,
+                         subject_icons=subject_icons,
+                         subject_short_names=subject_short_names,
+                         selected_subject_year_id=selected_subject_year_id,
+                         selected_subject_level_id=selected_subject_level_id,
+                         display_subject_names=settings.get("display_subject_names", "full"))
 
 
 @admin_bp.route("/config-center/authenticate", methods=["POST"])
@@ -1875,6 +1895,29 @@ def config_result_settings():
 def config_system_defaults():
     """System Defaults Management"""
     return redirect(url_for('admin.config_center', section='system-defaults'))
+
+
+@admin_bp.route("/config-center/api/system-defaults", methods=["POST"])
+@login_required
+@config_center_required
+def config_save_system_defaults():
+    """Persist the small set of system-wide display defaults without adding schema."""
+    value = (request.form.get("display_subject_names") or "full").strip().lower()
+    allowed = {"full", "short", "full_short"}
+    if value not in allowed:
+        flash("Please choose a valid subject display mode.", "danger")
+        return redirect(url_for("admin.config_center", section="system-defaults"))
+    setting = db.session.get(Setting, "display_subject_names") or Setting(key="display_subject_names")
+    setting.value = value
+    db.session.add(setting)
+    try:
+        db.session.commit()
+        audit("Configuration Center", f"Updated subject display mode: {value}")
+        flash("System default saved successfully.", "success")
+    except Exception:
+        db.session.rollback()
+        flash("System default could not be saved.", "danger")
+    return redirect(url_for("admin.config_center", section="system-defaults"))
 
 
 @admin_bp.route("/config-center/audit-logs")
@@ -2298,6 +2341,7 @@ def config_create_subject():
     academic_level_id = _parse_int(data.get('academic_level_id'))
     max_score = _parse_float(data.get('max_score'), 100.0)
     sort_order = _parse_int(data.get('sort_order'))
+    short_name = data.get('short_name', '').strip().upper()
 
     if not name:
         return jsonify({'success': False, 'message': 'Name is required'})
@@ -2318,6 +2362,9 @@ def config_create_subject():
             sort_order=sort_order if sort_order is not None else max_sort + 1
         )
         db.session.add(subject)
+        db.session.flush()
+        if short_name:
+            db.session.merge(Setting(key=f"subject_short_name_{subject.id}", value=short_name))
         db.session.commit()
 
         audit("Configuration Center", f"Created subject: {name}")
@@ -2337,7 +2384,8 @@ def config_update_subject(subject_id):
     subject = Subject.query.get_or_404(subject_id)
 
     name = data.get('name', subject.name).strip()
-    academic_level_id = _parse_int(data.get('academic_level_id'), subject.academic_level_id)
+    academic_level_id = _parse_int(data.get('academic_level_id')) if 'academic_level_id' in data else subject.academic_level_id
+    short_name = data.get('short_name', '').strip().upper()
     if not name:
         return jsonify({'success': False, 'message': 'Name is required'})
     if _duplicate_exists(Subject, {'name': name, 'academic_level_id': academic_level_id}, exclude_id=subject.id):
@@ -2350,6 +2398,11 @@ def config_update_subject(subject_id):
     subject.sort_order = _parse_int(data.get('sort_order'), subject.sort_order)
 
     try:
+        if 'short_name' in data:
+            setting_key = f"subject_short_name_{subject.id}"
+            setting = db.session.get(Setting, setting_key) or Setting(key=setting_key)
+            setting.value = short_name
+            db.session.add(setting)
         db.session.commit()
         _audit_config_change("Configuration Center Updated", "subjects", subject, old_value=old_value, new_value={'name': subject.name, 'academic_level_id': subject.academic_level_id, 'max_score': float(subject.max_score or 0), 'sort_order': subject.sort_order})
         return jsonify({'success': True, 'message': 'Subject updated successfully'})

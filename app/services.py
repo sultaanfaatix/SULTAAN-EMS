@@ -382,6 +382,7 @@ DEFAULT_SETTINGS = {
     "verify_id_status_text_color": "#ffffff",
     "verify_id_shadow_color": "#000000",
     "verify_id_template_style": "premium",
+    "display_subject_names": "full",
 }
 
 DEFAULT_GRADE_SCALES = [
@@ -438,12 +439,57 @@ def subject_icon(subject_name, settings=None):
     return {"type": "fa", "value": "fa-book"}
 
 
+def subject_short_name(subject, settings=None):
+    settings = settings or get_settings()
+    configured = settings.get(f"subject_short_name_{subject.id}") if subject and subject.id else ""
+    if configured:
+        return configured
+    words = str(subject.name if subject else "").replace("-", " ").split()
+    if not words:
+        return ""
+    if len(words) == 1:
+        return words[0][:4].upper()
+    return "".join(word[0] for word in words[:4]).upper()
+
+
+def subject_display_name(subject, settings=None):
+    settings = settings or get_settings()
+    mode = settings.get("display_subject_names", "full")
+    short = subject_short_name(subject, settings)
+    full = subject.name if subject else ""
+    if mode == "short":
+        return short or full
+    if mode == "full_short" and short:
+        return f"{full} ({short})"
+    return full
+
+
 def slug(value):
     return "".join(ch.lower() if ch.isalnum() else "_" for ch in str(value or "")).strip("_")
 
 
 def grade_for(score, exam_id=None):
     """Get grade for a given score, optionally scoped to a specific exam"""
+    try:
+        score = float(score or 0)
+    except (TypeError, ValueError):
+        score = 0.0
+
+    # Keep all callers on one request-scoped scale snapshot. This prevents
+    # analytics and result pages from issuing one SQL query per percentage.
+    try:
+        cache = getattr(g, "_grade_scale_cache", None)
+        if cache is None:
+            cache = {}
+            g._grade_scale_cache = cache
+        cache_key = int(exam_id or 0)
+        if cache_key not in cache:
+            cache[cache_key] = load_grade_scale_cache(exam_id)
+        return grade_for_from_cache(score, cache[cache_key])
+    except RuntimeError:
+        # Preserve utility behavior for callers outside an application context.
+        pass
+
     # First try to find exam-specific grade scale
     if exam_id:
         scale = (
@@ -473,11 +519,6 @@ def grade_for(score, exam_id=None):
     if scale:
         return grade_scale_payload(scale)
     
-    # Final fallback to any active grade scale
-    fallback = GradeScale.query.filter_by(is_active=True).order_by(GradeScale.sort_order.asc(), GradeScale.min_score.asc()).first()
-    if fallback:
-        return grade_scale_payload(fallback)
-    
     return {"grade": "-", "comment": "", "grade_point": 0.0, "is_pass": False, "badge_color": "#64748b", "text_color": "#ffffff", "background_color": "#f1f5f9", "border_color": "#cbd5e1"}
 
 
@@ -503,18 +544,10 @@ def load_grade_scale_cache(exam_id=None):
         .all()
     )
 
-    fallback_scales = []
-    if not exam_scales and not global_scales:
-        fallback_scales = (
-            GradeScale.query.filter_by(is_active=True)
-            .order_by(GradeScale.sort_order.asc(), GradeScale.min_score.asc())
-            .all()
-        )
-
     return {
         "exam": [grade_scale_cache_row(scale) for scale in exam_scales],
         "global": [grade_scale_cache_row(scale) for scale in global_scales],
-        "fallback": [grade_scale_cache_row(scale) for scale in fallback_scales],
+        "fallback": [],
     }
 
 
@@ -669,20 +702,24 @@ def result_payload(student, exam=None, public_only=True):
     max_total = sum(Decimal(row.subject.max_score) for row in rows) or Decimal("0")
     average = (total / max_total * 100) if max_total else Decimal("0")
     settings = get_settings()
-    overall = grade_for(average)
+    # Resolve every grade in this payload from one in-memory scale snapshot.
+    # This keeps the public result, print report, and verification view aligned
+    # with the selected exam's Grade Management configuration.
+    grade_cache = load_grade_scale_cache(exam.id if exam else None)
+    overall = grade_for_from_cache(average, grade_cache)
     status = "Gudbay" if overall.get("is_pass") else "Haray"
 
     subject_rows = []
     for row in rows:
         percentage = Decimal(row.score) / Decimal(row.subject.max_score) * 100 if row.subject.max_score else 0
-        automatic_grade = grade_for(percentage)
+        automatic_grade = grade_for_from_cache(percentage, grade_cache)
         displayed_grade = dict(automatic_grade)
         displayed_grade["grade"] = row.grade_override or automatic_grade["grade"]
         displayed_grade["comment"] = row.comment or automatic_grade["comment"]
         subject_rows.append(
             {
                 "id": row.id,
-                "subject": row.subject.name.strip(),
+                "subject": subject_display_name(row.subject, settings).strip(),
                 "score": float(row.score),
                 "max_score": float(row.subject.max_score),
                 "grade": displayed_grade,
@@ -711,6 +748,16 @@ def result_payload(student, exam=None, public_only=True):
                 rank = index
                 break
 
+    exam_grade_scales = (
+        GradeScale.query.filter_by(exam_id=exam.id, is_active=True)
+        .order_by(GradeScale.sort_order.asc(), GradeScale.min_score.desc()).all()
+        if exam else []
+    )
+    result_grade_scales = exam_grade_scales or (
+        GradeScale.query.filter_by(exam_id=None, is_active=True)
+        .order_by(GradeScale.sort_order.asc(), GradeScale.min_score.desc()).all()
+    )
+
     return {
         "student": student,
         "exam": exam or (rows[0].exam if rows else None),
@@ -720,15 +767,15 @@ def result_payload(student, exam=None, public_only=True):
         "average": float(round(average, 2)),
         "status": status,
         "overall_grade": overall,
-        "grade_scales": GradeScale.query.filter_by(is_active=True).order_by(GradeScale.sort_order.asc(), GradeScale.min_score.desc()).all(),
+        "grade_scales": result_grade_scales,
         "rank": rank,
-        "comment": automatic_comment(average),
+        "comment": overall.get("comment") or "",
         "settings": settings,
     }
 
 
-def automatic_comment(average):
-    return grade_for(average).get("comment") or ""
+def automatic_comment(average, exam_id=None):
+    return grade_for(average, exam_id=exam_id).get("comment") or ""
 
 
 def get_label(label_key, language_code=None, default=None):
