@@ -91,7 +91,7 @@ def result():
 
     available_exams = (
         Exam.query.join(Result, Result.exam_id == Exam.id)
-        .filter(Result.student_id == student.id, Result.is_published.is_(True), Exam.is_published.is_(True))
+        .filter(Result.student_id == student.id, Result.is_published.is_(True))
         .order_by(Exam.academic_year_id.desc(), Exam.id.desc())
         .distinct()
         .all()
@@ -173,7 +173,6 @@ def print_report(student_code):
         .filter(
             Result.student_id == student.id,
             Result.is_published.is_(True),
-            Exam.is_published.is_(True),
         )
     )
     if requested_exam_id:
@@ -212,10 +211,16 @@ def api_result(student_code):
             "reason": student.lock_reason
         }), 423
 
-    exam = Exam.query.filter_by(
-        academic_year_id=student.academic_year_id,
-        is_published=True
-    ).order_by(Exam.id.desc()).first()
+    exam = (
+        Exam.query.join(Result, Result.exam_id == Exam.id)
+        .filter(
+            Result.student_id == student.id,
+            Result.is_published.is_(True),
+            Exam.academic_year_id == student.academic_year_id,
+        )
+        .order_by(Exam.id.desc())
+        .first()
+    )
 
     if not exam:
         return jsonify({"ok": False, "message": "No published result."}), 404

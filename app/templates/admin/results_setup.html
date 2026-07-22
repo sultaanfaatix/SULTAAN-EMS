@@ -14,8 +14,8 @@
           <i class="fas fa-shield-alt"></i>
         </div>
         <div class="config-hero-text">
+          <span class="config-hero-kicker">Read Only Workspace</span>
           <h1 class="config-hero-title">Configuration is Protected</h1>
-          <p class="config-hero-subtitle">This page is in Read Only Mode. All system configuration is managed inside the Configuration Center.</p>
         </div>
       </div>
       <div class="config-hero-right">
@@ -56,7 +56,7 @@
     <!-- Academic Years Card -->
     <div class="config-card config-card-academic">
       <div class="config-card-header">
-        <div class="config-card-icon" style="background: var(--gradient-academic);">
+        <div class="config-card-icon config-card-icon-academic">
           <i class="fas fa-calendar-alt"></i>
         </div>
         <div class="config-card-title">
@@ -92,7 +92,7 @@
     <!-- Exam Types Card -->
     <div class="config-card config-card-exam">
       <div class="config-card-header">
-        <div class="config-card-icon" style="background: var(--gradient-exam);">
+        <div class="config-card-icon config-card-icon-exam">
           <i class="fas fa-clipboard-list"></i>
         </div>
         <div class="config-card-title">
@@ -128,7 +128,7 @@
     <!-- Levels & Classes Card -->
     <div class="config-card config-card-level">
       <div class="config-card-header">
-        <div class="config-card-icon" style="background: var(--gradient-level);">
+        <div class="config-card-icon config-card-icon-level">
           <i class="fas fa-layer-group"></i>
         </div>
         <div class="config-card-title">
@@ -164,7 +164,7 @@
     <!-- Subjects Card -->
     <div class="config-card config-card-subject">
       <div class="config-card-header">
-        <div class="config-card-icon" style="background: var(--gradient-subject);">
+        <div class="config-card-icon config-card-icon-subject">
           <i class="fas fa-book"></i>
         </div>
         <div class="config-card-title">
@@ -198,28 +198,6 @@
     </div>
   </div>
 
-  <!-- Configuration Status Banner -->
-  <div class="config-status-banner">
-    <div class="config-status-banner-content">
-      <div class="config-status-banner-icon">
-        <i class="fas fa-shield-alt"></i>
-      </div>
-      <div class="config-status-banner-text">
-        <h4>Configuration is Protected</h4>
-        <p>Read Only Mode - All modifications require authentication in Configuration Center</p>
-      </div>
-      <div class="config-status-banner-actions">
-        <span class="config-badge config-badge-success">
-          <i class="fas fa-check-circle"></i>
-          Secure
-        </span>
-        <span class="config-badge config-badge-info">
-          <i class="fas fa-lock"></i>
-          Protected
-        </span>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- Authentication Modal -->
@@ -522,6 +500,127 @@
 .config-status-banner-actions {
   display: flex;
   gap: var(--space-3);
+}
+
+/* Compact read-only dashboard treatment. The four cards remain the
+   information architecture; only their presentation is tightened. */
+.config-dashboard {
+  max-width: 1320px;
+  padding: clamp(20px, 3vw, 36px);
+}
+
+.config-dashboard .config-hero {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(99, 102, 241, 0.15), transparent 34%),
+    linear-gradient(135deg, #ffffff 0%, #f8fbff 52%, #f1f5ff 100%);
+  border-color: rgba(99, 102, 241, 0.18);
+  box-shadow: 0 18px 42px rgba(30, 41, 59, 0.10);
+}
+
+.config-dashboard .config-hero-content {
+  padding: clamp(22px, 3vw, 34px);
+  gap: 28px;
+}
+
+.config-dashboard .config-hero-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #4338ca, #6366f1 58%, #38bdf8);
+  box-shadow: 0 12px 24px rgba(79, 70, 229, 0.24);
+  font-size: 28px;
+}
+
+.config-dashboard .config-hero-kicker {
+  display: block;
+  margin-bottom: 6px;
+  color: #4f46e5;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.config-dashboard .config-hero-title {
+  margin: 0;
+  font-size: clamp(24px, 2.6vw, 34px);
+  letter-spacing: -0.02em;
+}
+
+.config-dashboard .config-hero-right {
+  min-width: 320px;
+  gap: 18px;
+}
+
+.config-dashboard .config-hero-button {
+  min-height: 52px;
+  background: linear-gradient(135deg, #4f46e5, #2563eb 58%, #0ea5e9);
+  box-shadow: 0 12px 26px rgba(37, 99, 235, 0.24);
+}
+
+.config-dashboard .config-hero-button:hover {
+  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.30);
+  transform: translateY(-2px);
+}
+
+.config-dashboard .config-cards-grid {
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.config-dashboard .config-card {
+  position: relative;
+  min-width: 0;
+  padding: 20px;
+  border-color: rgba(148, 163, 184, 0.22);
+  box-shadow: 0 10px 24px rgba(30, 41, 59, 0.08);
+  overflow: hidden;
+}
+
+.config-dashboard .config-card::after {
+  position: absolute;
+  right: -22px;
+  bottom: -34px;
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  content: "";
+  opacity: .36;
+  pointer-events: none;
+}
+
+.config-dashboard .config-card-academic { background: linear-gradient(145deg, #ffffff, #eff6ff); }
+.config-dashboard .config-card-exam { background: linear-gradient(145deg, #ffffff, #faf5ff); }
+.config-dashboard .config-card-level { background: linear-gradient(145deg, #ffffff, #ecfdf5); }
+.config-dashboard .config-card-subject { background: linear-gradient(145deg, #ffffff, #fff7ed); }
+.config-dashboard .config-card-academic::after { background: #93c5fd; }
+.config-dashboard .config-card-exam::after { background: #c4b5fd; }
+.config-dashboard .config-card-level::after { background: #6ee7b7; }
+.config-dashboard .config-card-subject::after { background: #fdba74; }
+
+.config-dashboard .config-card-header,
+.config-dashboard .config-card-stats,
+.config-dashboard .config-card-footer {
+  position: relative;
+  z-index: 1;
+}
+
+.config-dashboard .config-card-header { margin-bottom: 18px; }
+.config-dashboard .config-card-icon { width: 44px; height: 44px; border-radius: 14px; }
+.config-dashboard .config-card-icon-academic { background: linear-gradient(135deg, #2563eb, #38bdf8); }
+.config-dashboard .config-card-icon-exam { background: linear-gradient(135deg, #7c3aed, #c084fc); }
+.config-dashboard .config-card-icon-level { background: linear-gradient(135deg, #059669, #34d399); }
+.config-dashboard .config-card-icon-subject { background: linear-gradient(135deg, #ea580c, #fb923c); }
+
+.config-dashboard .config-card-title h3 { font-size: 15px; }
+.config-dashboard .config-card-title p { font-size: 12px; }
+.config-dashboard .config-card-stats { margin-bottom: 18px; padding-bottom: 16px; }
+.config-dashboard .config-stat-value { font-size: 22px; }
+.config-dashboard .config-card-current-value { max-width: 130px; }
+
+@media (max-width: 768px) {
+  .config-dashboard .config-hero-right { min-width: 0; }
+  .config-dashboard .config-hero-content { padding: 22px; }
 }
 
 @media (max-width: 1200px) {

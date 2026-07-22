@@ -39,17 +39,19 @@
 {% endmacro %}
 
 <div class="config-center">
-  <aside class="config-sidebar">
-    <div class="config-sidebar-header">
-      <div class="config-sidebar-title">
-        <i class="fas fa-shield-alt"></i>
-        Configuration Center
+  <main class="config-main">
+    <div class="config-header">
+      <div>
+        <div class="config-breadcrumb"><i class="fas fa-sliders-h"></i> Administration <span>/</span> Configuration Center</div>
+        <h1 class="config-title">{{ section_title }}</h1>
+        <p class="config-description">{{ section_description }}</p>
       </div>
-      <div class="config-sidebar-subtitle">Protected system management</div>
+      <a class="config-btn config-btn-secondary" href="{{ url_for('admin_advanced_results.new_setup') }}">
+        <i class="fas fa-arrow-left"></i> Back to Setup
+      </a>
     </div>
-    <nav class="config-sidebar-nav">
-      <div class="config-nav-section">
-        <div class="config-nav-section-title">Core Configuration</div>
+    <nav class="config-horizontal-nav" aria-label="Configuration sections">
+      <span class="config-horizontal-label"><i class="fas fa-shield-alt"></i> Configuration</span>
         <a href="{{ url_for('admin.config_academic_years') }}" class="config-nav-item academic {% if section == 'academic-years' %}active{% endif %}">
           <i class="fas fa-calendar-alt"></i> Academic Years
         </a>
@@ -62,41 +64,13 @@
         <a href="{{ url_for('admin.config_subjects') }}" class="config-nav-item subject {% if section == 'subjects' %}active{% endif %}">
           <i class="fas fa-book"></i> Subjects
         </a>
-      </div>
-      <div class="config-nav-section">
-        <div class="config-nav-section-title">Rules & Results</div>
-        <a href="{{ url_for('admin.config_promotion_rules') }}" class="config-nav-item grade {% if section == 'promotion-rules' %}active{% endif %}">
-          <i class="fas fa-arrow-up"></i> Promotion Rules
-        </a>
-        <a href="{{ url_for('admin.config_result_settings') }}" class="config-nav-item grade {% if section == 'result-settings' %}active{% endif %}">
-          <i class="fas fa-sliders-h"></i> Result Settings
-        </a>
-      </div>
-      <div class="config-nav-section">
-        <div class="config-nav-section-title">System</div>
-        <a href="{{ url_for('admin.config_system_defaults') }}" class="config-nav-item {% if section == 'system-defaults' %}active{% endif %}">
-          <i class="fas fa-cogs"></i> System Defaults
-        </a>
         <a href="{{ url_for('admin.config_audit_logs') }}" class="config-nav-item audit {% if section == 'audit-logs' %}active{% endif %}">
           <i class="fas fa-history"></i> Audit Logs
         </a>
         <a href="{{ url_for('admin.config_archive') }}" class="config-nav-item archive {% if section == 'archive' %}active{% endif %}">
           <i class="fas fa-archive"></i> Archive
         </a>
-      </div>
     </nav>
-  </aside>
-
-  <main class="config-main">
-    <div class="config-header">
-      <div>
-        <h1 class="config-title">{{ section_title }}</h1>
-        <p class="config-description">{{ section_description }}</p>
-      </div>
-      <a class="config-btn config-btn-secondary" href="{{ url_for('admin_advanced_results.new_setup') }}">
-        <i class="fas fa-arrow-left"></i> Back to Setup
-      </a>
-    </div>
 
     <div class="config-toolbar">
       <div class="config-search">
@@ -116,38 +90,23 @@
           <option value="{{ level.id }}" {% if selected_subject_level_id == level.id %}selected{% endif %}>{{ level.name }}</option>
           {% endfor %}
         </select>
+        <form method="post" action="{{ url_for('admin.config_save_system_defaults') }}" class="config-subject-display-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="redirect_section" value="subjects">
+          <select class="config-filter-select" name="display_subject_names" aria-label="Subject display mode" onchange="this.form.submit()">
+            <option value="full" {% if display_subject_names == 'full' %}selected{% endif %}>Full Names</option>
+            <option value="short" {% if display_subject_names == 'short' %}selected{% endif %}>Short Names</option>
+            <option value="full_short" {% if display_subject_names == 'full_short' %}selected{% endif %}>Full + Short</option>
+          </select>
+        </form>
       </div>
       {% endif %}
-      <div class="config-filters">
-        <button class="config-filter active" onclick="applyFilter(event, 'all')">All</button>
-        <button class="config-filter" onclick="applyFilter(event, 'active')">Active</button>
-        <button class="config-filter" onclick="applyFilter(event, 'archived')">Archived</button>
-      </div>
       {% if section in mutable_sections %}
       <button class="config-btn config-btn-primary" onclick="openAddModal()">
         <i class="fas fa-plus"></i> Add New
       </button>
       {% endif %}
     </div>
-
-    {% if section == 'system-defaults' %}
-    <section class="config-defaults-card">
-      <div class="config-defaults-heading">
-        <span class="config-defaults-icon"><i class="fas fa-font"></i></span>
-        <div>
-          <h2>Subject display names</h2>
-          <p>Choose how subject names appear across Results Hub tables and reports.</p>
-        </div>
-      </div>
-      <form method="post" action="{{ url_for('admin.config_save_system_defaults') }}" class="config-defaults-form">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <label class="config-default-option"><input type="radio" name="display_subject_names" value="full" {% if display_subject_names == 'full' %}checked{% endif %}><span><strong>Full Name</strong><small>Mathematics</small></span></label>
-        <label class="config-default-option"><input type="radio" name="display_subject_names" value="short" {% if display_subject_names == 'short' %}checked{% endif %}><span><strong>Short Name</strong><small>MATH</small></span></label>
-        <label class="config-default-option"><input type="radio" name="display_subject_names" value="full_short" {% if display_subject_names == 'full_short' %}checked{% endif %}><span><strong>Full Name (Short Name)</strong><small>Mathematics (MATH)</small></span></label>
-        <button type="submit" class="config-btn config-btn-primary"><i class="fas fa-save"></i> Save Default</button>
-      </form>
-    </section>
-    {% endif %}
 
     <div class="config-stats-row">
       <div class="config-stat-card">

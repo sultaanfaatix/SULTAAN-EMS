@@ -695,9 +695,6 @@ def result_payload(student, exam=None, public_only=True):
     if public_only:
         query = query.join(Result.exam).filter(Result.is_published.is_(True))
     rows = query.join(Result.subject).order_by(Result.subject_id.asc()).all()
-    if exam and not exam.is_published and public_only:
-        rows = []
-
     total = sum(Decimal(row.score) for row in rows)
     max_total = sum(Decimal(row.subject.max_score) for row in rows) or Decimal("0")
     average = (total / max_total * 100) if max_total else Decimal("0")

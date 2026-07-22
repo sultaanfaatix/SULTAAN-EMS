@@ -1508,21 +1508,6 @@ CONFIG_CENTER_SECTIONS = {
         'description': 'Manage subject offerings and their level assignments',
         'columns': ['Subject', 'Status', 'Short Name', 'Level', 'Classes', 'Created By']
     },
-    'promotion-rules': {
-        'title': 'Promotion Rules',
-        'description': 'Document student promotion criteria and administrative policies',
-        'columns': ['Rule', 'Condition', 'Value', 'Status', 'Applies To', 'Created By']
-    },
-    'result-settings': {
-        'title': 'Result Settings',
-        'description': 'Review result publication and display settings',
-        'columns': ['Setting', 'Value', 'Type', 'Status', 'Category', 'Created By']
-    },
-    'system-defaults': {
-        'title': 'System Defaults',
-        'description': 'Review system-wide default values',
-        'columns': ['Setting', 'Default Value', 'Type', 'Status', 'Category', 'Created By']
-    },
     'audit-logs': {
         'title': 'Audit Logs',
         'description': 'View all system configuration changes',
@@ -1712,8 +1697,8 @@ def enforce_config_center_access():
 def config_center():
     """Configuration Center Main Page"""
     section = request.args.get('section', 'academic-years')
-    if section == 'grade-system':
-        abort(404)
+    if section not in CONFIG_CENTER_SECTIONS or section == 'grade-system':
+        section = 'academic-years'
     info = CONFIG_CENTER_SECTIONS.get(section, CONFIG_CENTER_SECTIONS['academic-years'])
 
     classes_by_level = {}
@@ -1906,7 +1891,7 @@ def config_save_system_defaults():
     allowed = {"full", "short", "full_short"}
     if value not in allowed:
         flash("Please choose a valid subject display mode.", "danger")
-        return redirect(url_for("admin.config_center", section="system-defaults"))
+        return redirect(url_for("admin.config_center", section=request.form.get("redirect_section") or "subjects"))
     setting = db.session.get(Setting, "display_subject_names") or Setting(key="display_subject_names")
     setting.value = value
     db.session.add(setting)
@@ -1917,7 +1902,7 @@ def config_save_system_defaults():
     except Exception:
         db.session.rollback()
         flash("System default could not be saved.", "danger")
-    return redirect(url_for("admin.config_center", section="system-defaults"))
+    return redirect(url_for("admin.config_center", section=request.form.get("redirect_section") or "subjects"))
 
 
 @admin_bp.route("/config-center/audit-logs")
@@ -2383,9 +2368,12 @@ def config_update_subject(subject_id):
     data = request.get_json(silent=True) or {}
     subject = Subject.query.get_or_404(subject_id)
 
-    name = data.get('name', subject.name).strip()
+    name = str(data.get('name', subject.name) or '').strip()
     academic_level_id = _parse_int(data.get('academic_level_id')) if 'academic_level_id' in data else subject.academic_level_id
-    short_name = data.get('short_name', '').strip().upper()
+    setting_key = f"subject_short_name_{subject.id}"
+    existing_setting = db.session.get(Setting, setting_key)
+    existing_short_name = (existing_setting.value or '').strip().upper() if existing_setting else ''
+    short_name = str(data.get('short_name', existing_short_name) or '').strip().upper()
     if not name:
         return jsonify({'success': False, 'message': 'Name is required'})
     if _duplicate_exists(Subject, {'name': name, 'academic_level_id': academic_level_id}, exclude_id=subject.id):
@@ -2398,8 +2386,7 @@ def config_update_subject(subject_id):
     subject.sort_order = _parse_int(data.get('sort_order'), subject.sort_order)
 
     try:
-        if 'short_name' in data:
-            setting_key = f"subject_short_name_{subject.id}"
+        if 'short_name' in data or existing_short_name:
             setting = db.session.get(Setting, setting_key) or Setting(key=setting_key)
             setting.value = short_name
             db.session.add(setting)
