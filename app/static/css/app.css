@@ -4916,6 +4916,53 @@ tbody tr:hover td { background: #f8fbff; }
   flex-wrap: wrap;
 }
 
+/* Student selection bottom-sheet wizard. These selectors are intentionally
+   scoped to the selection workflow and do not affect the Result View. */
+.selection-sheet-stage { position: relative; z-index: 3; min-height: 430px; margin: 24px auto 0; }
+.selection-sheet-backdrop { position: fixed; inset: 0; background: rgba(2, 12, 36, .42); backdrop-filter: blur(5px); pointer-events: none; }
+.selection-bottom-sheet { position: relative; width: min(720px, 100%); margin: 0 auto; padding: 12px clamp(18px, 4vw, 34px) 24px; border: 1px solid rgba(255,255,255,.28); border-radius: 28px 28px 18px 18px; background: linear-gradient(145deg, rgba(5, 39, 94, .97), rgba(7, 85, 145, .94)); box-shadow: 0 -18px 70px rgba(0, 0, 0, .28); animation: selectionSheetIn .42s cubic-bezier(.2,.8,.2,1) both; }
+.selection-sheet-handle { width: 48px; height: 5px; margin: 0 auto 16px; border-radius: 999px; background: rgba(255,255,255,.5); }
+.selection-profile-card { display: flex; align-items: center; gap: 14px; padding: 14px; border: 1px solid rgba(255,255,255,.18); border-radius: 18px; background: rgba(255,255,255,.1); }
+.selection-profile-copy { min-width: 0; flex: 1; }
+.selection-profile-copy h2 { margin: 0; overflow-wrap: anywhere; color: #fff; font-size: clamp(1rem, 2.4vw, 1.35rem); line-height: 1.2; }
+.selection-profile-copy p { margin: 5px 0 0; color: rgba(255,255,255,.7); font-size: .86rem; }
+.selection-verified-badge { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; padding: 7px 10px; border-radius: 999px; color: #D1FAE5; background: rgba(16, 185, 129, .22); font-size: .72rem; font-weight: 800; }
+.selection-verified-badge i { color: #6EE7B7; }
+.selection-progress { margin: 20px 0 16px; }
+.selection-progress-copy { display: flex; justify-content: space-between; gap: 12px; align-items: center; color: rgba(255,255,255,.72); font-size: .76rem; font-weight: 700; }
+.selection-progress-copy strong { color: #fff; font-size: .9rem; }
+.selection-progress-track { height: 4px; margin-top: 12px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.16); }
+.selection-progress-track span { display: block; width: 50%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #67E8F9, #A7F3D0); transition: width .35s ease; }
+.selection-progress-dots { display: flex; justify-content: space-between; margin-top: -7px; }
+.selection-progress-dots i { width: 10px; height: 10px; border: 2px solid #67E8F9; border-radius: 50%; background: #083b78; transition: background .3s ease, transform .3s ease; }
+.selection-progress-dots i.is-current { background: #67E8F9; transform: scale(1.25); }
+.selection-wizard-viewport { overflow: hidden; }
+.selection-wizard-track { display: flex; width: 200%; transition: transform .42s cubic-bezier(.2,.8,.2,1); }
+.selection-wizard-step { width: 50%; flex: 0 0 50%; min-width: 0; }
+.selection-step-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.selection-step-heading h3 { margin: 0; color: #fff; font-size: 1.08rem; }
+.selection-step-heading p { margin: 4px 0 0; color: rgba(255,255,255,.68); font-size: .8rem; }
+.selection-step-icon { width: 38px; height: 38px; display: grid; place-items: center; flex: 0 0 38px; border-radius: 12px; color: #fff; background: linear-gradient(135deg, #0284C7, #22D3EE); }
+.selection-step-icon.exam { background: linear-gradient(135deg, #7C3AED, #A78BFA); }
+.selection-choice-list { display: grid; gap: 9px; max-height: 250px; overflow-y: auto; padding: 2px; }
+.selection-choice { display: flex; align-items: center; gap: 11px; width: 100%; min-height: 60px; padding: 10px 12px; border: 1px solid rgba(255,255,255,.16); border-radius: 15px; color: #fff; text-align: left; background: rgba(255,255,255,.08); cursor: pointer; transition: transform .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.selection-choice:hover { transform: translateY(-1px); background: rgba(255,255,255,.14); border-color: rgba(103,232,249,.6); }
+.selection-choice.is-selected { border-color: #67E8F9; background: linear-gradient(90deg, rgba(14,116,144,.7), rgba(16,185,129,.28)); box-shadow: 0 8px 20px rgba(0,0,0,.14); }
+.selection-choice-icon { width: 34px; height: 34px; display: grid; place-items: center; flex: 0 0 34px; border-radius: 10px; color: #67E8F9; background: rgba(103,232,249,.15); }
+.selection-choice-copy { display: grid; min-width: 0; flex: 1; gap: 2px; }
+.selection-choice-copy strong { overflow-wrap: anywhere; font-size: .92rem; }
+.selection-choice-copy small { color: rgba(255,255,255,.62); font-size: .73rem; }
+.selection-choice-check { width: 22px; height: 22px; display: grid; place-items: center; flex: 0 0 22px; border: 1px solid rgba(255,255,255,.34); border-radius: 50%; color: transparent; font-size: .7rem; }
+.selection-choice.is-selected .selection-choice-check { border-color: #6EE7B7; color: #063b2b; background: #6EE7B7; animation: selectionCheckIn .25s ease both; }
+.selection-no-exams { padding: 18px; border: 1px dashed rgba(255,255,255,.3); border-radius: 14px; color: rgba(255,255,255,.75); text-align: center; font-size: .85rem; }
+.selection-sheet-actions { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
+.selection-sheet-actions .result-options-submit { flex: 1; min-height: 52px; white-space: nowrap; }
+.selection-sheet-actions .result-options-submit:disabled { opacity: .45; cursor: not-allowed; filter: grayscale(.2); }
+.selection-back-button { min-height: 52px; padding: 0 16px; border: 1px solid rgba(255,255,255,.28); border-radius: 12px; color: #fff; background: rgba(255,255,255,.1); cursor: pointer; }
+@keyframes selectionSheetIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes selectionCheckIn { from { transform: scale(.6); opacity: .4; } to { transform: scale(1); opacity: 1; } }
+@media (max-width: 560px) { .selection-sheet-stage { min-height: 0; margin-inline: -2px; } .selection-bottom-sheet { padding-inline: 14px; border-radius: 24px 24px 14px 14px; } .selection-profile-card { gap: 10px; padding: 11px; } .selection-verified-badge { padding: 6px 8px; font-size: .67rem; } .selection-choice-list { max-height: 220px; } }
+
 /* Student record selection only: keep the lookup step compact and stable
    without changing the published result dashboard. */
 .premium-homepage:not(.has-result) .premium-language-nav {
