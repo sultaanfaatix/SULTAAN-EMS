@@ -495,7 +495,6 @@
             <form method="POST" action="{{ url_for('admin.incident_lookup_create', kind=kind) }}" class="lookup-add-row">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input type="text" name="name" placeholder="New {{ kind }} name" required>
-              <input type="text" name="description" placeholder="Description">
               {% if color_field %}<input type="color" name="color" value="#64748b" title="Color">{% endif %}
               <input type="number" name="sort_order" value="0" min="0" title="Sort order">
               <label class="lookup-active"><input type="checkbox" name="is_active" checked> Active</label>
@@ -509,7 +508,6 @@
                   <div class="category-info">
                     <i class="fa-solid fa-{{ icon }} category-icon"></i>
                     <input class="category-name-input" name="name" value="{{ row.name }}" required>
-                    <input class="category-desc-input" name="description" value="{{ row.description or '' }}" placeholder="Description">
                     {% if color_field %}<input type="color" name="color" value="{{ row.color }}" title="Color">{% endif %}
                     <input class="category-sort-input" type="number" name="sort_order" value="{{ row.sort_order }}" min="0" title="Sort order">
                     <label class="lookup-active"><input type="checkbox" name="is_active" {% if row.is_active %}checked{% endif %}> Active</label>
@@ -518,7 +516,7 @@
                     <button type="submit" class="btn-edit" title="Save changes"><i class="fa-solid fa-pen"></i></button>
                   </div>
                 </form>
-                <form method="POST" action="{{ url_for('admin.incident_lookup_delete', kind=kind, row_id=row.id) }}" onsubmit="return confirm('Delete this {{ kind }}? Existing reports will be protected.');">
+                <form method="POST" action="{{ url_for('admin.incident_lookup_delete', kind=kind, row_id=row.id) }}" class="lookup-delete-form" data-confirm="Delete this {{ kind }}? Existing reports will be protected.">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button type="submit" class="btn-delete" title="Delete"><i class="fa-solid fa-trash"></i></button>
                 </form>
@@ -529,9 +527,23 @@
         </div>
         {% endmacro %}
 
-        {{ lookup_card('category', 'Category Management', categories, 'tag') }}
-        {{ lookup_card('severity', 'Severity Levels', severities, 'circle-exclamation', True) }}
-        {{ lookup_card('action', 'Incident Actions', actions, 'list-check') }}
+        <section id="incident-management" class="lookup-management-panel" data-tab-panel="labels" hidden>
+          <div class="lookup-management-hero">
+            <div class="lookup-management-icon">
+              <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <div>
+              <span class="lookup-eyebrow">Dedicated Management</span>
+              <h2>Categories, Severity Levels & Actions</h2>
+              <p>Manage the reusable lookup values for incident reports from one protected workspace.</p>
+            </div>
+          </div>
+          <div class="lookup-management-grid">
+            {{ lookup_card('category', 'Category Management', categories, 'tag') }}
+            {{ lookup_card('severity', 'Severity Levels', severities, 'circle-exclamation', True) }}
+            {{ lookup_card('action', 'Incident Actions', actions, 'list-check') }}
+          </div>
+        </section>
     </div>
 
   </div>
@@ -539,7 +551,7 @@
   <!-- Footer Info -->
   <div class="settings-footer">
     <i class="fa-solid fa-circle-info"></i>
-    <span>All changes are saved automatically. You can reset to default settings at any time.</span>
+    <span>Lookup changes save immediately. Form configuration changes are applied after clicking Save Settings.</span>
   </div>
 </div>
 
@@ -1252,6 +1264,84 @@
 }
 
 /* Category Management */
+.lookup-management-panel {
+  margin-top: 1.5rem;
+  animation: fadeInLookup .28s ease both;
+}
+
+@keyframes fadeInLookup {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.lookup-management-hero {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(99, 102, 241, .18);
+  border-radius: 22px;
+  background:
+    linear-gradient(135deg, rgba(99, 102, 241, .12), rgba(14, 165, 233, .08)),
+    #fff;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, .08);
+}
+
+.lookup-management-icon {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 18px;
+  color: #fff;
+  background: linear-gradient(135deg, #6366f1, #0ea5e9);
+  box-shadow: 0 12px 28px rgba(99, 102, 241, .28);
+}
+
+.lookup-eyebrow {
+  display: block;
+  margin-bottom: .2rem;
+  color: #4f46e5;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.lookup-management-hero h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.lookup-management-hero p {
+  margin: .25rem 0 0;
+  color: #64748b;
+  font-size: .92rem;
+}
+
+.lookup-management-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.lookup-management-grid .settings-card {
+  margin-bottom: 0;
+  border-radius: 22px;
+  border-color: rgba(148, 163, 184, .22);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, .07);
+}
+
+.lookup-management-grid .settings-card .card-header {
+  background:
+    linear-gradient(135deg, rgba(59, 130, 246, .1), rgba(255, 255, 255, .94));
+}
+
 .categories-list {
   display: flex;
   flex-direction: column;
@@ -1264,12 +1354,15 @@
   align-items: center;
   padding: 1rem;
   background: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, .18);
   border-radius: 12px;
   transition: all 0.3s ease;
 }
 
 .category-item:hover {
-  background: #f1f5f9;
+  background: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .07);
 }
 
 .category-info {
@@ -1371,6 +1464,7 @@
 
 .btn-edit:hover {
   background: #bfdbfe;
+  transform: translateY(-1px);
 }
 
 .btn-delete {
@@ -1380,6 +1474,14 @@
 
 .btn-delete:hover {
   background: #fecaca;
+  transform: translateY(-1px);
+}
+
+.lookup-edit-form.is-submitting,
+.lookup-add-row.is-submitting,
+.lookup-delete-form.is-submitting {
+  opacity: .72;
+  pointer-events: none;
 }
 
 /* Preview Card */
@@ -1550,6 +1652,14 @@
   .colors-grid {
     grid-template-columns: 1fr;
   }
+
+  .lookup-management-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lookup-management-hero {
+    align-items: flex-start;
+  }
   
   .template-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1622,6 +1732,31 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     this.classList.add('active');
     const tabId = this.getAttribute('data-tab');
     document.getElementById('tab-' + tabId).classList.add('active');
+    syncRelatedPanels(tabId);
+  });
+});
+
+function syncRelatedPanels(activeTab) {
+  document.querySelectorAll('[data-tab-panel]').forEach(panel => {
+    panel.hidden = panel.getAttribute('data-tab-panel') !== activeTab;
+  });
+}
+
+document.querySelectorAll('.lookup-add-row, .lookup-edit-form, .lookup-delete-form').forEach(form => {
+  form.addEventListener('submit', function(event) {
+    const confirmMessage = this.getAttribute('data-confirm');
+    if (confirmMessage && !confirm(confirmMessage)) {
+      event.preventDefault();
+      return;
+    }
+    if (event.defaultPrevented) return;
+    this.classList.add('is-submitting');
+    const button = this.querySelector('button[type="submit"]');
+    if (button) {
+      button.disabled = true;
+      button.dataset.originalHtml = button.innerHTML;
+      button.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+    }
   });
 });
 
@@ -1691,6 +1826,15 @@ function updatePreview() {
 // Initialize preview on load
 document.addEventListener('DOMContentLoaded', function() {
   updatePreview();
+  const activeTab = document.querySelector('.tab-btn.active')?.getAttribute('data-tab') || 'fields';
+  syncRelatedPanels(activeTab);
+  if (window.location.hash === '#incident-management') {
+    const labelsTab = document.querySelector('.tab-btn[data-tab="labels"]');
+    if (labelsTab) {
+      labelsTab.click();
+      document.getElementById('incident-management')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
 });
 </script>
 {% endblock %}

@@ -1,7 +1,7 @@
 from datetime import datetime, date, timedelta
 from functools import wraps
 
-from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, send_file, session, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required
 from openpyxl import Workbook
 from sqlalchemy import or_
@@ -1404,6 +1404,24 @@ def incident_lookup_model(kind):
     return models.get(kind)
 
 
+def incident_lookup_redirect():
+    return redirect(url_for("admin.incident_settings", _anchor="incident-management"))
+
+
+def safe_lookup_sort_order(value):
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def normalize_lookup_color(value):
+    color = (value or "").strip()
+    if len(color) == 7 and color.startswith("#") and all(ch in "0123456789abcdefABCDEF" for ch in color[1:]):
+        return color
+    return "#64748b"
+
+
 @admin_bp.route("/incident-settings/<kind>/create", methods=["POST"])
 def incident_lookup_create(kind):
     model = incident_lookup_model(kind)
@@ -1412,23 +1430,24 @@ def incident_lookup_create(kind):
     name = request.form.get("name", "").strip()
     if not name:
         flash("Name is required.", "danger")
-        return redirect(url_for("admin.incident_settings"))
+        return incident_lookup_redirect()
     row = model(name=name)
-    if hasattr(row, "description"):
+    if hasattr(row, "description") and "description" in request.form:
         row.description = request.form.get("description", "").strip()
-    if hasattr(row, "color") and request.form.get("color"):
-        row.color = request.form.get("color")
-    row.sort_order = int(request.form.get("sort_order") or 0)
-    row.is_active = request.form.get("is_active", "on") == "on"
+    if hasattr(row, "color"):
+        row.color = normalize_lookup_color(request.form.get("color"))
+    row.sort_order = safe_lookup_sort_order(request.form.get("sort_order"))
+    row.is_active = request.form.get("is_active") in ("on", "true", "1")
     db.session.add(row)
     try:
         db.session.commit()
         audit("Incident Settings Updated", f"Created incident {kind}: {name}")
         flash(f"{kind.title()} created successfully.", "success")
-    except SQLAlchemyError:
+    except SQLAlchemyError as exc:
         db.session.rollback()
+        current_app.logger.exception("Incident %s create failed: %s", kind, exc)
         flash(f"Could not create {kind}. The name may already exist.", "danger")
-    return redirect(url_for("admin.incident_settings"))
+    return incident_lookup_redirect()
 
 
 @admin_bp.route("/incident-settings/<kind>/<int:row_id>/update", methods=["POST"])
@@ -1440,22 +1459,24 @@ def incident_lookup_update(kind, row_id):
     name = request.form.get("name", "").strip()
     if not name:
         flash("Name is required.", "danger")
-        return redirect(url_for("admin.incident_settings"))
+        return incident_lookup_redirect()
     row.name = name
-    if hasattr(row, "description"):
+    if hasattr(row, "description") and "description" in request.form:
         row.description = request.form.get("description", "").strip()
-    if hasattr(row, "color") and request.form.get("color"):
-        row.color = request.form.get("color")
-    row.sort_order = int(request.form.get("sort_order") or 0)
-    row.is_active = request.form.get("is_active", "on") == "on"
+    if hasattr(row, "color"):
+        row.color = normalize_lookup_color(request.form.get("color"))
+    row.sort_order = safe_lookup_sort_order(request.form.get("sort_order"))
+    row.is_active = request.form.get("is_active") in ("on", "true", "1")
+    db.session.add(row)
     try:
         db.session.commit()
         audit("Incident Settings Updated", f"Updated incident {kind}: {name}")
         flash(f"{kind.title()} updated successfully.", "success")
-    except SQLAlchemyError:
+    except SQLAlchemyError as exc:
         db.session.rollback()
+        current_app.logger.exception("Incident %s update failed for row %s: %s", kind, row_id, exc)
         flash(f"Could not update {kind}. The name may already exist.", "danger")
-    return redirect(url_for("admin.incident_settings"))
+    return incident_lookup_redirect()
 
 
 @admin_bp.route("/incident-settings/<kind>/<int:row_id>/delete", methods=["POST"])
@@ -1474,6 +1495,7 @@ def incident_lookup_delete(kind, row_id):
     try:
         if referenced:
             row.is_active = False
+            db.session.add(row)
             message = f"{kind.title()} is used by existing reports, so it was deactivated safely."
         else:
             db.session.delete(row)
@@ -1481,10 +1503,11 @@ def incident_lookup_delete(kind, row_id):
         db.session.commit()
         audit("Incident Settings Updated", f"Deleted/deactivated incident {kind}: {name}")
         flash(message, "success")
-    except SQLAlchemyError:
+    except SQLAlchemyError as exc:
         db.session.rollback()
+        current_app.logger.exception("Incident %s delete failed for row %s: %s", kind, row_id, exc)
         flash(f"Could not delete {kind}. It was not changed.", "danger")
-    return redirect(url_for("admin.incident_settings"))
+    return incident_lookup_redirect()
 
 
 CONFIG_CENTER_SECTIONS = {
