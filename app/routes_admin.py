@@ -954,6 +954,7 @@ def settings():
             "print_footer_logo": "print_footer_logo",
             "verify_background_image": "verify_background_image",
             "verify_default_student_photo": "verify_default_student_photo",
+            "footer_logo": "footer_logo_path",
         }
         for field_name, setting_key in upload_fields.items():
             upload = request.files.get(field_name)
@@ -1388,9 +1389,20 @@ def incident_settings_update():
                     value = "".join(ch for ch in value.strip().upper() if ch.isalnum())[:10] or "INC"
                 setting.setting_value = value
 
+    # Handle footer logo upload
+    upload = request.files.get("setting_footer_logo_path")
+    if upload and upload.filename:
+        if allowed_file(upload.filename, ALLOWED_PHOTOS):
+            image_url = upload_image(upload, "school/settings")
+            setting = IncidentReportSettings.query.filter_by(setting_key="footer_logo_path").first()
+            if setting:
+                setting.setting_value = image_url
+
     db.session.commit()
 
     audit("Incident Settings Updated", "Updated incident report form settings")
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"status": "success", "message": "Incident settings saved."})
     flash("Incident report settings updated successfully!", "success")
     return redirect(url_for("admin.incident_settings"))
 

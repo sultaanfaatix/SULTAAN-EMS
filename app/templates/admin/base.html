@@ -91,4 +91,141 @@
   </header>
   {% block admin_content %}{% endblock %}
 </main>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Identify settings and configuration forms
+  const settingsForms = [];
+  const systemSettingsForm = document.querySelector('form.settings-stack');
+  const incidentSettingsForm = document.getElementById('settingsForm');
+  
+  if (systemSettingsForm) settingsForms.push(systemSettingsForm);
+  if (incidentSettingsForm) settingsForms.push(incidentSettingsForm);
+  
+  // Edit forms inside individual settings lists (categories, severities, actions)
+  const lookupForms = document.querySelectorAll('.lookup-edit-form, .lookup-edit-form-vertical');
+  lookupForms.forEach(f => settingsForms.push(f));
+
+  if (settingsForms.length === 0) return;
+
+  // Add the Auto Save Status Component in the top actions bar
+  const topActions = document.querySelector('.top-actions');
+  if (!topActions) return;
+
+  const statusDiv = document.createElement('div');
+  statusDiv.id = 'autosave-status';
+  statusDiv.className = 'autosave-status saved';
+  statusDiv.style.cssText = `
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    background: var(--surface, #ffffff);
+    border: 1px solid var(--line, #e2e8f0);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-right: 10px;
+    transition: all 0.22s ease;
+  `;
+  statusDiv.innerHTML = `
+    <span class="status-dot" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; transition: background 0.22s ease;"></span>
+    <span class="status-text" style="color: var(--muted, #64748b);">All changes saved</span>
+  `;
+  topActions.insertBefore(statusDiv, topActions.firstChild);
+
+  // Status CSS Keyframes
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes pulse-dot {
+      0% { transform: scale(0.85); opacity: 0.6; }
+      50% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(0.85); opacity: 0.6; }
+    }
+    .autosave-status.saving .status-dot {
+      background: #eab308 !important;
+      animation: pulse-dot 1.2s infinite ease-in-out;
+    }
+    .autosave-status.saved .status-dot {
+      background: #10b981 !important;
+    }
+    .autosave-status.syncing .status-dot {
+      background: #3b82f6 !important;
+      animation: pulse-dot 1.2s infinite ease-in-out;
+    }
+    .autosave-status.failed .status-dot {
+      background: #ef4444 !important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  let debounceTimer = null;
+
+  function updateStatus(state, text) {
+    statusDiv.className = 'autosave-status ' + state;
+    const txt = statusDiv.querySelector('.status-text');
+    txt.textContent = text;
+  }
+
+  function triggerSave(form) {
+    updateStatus('saving', 'Saving changes...');
+    
+    // Construct form data representing all fields
+    const formData = new FormData(form);
+    
+    fetch(form.action || window.location.href, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => {
+      if (response.ok) {
+        updateStatus('saved', 'All changes saved');
+      } else {
+        updateStatus('failed', 'Failed to save');
+      }
+    })
+    .catch(error => {
+      console.error('Autosave failed:', error);
+      updateStatus('failed', 'Failed to save');
+    });
+  }
+
+  function queueSave(form) {
+    updateStatus('syncing', 'Syncing...');
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      triggerSave(form);
+    }, 1000);
+  }
+
+  settingsForms.forEach(form => {
+    // Intercept submit
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      triggerSave(form);
+    });
+
+    // Listen to changes on inputs/selects/textareas
+    const inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+      const eventType = (input.type === 'checkbox' || input.type === 'radio' || input.type === 'file' || input.tagName === 'SELECT') ? 'change' : 'input';
+      input.addEventListener(eventType, function() {
+        queueSave(form);
+      });
+    });
+  });
+
+  // Remove/hide large save buttons
+  const saveBtns = document.querySelectorAll('.floating-save, .btn-save-header, .btn-edit');
+  saveBtns.forEach(btn => {
+    if (btn.tagName === 'BUTTON' || btn.classList.contains('floating-save') || btn.classList.contains('btn-save-header') || btn.classList.contains('btn-edit')) {
+      btn.style.setProperty('display', 'none', 'important');
+    }
+  });
+});
+</script>
 {% endblock %}

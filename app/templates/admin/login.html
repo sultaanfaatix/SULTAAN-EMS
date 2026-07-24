@@ -9,9 +9,68 @@
     <h1>{{ ui_settings.school_name }}</h1>
     <p>{{ ui_settings.school_name }} administration workspace.</p>
     <label><i class="fa-solid fa-user"></i> Username<input name="username" required autofocus></label>
-    <label><i class="fa-solid fa-key"></i> Password<input name="password" type="password" required></label>
+    <label><i class="fa-solid fa-key"></i> Password</label>
+    <div class="password-wrapper">
+      <input name="password" id="passwordInput" type="password" required>
+      <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility()" aria-label="Toggle Password Visibility">
+        <i class="fa-solid fa-eye" id="eyeIcon"></i>
+      </button>
+    </div>
     <button type="submit" class="premium"><i class="fa-solid fa-right-to-bracket"></i> Login</button>
     <p style="margin:0;text-align:center;color:var(--muted);font-size:.9rem;">Teachers: use the <a href="{{ url_for('teacher_portal.login') }}">Teacher Portal login</a>.</p>
   </form>
 </main>
+
+<style>
+.password-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+.password-wrapper input {
+  padding-right: 44px !important;
+  width: 100%;
+}
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  padding: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+  z-index: 10;
+}
+.password-toggle-btn:hover {
+  color: var(--primary, #3b82f6);
+}
+.password-toggle-btn i {
+  font-size: 1.1rem;
+  transition: transform 0.15s ease;
+}
+.password-toggle-btn:active i {
+  transform: scale(0.85);
+}
+</style>
+
+<script>
+function togglePasswordVisibility() {
+  const input = document.getElementById('passwordInput');
+  const icon = document.getElementById('eyeIcon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.remove('fa-eye');
+    icon.classList.add('fa-eye-slash');
+  } else {
+    input.type = 'password';
+    icon.classList.remove('fa-eye-slash');
+    icon.classList.add('fa-eye');
+  }
+}
+</script>
 {% endblock %}

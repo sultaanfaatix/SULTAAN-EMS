@@ -73,7 +73,7 @@
   <div class="settings-layout">
     <!-- Left Column - Settings -->
     <div class="settings-column">
-      <form method="POST" action="{{ url_for('admin.incident_settings_update') }}" id="settingsForm">
+      <form method="POST" action="{{ url_for('admin.incident_settings_update') }}" id="settingsForm" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <!-- General Tab -->
@@ -283,6 +283,18 @@
                   <input type="checkbox" name="setting_{{ setting.setting_key }}" {% if setting.setting_value == 'true' %}checked{% endif %}>
                   <span class="toggle-slider"></span>
                 </label>
+                {% elif 'color' in setting.setting_key.lower() or setting.setting_key in ['footer_bg_start', 'footer_bg_end', 'footer_gold', 'footer_teal'] %}
+                <div class="input-wrapper" style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                  <input type="color" id="picker_{{ setting.setting_key }}" value="{{ setting.setting_value or '#ffffff' }}" onchange="document.getElementById('setting_{{ setting.setting_key }}').value = this.value; document.getElementById('setting_{{ setting.setting_key }}').dispatchEvent(new Event('change'));" style="width: 50px; height: 38px; padding: 0; border-radius: 6px; cursor: pointer; border: 1px solid var(--line);">
+                  <input type="text" id="setting_{{ setting.setting_key }}" name="setting_{{ setting.setting_key }}" value="{{ setting.setting_value }}" placeholder="#HEX" class="modern-input" style="flex: 1;" onchange="document.getElementById('picker_{{ setting.setting_key }}').value = this.value; document.getElementById('setting_{{ setting.setting_key }}').dispatchEvent(new Event('change'));">
+                </div>
+                {% elif setting.setting_key == 'footer_logo_path' %}
+                <div class="input-wrapper" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                  <input type="file" id="file_{{ setting.setting_key }}" name="setting_{{ setting.setting_key }}" accept="image/*" class="modern-input" style="width: 100%;" onchange="const reader = new FileReader(); reader.onload = (e) => { const img = document.getElementById('preview_img_{{ setting.setting_key }}'); if(img) { img.src = e.target.result; img.style.display = 'block'; } }; if(this.files[0]) reader.readAsDataURL(this.files[0]);">
+                  <div class="logo-preview-wrapper" style="margin-top: 6px;">
+                    <img id="preview_img_{{ setting.setting_key }}" src="{% if setting.setting_value %}{{ asset_url(setting.setting_value) }}{% endif %}" alt="Footer logo preview" style="max-height: 40px; border-radius: 6px; border: 1px solid var(--line); {% if not setting.setting_value %}display: none;{% endif %}">
+                  </div>
+                </div>
                 {% else %}
                 <div class="input-wrapper">
                   <i class="fa-solid fa-pen input-icon"></i>
@@ -475,16 +487,6 @@
                 </div>
               </div>
               {% endif %}
-              {% endfor %}
-            </div>
-                </label>
-                {% else %}
-                <div class="input-wrapper">
-                  <i class="fa-solid fa-pen input-icon"></i>
-                  <input type="text" id="setting_{{ setting.setting_key }}" name="setting_{{ setting.setting_key }}" value="{{ setting.setting_value }}" placeholder="Enter {{ setting.description|lower }}">
-                </div>
-                {% endif %}
-              </div>
               {% endfor %}
             </div>
           </div>

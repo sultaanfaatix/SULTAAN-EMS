@@ -218,6 +218,15 @@ def create_app(config_class=Config):
             # Footer settings
             {"setting_key": "show_footer", "setting_value": "true", "setting_type": "boolean", "category": "footer", "description": "Show form footer"},
             {"setting_key": "footer_text", "setting_value": "© 2024 Examination System", "setting_type": "string", "category": "footer", "description": "Footer text"},
+            {"setting_key": "footer_copyright_text", "setting_value": "© SULTAAN EMS", "setting_type": "string", "category": "footer", "description": "Copyright prefix"},
+            {"setting_key": "footer_org_name", "setting_value": "Sultaan Administration", "setting_type": "string", "category": "footer", "description": "Organization name"},
+            {"setting_key": "footer_year", "setting_value": "2026", "setting_type": "string", "category": "footer", "description": "Copyright year"},
+            {"setting_key": "footer_bg_start", "setting_value": "#071931", "setting_type": "string", "category": "footer", "description": "Footer background start color"},
+            {"setting_key": "footer_bg_end", "setting_value": "#0c3366", "setting_type": "string", "category": "footer", "description": "Footer background end color"},
+            {"setting_key": "footer_gold", "setting_value": "#C9A227", "setting_type": "string", "category": "footer", "description": "Footer gold accent color"},
+            {"setting_key": "footer_teal", "setting_value": "#1B998B", "setting_type": "string", "category": "footer", "description": "Footer teal accent color"},
+            {"setting_key": "footer_logo_path", "setting_value": "", "setting_type": "string", "category": "footer", "description": "Footer logo path"},
+            {"setting_key": "footer_shimmer_enabled", "setting_value": "true", "setting_type": "boolean", "category": "footer", "description": "Enable text shimmer animation"},
         ]
         
         for setting in default_settings:
