@@ -1099,36 +1099,37 @@
 
 /* Premium Animated Footer */
 .sultan-premium-footer {
-  margin-top: 4.5rem;
-  padding: 20px 28px 18px;
+  margin-top: 3rem;
+  padding: 12px 28px;
   background: linear-gradient(180deg, var(--bg-start, #071931) 0%, var(--bg-end, #0c3366) 100%);
-  border-radius: 18px;
+  border-radius: 14px;
   border: 1px solid rgba(27, 153, 139, 0.2); /* Teal accent border */
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
   display: flex;
-  flex-direction: column;
   align-items: center;
-  text-align: center;
+  justify-content: center;
   gap: 1.2rem;
   overflow: hidden;
   position: relative;
+  height: auto;
 }
 
 /* Conic Gradient Logo Ring */
 .footer-logo-ring-container {
   position: relative;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .footer-logo-ring {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  padding: 2px;
+  padding: 3px;
   background: conic-gradient(var(--gold, #C9A227), transparent, var(--teal, #1B998B), transparent, var(--gold, #C9A227));
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -1142,8 +1143,8 @@
 
 .footer-logo-inner {
   position: absolute;
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: var(--bg-start, #071931);
   display: flex;
@@ -1153,14 +1154,15 @@
 }
 
 .footer-logo-inner img {
-  width: 26px;
-  height: 26px;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .footer-logo-inner span {
   font-family: "Fraunces", serif;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--gold, #C9A227);
 }
@@ -1168,8 +1170,6 @@
 /* Copyright Text & Subtitle */
 .footer-text-block {
   display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
   align-items: center;
 }
 
@@ -1204,17 +1204,6 @@
   }
 }
 
-.footer-subtitle {
-  font-family: "Inter", sans-serif;
-  font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: var(--teal, #1B998B);
-  opacity: 0.9;
-  margin-top: 0.1rem;
-}
-
 /* Respect prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   .footer-logo-ring {
@@ -1233,7 +1222,10 @@
 /* Mobile Responsiveness */
 @media (max-width: 480px) {
   .sultan-premium-footer {
-    padding: 2.2rem 1.25rem 2rem;
-    gap: 1.5rem;
+    padding: 12px 18px;
+    gap: 0.8rem;
+  }
+  .copyright-shimmer {
+    font-size: 0.95rem;
   }
 }
